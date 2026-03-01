@@ -3,8 +3,8 @@ package mappers
 import (
 	"fmt"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/models"
 )
 
 // DeploymentMapper maps between models.Deployment and api.Deployment types.

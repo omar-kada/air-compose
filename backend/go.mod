@@ -1,4 +1,4 @@
-module omar-kada/autonas
+module omar-kada/air-compose
 
 go 1.24.9
 

@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/models"
 )
 
 var (

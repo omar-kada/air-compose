@@ -1,8 +1,8 @@
 package mappers
 
 import (
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/models"
 )
 
 // SettingsMapper maps models.Settings to api.Settings

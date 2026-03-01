@@ -1,14 +1,14 @@
 # ----------- Builder Stage -----------
 FROM golang:1.25.1-bookworm AS builder
 
-RUN mkdir /autonas
-WORKDIR /autonas
+RUN mkdir /air-compose
+WORKDIR /air-compose
 
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 COPY backend .
-RUN go build -o autonas /autonas/cmd/autonas/main.go
+RUN go build -o air-compose /air-compose/cmd/air-compose/main.go
 
 # ----------- Frontend Builder Stage -----------
 FROM node:22-alpine AS frontend-builder
@@ -53,16 +53,16 @@ RUN mkdir /data
 
 WORKDIR /app
 
-COPY --from=builder /autonas/autonas /app/
+COPY --from=builder /air-compose/air-compose /app/
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app
 
-ENV AUTONAS_WORKING_DIR="/data"
+ENV AIR_COMPOSE_WORKING_DIR="/data"
 EXPOSE 5005
 
 # Start the application
-CMD ["sh", "-c", "/app/autonas run"]
+CMD ["sh", "-c", "/app/air-compose run"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5005/ || exit 1

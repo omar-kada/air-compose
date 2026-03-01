@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/models"
 
 	"github.com/moby/moby/client"
 )
@@ -48,7 +48,7 @@ func NewInspector() (Inspector, error) {
 }
 
 // GetManagedStacks returns the list of containers (as returned by ContainerList)
-// that are managed by AutoNAS
+// that are managed by AirCompose
 func (i *inspector) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
 	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})

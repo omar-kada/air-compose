@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	"github.com/go-viper/mapstructure/v2"
 	"go.yaml.in/yaml/v3"

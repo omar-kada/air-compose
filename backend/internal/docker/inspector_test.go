@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"omar-kada/autonas/internal/shell"
+	"omar-kada/air-compose/internal/shell"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"

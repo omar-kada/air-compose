@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"omar-kada/autonas/models"
-	"omar-kada/autonas/testutil"
+	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/testutil"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/stretchr/testify/assert"

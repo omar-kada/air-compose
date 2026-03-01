@@ -1,6 +1,6 @@
 /.env
 _ignore_*
-/autonas 
+/air-compose 
 
 # Go build artifacts
 */bin/

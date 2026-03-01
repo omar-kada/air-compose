@@ -1,21 +1,21 @@
 services:
-  autonas:
+  air-compose:
     build: .
-    image: autonas:local
-    container_name: autonas
+    image: air-compose:local
+    container_name: air-compose
     ports:
       - 8080:5005
     env_file:
       - .env
     environment:
-      AUTONAS_CONFIG_FILE: "/config.yaml" # the configuration file that will define what should be deployed
-      AUTONAS_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
-      #AUTONAS_DISPLAY_CONFIG: true
-      #AUTONAS_EDIT_CONFIG: true
+      AIR_COMPOSE_CONFIG_FILE: "/config.yaml" # the configuration file that will define what should be deployed
+      AIR_COMPOSE_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
+      #AIR_COMPOSE_DISPLAY_CONFIG: true
+      #AIR_COMPOSE_EDIT_CONFIG: true
       ENV: "${ENV}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SERVICES_DIR}:${SERVICES_DIR} # path where compose stacks will be stored (must be equal & absolute)
-      - ${AUTONAS_DATA_PATH}:/data # data for AUTONAS, like repository and DB
-      - ${CONFIG_PATH}:/config.yaml # the file containing the configuration (it may be re-written by AUTONAS)
+      - ${AIR_COMPOSE_DATA_PATH}:/data # data for AIR_COMPOSE, like repository and DB
+      - ${CONFIG_PATH}:/config.yaml # the file containing the configuration (it may be re-written by AIR_COMPOSE)
     restart: "no"

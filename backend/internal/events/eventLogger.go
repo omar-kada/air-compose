@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 )
 
 // LoggingEventHandler is an event handler that logs events

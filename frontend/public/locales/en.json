@@ -50,9 +50,9 @@
   "CONFIGURATION": {
     "CONFIGURATION": "Configuration",
     "DISABLED_TITLE": "Configuration is disabled",
-    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_DISPLAY_CONFIG' to 'true'",
+    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_DISPLAY_CONFIG' to 'true'",
     "DISABLED_EDIT_TITLE": "Editing is disabled",
-    "DISABLED_EDIT_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_CONFIG' to 'true'",
+    "DISABLED_EDIT_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_EDIT_CONFIG' to 'true'",
     "FORM": {
       "GLOBAL_ENV_VARS": "Global environment variables",
       "KEY": "Key",
@@ -69,11 +69,11 @@
     "SETTINGS": "Settings",
     "DESCRIPTION": "Update the app settings",
     "DISABLED_TITLE": "Settings are disabled",
-    "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AUTONAS_EDIT_SETTINGS' to 'true'",
+    "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_EDIT_SETTINGS' to 'true'",
     "FORM": {
       "GIT": "Git",
       "repo": "Repository",
-      "repo_PLACEHOLDER": "https://github.com/omar-kada/autonas-config",
+      "repo_PLACEHOLDER": "https://github.com/omar-kada/air-compose-config",
       "repo_REQUIRED": "Repository is required",
       "branch": "Branch",
       "branch_PLACEHOLDER": "main",

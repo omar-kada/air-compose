@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os/exec"
 
-	"omar-kada/autonas/internal/events"
+	"omar-kada/air-compose/internal/events"
 )
 
 // Executor abstracts writing content to a file

@@ -1,4 +1,4 @@
-// Package main is the entry point for AutoNAS.
+// Package main is the entry point for AirCompose.
 package main
 
 import (
@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"omar-kada/autonas/internal/cli"
-	"omar-kada/autonas/internal/shell"
+	"omar-kada/air-compose/internal/cli"
+	"omar-kada/air-compose/internal/shell"
 )
 
 func main() {

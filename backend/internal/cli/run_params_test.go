@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,10 +32,10 @@ func TestGetParamsWithDefaults_AllCliValuesProvided(t *testing.T) {
 }
 
 func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
-	t.Setenv("AUTONAS_WORKING_DIR", "/env/work")
-	t.Setenv("AUTONAS_SERVICES_DIR", "/env/services")
-	t.Setenv("AUTONAS_CONFIG_FILE", "env1.yaml")
-	t.Setenv("AUTONAS_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_WORKING_DIR", "/env/work")
+	t.Setenv("AIR_COMPOSE_SERVICES_DIR", "/env/services")
+	t.Setenv("AIR_COMPOSE_CONFIG_FILE", "env1.yaml")
+	t.Setenv("AIR_COMPOSE_PORT", "8080")
 
 	params := RunParams{}
 
@@ -50,10 +50,10 @@ func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
 
 func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 	// Clear environment variables
-	t.Setenv("AUTONAS_WORKING_DIR", "")
-	t.Setenv("AUTONAS_SERVICES_DIR", "")
-	t.Setenv("AUTONAS_CONFIG_FILE", "")
-	t.Setenv("AUTONAS_PORT", "")
+	t.Setenv("AIR_COMPOSE_WORKING_DIR", "")
+	t.Setenv("AIR_COMPOSE_SERVICES_DIR", "")
+	t.Setenv("AIR_COMPOSE_CONFIG_FILE", "")
+	t.Setenv("AIR_COMPOSE_PORT", "")
 
 	params := RunParams{}
 
@@ -69,9 +69,9 @@ func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
 
 func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 	// CLI values should take priority over env variables and defaults
-	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
-	t.Setenv("AUTONAS_ADD_WRITE_PERM", "false")
-	t.Setenv("AUTONAS_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_CONFIG_BRANCH", "env-branch")
+	t.Setenv("AIR_COMPOSE_ADD_WRITE_PERM", "false")
+	t.Setenv("AIR_COMPOSE_PORT", "8080")
 
 	params := RunParams{
 		DeploymentParams: models.DeploymentParams{
@@ -93,10 +93,10 @@ func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 
 func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	// Test a mix of CLI values, env variables, and defaults
-	t.Setenv("AUTONAS_CONFIG_BRANCH", "env-branch")
-	t.Setenv("AUTONAS_WORKING_DIR", "")
-	t.Setenv("AUTONAS_ADD_WRITE_PERM", "true")
-	t.Setenv("AUTONAS_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_CONFIG_BRANCH", "env-branch")
+	t.Setenv("AIR_COMPOSE_WORKING_DIR", "")
+	t.Setenv("AIR_COMPOSE_ADD_WRITE_PERM", "true")
+	t.Setenv("AIR_COMPOSE_PORT", "8080")
 
 	params := RunParams{
 		ConfigFile: "cli.yaml", // From CLI

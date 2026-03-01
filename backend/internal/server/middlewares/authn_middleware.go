@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/users"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/users"
+	"omar-kada/air-compose/models"
 )
 
 type contextKey string

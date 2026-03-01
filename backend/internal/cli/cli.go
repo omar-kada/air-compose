@@ -4,8 +4,8 @@ package cli
 import (
 	"path/filepath"
 
-	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/internal/storage"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/internal/storage"
 
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
@@ -14,12 +14,12 @@ import (
 // NewRootCmd creates a new command with default dependencies
 func NewRootCmd(executor shell.Executor) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "autonas",
-		Short: "AutoNAS CLI",
+		Use:   "air-compose",
+		Short: "AirCompose CLI",
 	}
 	rootCmd.AddCommand(NewRunCommand(executor, func(params RunParams) (*gorm.DB, error) {
 		return storage.NewGormDb(
-			filepath.Join(params.GetDBDir(), "autonas.db"),
+			filepath.Join(params.GetDBDir(), "air-compose.db"),
 			params.GetAddWritePerm(),
 		)
 	}))

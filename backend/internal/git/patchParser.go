@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	gitObject "github.com/go-git/go-git/v6/plumbing/object"
 )

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"omar-kada/autonas/api"
+	"omar-kada/air-compose/api"
 )
 
 func sendError(w http.ResponseWriter, errCode api.ErrorCode) {

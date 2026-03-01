@@ -1,7 +1,7 @@
 package mappers
 
 import (
-	"omar-kada/autonas/api"
+	"omar-kada/air-compose/api"
 )
 
 // Mapper is a generic interface for mapping between types T and V.

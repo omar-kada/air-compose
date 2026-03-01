@@ -9,13 +9,13 @@ import (
 	"reflect"
 	"strconv"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/process"
-	"omar-kada/autonas/internal/server/mappers"
-	"omar-kada/autonas/internal/server/middlewares"
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/internal/users"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/process"
+	"omar-kada/air-compose/internal/server/mappers"
+	"omar-kada/air-compose/internal/server/middlewares"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/internal/users"
+	"omar-kada/air-compose/models"
 )
 
 var (

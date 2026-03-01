@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/models"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
