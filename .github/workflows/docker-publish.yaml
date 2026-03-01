@@ -1,9 +1,9 @@
 name: Publish Docker image on release tag
 
 on:
-  push:
-    tags: ['v*.*.*'] # Matches tags like v1.2.3, v10.20.30
-  # Optional: also trigger when a release is published (same effect)
+#  push:
+#    tags: ['v*.*.*'] # Matches tags like v1.2.3, v10.20.30
+#  # Optional: also trigger when a release is published (same effect)
   release:
     types: [published]
 
