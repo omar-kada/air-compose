@@ -1,0 +1,35 @@
+name: Pull Request - Conventional Commits
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  validate-commits:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Needed to post status checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch all history so the action can check all commits in the PR
+          fetch-depth: 0 [citation:4]
+
+      - name: Validate commit messages
+        uses: oliversalzburg/action-commit-validator@v0.0.4 # Use the latest version
+        with:
+          accepted_types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            ci
+            build
+            revert
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
