@@ -69,13 +69,13 @@ func TestFileGeneration(t *testing.T) {
 	// Start docker-compose environment
 	composeEnv, err := compose.NewDockerCompose("../../compose.yaml")
 	composeEnv.WithEnv(map[string]string{
-		"CONFIG_PATH":            filepath.Join(configDir, "config.yaml"),
-		"SERVICES_DIR":           servicesDir,
+		"CONFIG_PATH":                filepath.Join(configDir, "config.yaml"),
+		"SERVICES_DIR":               servicesDir,
 		"AIR_COMPOSE_DATA_PATH":      dataDir,
 		"AIR_COMPOSE_ADD_WRITE_PERM": "true",
-		"ENV":                    "DEV",
-		"UID":                    fmt.Sprint(os.Getuid()),
-		"GID":                    fmt.Sprint(os.Getgid()),
+		"ENV":                        "DEV",
+		"UID":                        fmt.Sprint(os.Getuid()),
+		"GID":                        fmt.Sprint(os.Getgid()),
 	})
 
 	assert.NoError(t, err, "failed to load compose")

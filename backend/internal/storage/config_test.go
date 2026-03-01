@@ -15,7 +15,7 @@ func TestDecodeConfig(t *testing.T) {
 	input := map[string]any{
 		"environment": map[string]string{
 			"AIR_COMPOSE_HOST": "localhost",
-			"DATA_PATH":    "/data",
+			"DATA_PATH":        "/data",
 		},
 		"services": map[string]map[string]string{
 			"svc1": {
@@ -33,7 +33,7 @@ func TestDecodeConfig(t *testing.T) {
 	want := models.Config{
 		Environment: models.Environment{
 			"AIR_COMPOSE_HOST": "localhost",
-			"DATA_PATH":    "/data",
+			"DATA_PATH":        "/data",
 		},
 		Services: map[string]models.ServiceConfig{
 			"svc1": {
@@ -72,7 +72,7 @@ func TestUpdateConfig(t *testing.T) {
 			},
 			Environment: models.Environment{
 				"AIR_COMPOSE_HOST": "localhost",
-				"DATA_PATH":    "/data",
+				"DATA_PATH":        "/data",
 			},
 			Services: map[string]models.ServiceConfig{
 				"svc1": {
