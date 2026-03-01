@@ -1,6 +1,6 @@
 
 -- config.default.yaml --
-AUTONAS_HOST: host
+AIR_COMPOSE_HOST: host
 services:
   svc:
     PORT: 1000
@@ -16,7 +16,7 @@ services:
     NEW_FIELD: new_value
 
 -- want --
-AUTONAS_HOST: host
+AIR_COMPOSE_HOST: host
 DATA_PATH: /data
 SERVICES_PATH: /services
 services:

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/models"
 )
 
 // AuthorizationMiddleware checks if the requested API endpoint is disabled based on feature flags.

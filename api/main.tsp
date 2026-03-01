@@ -4,7 +4,7 @@ import "@typespec/versioning";
 using Http;
 using Versioning;
 
-@service(#{ title: "AutoNAS API" })
+@service(#{ title: "AirCompose API" })
 @versioned(Versions)
 @route("/api")
 @useAuth(BearerAuth /*| OpenIdConnectAuth<"">*/)

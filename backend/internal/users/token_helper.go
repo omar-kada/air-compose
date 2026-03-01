@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	"golang.org/x/crypto/bcrypt"
 )

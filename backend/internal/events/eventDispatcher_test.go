@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

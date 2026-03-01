@@ -1,12 +1,12 @@
 
 build:
-	cd backend && go build -o autonas ./cmd/autonas
+	cd backend && go build -o air-compose ./cmd/air-compose
 
 run:
-	cd backend && go run ./cmd/autonas run
+	cd backend && go run ./cmd/air-compose run
 
 run-dev:
-	ENV=dev cd backend && go run ./cmd/autonas run
+	ENV=dev cd backend && go run ./cmd/air-compose run
 
 lint:
 	cd backend && golangci-lint run ./...
@@ -15,9 +15,9 @@ test:
 	cd backend && go test ./internal/...
 
 test-int:
-	(docker stop autonas || true) && \
-	(docker rm autonas || true) && \
-	(docker rmi autonas:local --force || true) && \
+	(docker stop air-compose || true) && \
+	(docker rm air-compose || true) && \
+	(docker rmi air-compose:local --force || true) && \
 	cd backend && go test ./integration_tests/... -v -count=1
 
 test-cover:

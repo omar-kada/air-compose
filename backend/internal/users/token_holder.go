@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 )
 
 // TokenHolder manages a map of tokens with automatic expiration handling

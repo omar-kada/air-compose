@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/models"
 
 	"github.com/containrrr/shoutrrr"
 )

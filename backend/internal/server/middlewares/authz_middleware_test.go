@@ -98,9 +98,9 @@ func TestAuthorizationMiddleware(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			// Set up environment variables for testing
-			t.Setenv("AUTONAS_DISPLAY_CONFIG", tt.displayConfig)
-			t.Setenv("AUTONAS_EDIT_CONFIG", tt.editConfig)
-			t.Setenv("AUTONAS_EDIT_SETTINGS", tt.editSettings)
+			t.Setenv("AIR_COMPOSE_DISPLAY_CONFIG", tt.displayConfig)
+			t.Setenv("AIR_COMPOSE_EDIT_CONFIG", tt.editConfig)
+			t.Setenv("AIR_COMPOSE_EDIT_SETTINGS", tt.editSettings)
 
 			// Call the middleware with the mock handler
 			handler := AuthorizationMiddleware(mockHandler)

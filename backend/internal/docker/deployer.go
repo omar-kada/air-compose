@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"slices"
 
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/files"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/models"
 )
 
 // Deployer defines methods for managing containerized services.

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
-	"omar-kada/autonas/testutil"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/testutil"
 
 	"github.com/stretchr/testify/assert"
 )

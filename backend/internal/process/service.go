@@ -9,11 +9,11 @@ import (
 	"slices"
 	"sync"
 
-	"omar-kada/autonas/internal/docker"
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/internal/git"
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/models"
 )
 
 const (

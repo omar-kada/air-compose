@@ -3,7 +3,7 @@ package testutil
 import (
 	"log/slog"
 
-	"omar-kada/autonas/internal/storage"
+	"omar-kada/air-compose/internal/storage"
 
 	"gorm.io/gorm"
 )

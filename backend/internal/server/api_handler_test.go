@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/internal/server/middlewares"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/server/middlewares"
+	"omar-kada/air-compose/models"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
@@ -408,9 +408,9 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 
-	t.Setenv("AUTONAS_DISPLAY_CONFIG", "true")
-	t.Setenv("AUTONAS_EDIT_CONFIG", "true")
-	t.Setenv("AUTONAS_EDIT_SETTINGS", "true")
+	t.Setenv("AIR_COMPOSE_DISPLAY_CONFIG", "true")
+	t.Setenv("AIR_COMPOSE_EDIT_CONFIG", "true")
+	t.Setenv("AIR_COMPOSE_EDIT_SETTINGS", "true")
 
 	h := NewHandler(store, m, m)
 

@@ -12,7 +12,7 @@ import (
 // DefaultBranch is the default branch name used when no branch is specified in the configuration.
 const DefaultBranch = "main"
 
-// Settings represents configuration of autonas.
+// Settings represents configuration of air-compose.
 type Settings struct {
 	Repo              string      `mapstructure:"repo"`
 	Branch            string      `mapstructure:"branch"`

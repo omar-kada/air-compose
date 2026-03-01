@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"log/slog"
 
-	"omar-kada/autonas/internal/docker"
-	"omar-kada/autonas/internal/events"
-	"omar-kada/autonas/internal/files"
-	"omar-kada/autonas/internal/git"
-	"omar-kada/autonas/internal/process"
-	"omar-kada/autonas/internal/server"
-	"omar-kada/autonas/internal/shell"
-	"omar-kada/autonas/internal/storage"
-	"omar-kada/autonas/internal/users"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/files"
+	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/process"
+	"omar-kada/air-compose/internal/server"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/internal/users"
+	"omar-kada/air-compose/models"
 
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
@@ -50,7 +50,7 @@ func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*g
 	run.cmd.Flags().StringVarP(&run.params.ConfigFile, string(_file), "f", "",
 		varInfoMap.GetDefaultString("YAML config file", _file))
 	run.cmd.Flags().StringVarP(&run.params.WorkingDir, string(_workingDir), "d", "",
-		varInfoMap.GetDefaultString("directory where autonas data will be stored", _workingDir))
+		varInfoMap.GetDefaultString("directory where air-compose data will be stored", _workingDir))
 	run.cmd.Flags().StringVarP(&run.params.ServicesDir, string(_servicesDir), "s", "",
 		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
 	run.cmd.Flags().StringVarP(&run.params.AddWritePerm, string(_addWritePerm), "w", "",

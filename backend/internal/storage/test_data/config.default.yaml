@@ -1,4 +1,4 @@
-AUTONAS_HOST: host
+AIR_COMPOSE_HOST: host
 DATA_PATH: /data
 SERVICES_PATH: /services
 services:

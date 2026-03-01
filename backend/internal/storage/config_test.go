@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +14,7 @@ import (
 func TestDecodeConfig(t *testing.T) {
 	input := map[string]any{
 		"environment": map[string]string{
-			"AUTONAS_HOST": "localhost",
+			"AIR_COMPOSE_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
 		"services": map[string]map[string]string{
@@ -32,7 +32,7 @@ func TestDecodeConfig(t *testing.T) {
 	}
 	want := models.Config{
 		Environment: models.Environment{
-			"AUTONAS_HOST": "localhost",
+			"AIR_COMPOSE_HOST": "localhost",
 			"DATA_PATH":    "/data",
 		},
 		Services: map[string]models.ServiceConfig{
@@ -71,7 +71,7 @@ func TestUpdateConfig(t *testing.T) {
 				NotificationTypes: []models.EventType{},
 			},
 			Environment: models.Environment{
-				"AUTONAS_HOST": "localhost",
+				"AIR_COMPOSE_HOST": "localhost",
 				"DATA_PATH":    "/data",
 			},
 			Services: map[string]models.ServiceConfig{
@@ -106,7 +106,7 @@ func TestUpdateConfig(t *testing.T) {
 		// Initial config
 		initialCfg := models.Config{
 			Environment: models.Environment{
-				"AUTONAS_HOST": "localhost",
+				"AIR_COMPOSE_HOST": "localhost",
 			},
 			Services: map[string]models.ServiceConfig{},
 			Settings: models.Settings{
@@ -128,7 +128,7 @@ func TestUpdateConfig(t *testing.T) {
 		// Update the config
 		updatedCfg := models.Config{
 			Environment: models.Environment{
-				"AUTONAS_HOST": "new-host",
+				"AIR_COMPOSE_HOST": "new-host",
 			},
 			Settings: models.Settings{
 				NotificationTypes: []models.EventType{},
@@ -159,7 +159,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		input := models.Config{
 			Environment: models.Environment{
-				"AUTONAS_HOST": "localhost",
+				"AIR_COMPOSE_HOST": "localhost",
 			},
 			Settings: models.Settings{
 				NotificationTypes: []models.EventType{},

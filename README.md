@@ -1,6 +1,6 @@
-# Autonas
+# AirCompose
 
-AutoNAS is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
+AirCompose is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
 Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.
 
 ## Requirements
@@ -16,7 +16,7 @@ a Linux environement with `docker` installed
 
 ## Getting started
 
-1. **Create a configuration repo** containing all your compose stacks with this structure (for example : [AutoNAS Config](https://github.com/omar-kada/autonas-config))
+1. **Create a configuration repo** containing all your compose stacks with this structure (for example : [AirCompose Config](https://github.com/omar-kada/air-compose-config))
 
 ```
 services/
@@ -39,7 +39,7 @@ CONFIG_FILE: path the the yaml configuration file # (default: /data/config.yaml)
 
 ```yaml
 ENV_VAR: value # will be available in all services
-repo: 'https://github.com/omar-kada/autonas-config'
+repo: 'https://github.com/omar-kada/air-compose-config'
 cron: '*/10 * * * *'
 
 services:
@@ -63,4 +63,4 @@ Once the container starts, it will :
 2. **Deploy or remove services** based on the configuration
 3. **Schedule the next runs** based on `CRON_PERIOD`
 
-When the stacks are updated in the repo, AutoNAS will **redploy only the changed stacks** in the next scheduled run
+When the stacks are updated in the repo, AirCompose will **redploy only the changed stacks** in the next scheduled run

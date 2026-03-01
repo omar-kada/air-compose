@@ -6,7 +6,7 @@ exclude_patterns = ["**/api.gen.go"]
 name = "go"
 
   [analyzers.meta]
-  import_root = "github.com/omar-kada/autonas:backend"
+  import_root = "github.com/omar-kada/air-compose:backend"
 
 [[analyzers]]
 name = "test-coverage"

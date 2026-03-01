@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/models"
 )
 
 func TestLoggingEventHandler_HandleEvent(t *testing.T) {

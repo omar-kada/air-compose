@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"omar-kada/autonas/internal/cli/defaults"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/internal/cli/defaults"
+	"omar-kada/air-compose/models"
 )
 
 const (
@@ -14,11 +14,11 @@ const (
 )
 
 var varInfoMap = defaults.VariableInfoMap{
-	_file:         {EnvKey: "AUTONAS_CONFIG_FILE", DefaultValue: "/data/config.yaml"},
-	_workingDir:   {EnvKey: "AUTONAS_WORKING_DIR", DefaultValue: "./config"},
-	_servicesDir:  {EnvKey: "AUTONAS_SERVICES_DIR", DefaultValue: "."},
-	_addWritePerm: {EnvKey: "AUTONAS_ADD_WRITE_PERM", DefaultValue: "false"},
-	_port:         {EnvKey: "AUTONAS_PORT", DefaultValue: 5005},
+	_file:         {EnvKey: "AIR_COMPOSE_CONFIG_FILE", DefaultValue: "/data/config.yaml"},
+	_workingDir:   {EnvKey: "AIR_COMPOSE_WORKING_DIR", DefaultValue: "./config"},
+	_servicesDir:  {EnvKey: "AIR_COMPOSE_SERVICES_DIR", DefaultValue: "."},
+	_addWritePerm: {EnvKey: "AIR_COMPOSE_ADD_WRITE_PERM", DefaultValue: "false"},
+	_port:         {EnvKey: "AIR_COMPOSE_PORT", DefaultValue: 5005},
 }
 
 // RunParams contain parameters of the run command

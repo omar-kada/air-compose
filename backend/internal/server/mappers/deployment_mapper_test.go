@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/autonas/api"
-	"omar-kada/autonas/models"
+	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/models"
 
 	"github.com/stretchr/testify/assert"
 )
