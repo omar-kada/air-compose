@@ -63,6 +63,8 @@ func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*g
 
 func (run *runCommand) doRun() error {
 	params := getParamsWithDefaults(run.params)
+	slog.Debug("running params : ", "params", params)
+
 	db, err := run.dbCreator(params)
 	if err != nil {
 		return fmt.Errorf("couldn't init storage %w", err)

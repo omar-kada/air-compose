@@ -35,7 +35,7 @@ func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
 	t.Setenv("AIR_COMPOSE_WORKING_DIR", "/env/work")
 	t.Setenv("AIR_COMPOSE_SERVICES_DIR", "/env/services")
 	t.Setenv("AIR_COMPOSE_CONFIG_FILE", "env1.yaml")
-	t.Setenv("AIR_COMPOSE_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_PORT", "5005")
 
 	params := RunParams{}
 
@@ -45,7 +45,7 @@ func TestGetParamsWithDefaults_UseEnvVariablesWhenCliEmpty(t *testing.T) {
 	assert.Equal(t, "/env/work", result.WorkingDir)
 	assert.Equal(t, "/env/services", result.ServicesDir)
 	assert.Equal(t, "false", result.AddWritePerm) // default Value
-	assert.Equal(t, 8080, result.Port)            // Value from env
+	assert.Equal(t, 5005, result.Port)            // Value from env
 }
 
 func TestGetParamsWithDefaults_UseDefaultsWhenCliAndEnvEmpty(t *testing.T) {
@@ -71,7 +71,7 @@ func TestGetParamsWithDefaults_CliPriority(t *testing.T) {
 	// CLI values should take priority over env variables and defaults
 	t.Setenv("AIR_COMPOSE_CONFIG_BRANCH", "env-branch")
 	t.Setenv("AIR_COMPOSE_ADD_WRITE_PERM", "false")
-	t.Setenv("AIR_COMPOSE_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_PORT", "5005")
 
 	params := RunParams{
 		DeploymentParams: models.DeploymentParams{
@@ -96,7 +96,7 @@ func TestGetParamsWithDefaults_MixedSources(t *testing.T) {
 	t.Setenv("AIR_COMPOSE_CONFIG_BRANCH", "env-branch")
 	t.Setenv("AIR_COMPOSE_WORKING_DIR", "")
 	t.Setenv("AIR_COMPOSE_ADD_WRITE_PERM", "true")
-	t.Setenv("AIR_COMPOSE_PORT", "8080")
+	t.Setenv("AIR_COMPOSE_PORT", "5005")
 
 	params := RunParams{
 		ConfigFile: "cli.yaml", // From CLI

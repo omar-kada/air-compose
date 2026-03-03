@@ -8,6 +8,9 @@ run:
 run-dev:
 	ENV=dev cd backend && go run ./cmd/air-compose run
 
+up-local:
+	docker compose -f compose.local.yaml up --build
+
 lint:
 	cd backend && golangci-lint run ./...
 

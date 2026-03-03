@@ -1,0 +1,10 @@
+services:
+  air-compose:
+    extends:
+      file: compose.yaml
+      service: air-compose
+    build: .
+    image: air-compose:local
+    environment:
+      ENV: "${ENV:-DEV}"
+      AIR_COMPOSE_ADD_WRITE_PERM: "${AIR_COMPOSE_ADD_WRITE_PERM:-true}"
