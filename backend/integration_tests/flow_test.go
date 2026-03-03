@@ -37,15 +37,12 @@ func TestFileGeneration(t *testing.T) {
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
-	configDir := filepath.Join(baseDir, "config")
 	err = os.Mkdir(servicesDir, 0o750)
 	assert.NoError(t, err)
 	err = os.Mkdir(dataDir, 0o750)
 	assert.NoError(t, err)
-	err = os.Mkdir(configDir, 0o750)
-	assert.NoError(t, err)
 
-	err = os.WriteFile(filepath.Join(configDir, "config.yaml"),
+	err = os.WriteFile(filepath.Join(dataDir, "config.yaml"),
 		[]byte(strings.Join([]string{
 			"settings:",
 			"  repo: \"https://github.com/omar-kada/air-compose-config\"",
@@ -67,28 +64,30 @@ func TestFileGeneration(t *testing.T) {
 
 	// When
 	// Start docker-compose environment
-	composeEnv, err := compose.NewDockerCompose("../../compose.yaml")
-	composeEnv.WithEnv(map[string]string{
-		"CONFIG_PATH":                filepath.Join(configDir, "config.yaml"),
-		"SERVICES_DIR":               servicesDir,
+	composeEnv, err := compose.NewDockerCompose("../../compose.local.yaml")
+	stack := composeEnv.WithEnv(map[string]string{
+		"AIR_COMPOSE_SERVICES_DIR":   servicesDir,
 		"AIR_COMPOSE_DATA_PATH":      dataDir,
 		"AIR_COMPOSE_ADD_WRITE_PERM": "true",
 		"ENV":                        "DEV",
 		"UID":                        fmt.Sprint(os.Getuid()),
 		"GID":                        fmt.Sprint(os.Getgid()),
 	})
+	stack.WithOsEnv()
 
 	assert.NoError(t, err, "failed to load compose")
 
 	// Start containers
-	if err := composeEnv.Up(ctx, compose.WithRecreate(api.RecreateForce)); err != nil {
+	if err := stack.Up(ctx, compose.WithRecreate(api.RecreateForce)); err != nil {
 		t.Fatalf("failed to start compose: %v", err)
 	}
 	t.Cleanup(func() {
 		if t.Failed() {
 			printContainerLogs(ctx, t, composeEnv)
 		}
-		composeEnv.Down(ctx, compose.RemoveOrphans(true), compose.RemoveVolumes(true))
+		if err := stack.Down(ctx); err != nil {
+			t.Error(err)
+		}
 	})
 
 	// Then

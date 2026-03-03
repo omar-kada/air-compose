@@ -3,16 +3,24 @@
 AirCompose is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
 Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.
 
+## Summary
+
+- [Requirements](#requirements)
+- [Features](#features)
+- [Getting started](#getting-started)
+
 ## Requirements
 
 a Linux environement with `docker` installed
 
 ## Features
 
-1. Easy service customization through a simple configuration file
-2. Minimal, clean structure — no unnecessary scaffolding
-3. No special syntax, compose stacks configuration are kept in their original form
-4. Works on any Docker-capable system
+1. Auto Load and deploy services from a Git repository
+2. No special syntax, compose stacks configuration are kept in their original form and are accessible to the user
+3. Modern UI to manage the tool remotely
+4. Get notifications about updates and changes
+5. Easy service customization through the UI or a simple configuration file
+6. Works on any Docker-capable system
 
 ## Getting started
 
@@ -31,11 +39,11 @@ services/
 2. **Copy the `compose.yaml` file your system** and fill the needed variables (make sure to read the comments about each variable), here are the main ones :
 
 ```yaml
-SERVICES_DIR: where the stack configuration will be stored
-CONFIG_FILE: path the the yaml configuration file # (default: /data/config.yaml)
+AIR_COMPOSE_SERVICES_DIR: where the stack configuration will be stored
+AIR_COMPOSE_DATA_PATH: path to the data directory, AirCompose will store config.yaml and DB files in this directory
 ```
 
-3. **Create a `config.yaml` file** and define the services you want to deploy :
+3. **Create a `config.yaml` file** inside the specified `AIR_COMPOSE_DATA_PATH` and define the services you want to deploy (here a simple example) :
 
 ```yaml
 ENV_VAR: value # will be available in all services

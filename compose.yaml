@@ -1,21 +1,15 @@
 services:
   air-compose:
-    build: .
-    image: air-compose:local
+    image: air-compose:latest
     container_name: air-compose
     ports:
-      - 8080:5005
+      - 5005:5005
     env_file:
       - .env
     environment:
-      AIR_COMPOSE_CONFIG_FILE: "/config.yaml" # the configuration file that will define what should be deployed
-      AIR_COMPOSE_SERVICES_DIR: "${SERVICES_DIR}" # directory where compose stacks will be stored
-      #AIR_COMPOSE_DISPLAY_CONFIG: true
-      #AIR_COMPOSE_EDIT_CONFIG: true
-      ENV: "${ENV}"
+      AIR_COMPOSE_SERVICES_DIR: "${AIR_COMPOSE_SERVICES_DIR}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${SERVICES_DIR}:${SERVICES_DIR} # path where compose stacks will be stored (must be equal & absolute)
-      - ${AIR_COMPOSE_DATA_PATH}:/data # data for AIR_COMPOSE, like repository and DB
-      - ${CONFIG_PATH}:/config.yaml # the file containing the configuration (it may be re-written by AIR_COMPOSE)
+      - ${AIR_COMPOSE_SERVICES_DIR}:${AIR_COMPOSE_SERVICES_DIR} # path where compose stacks will be stored (must be equal & absolute)
+      - ${AIR_COMPOSE_DATA_PATH}:/data # data for AIR_COMPOSE, like repository files and DB
     restart: "no"
