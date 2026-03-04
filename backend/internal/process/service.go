@@ -85,10 +85,9 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	}
 	oldCfg := s.currentCfg
 	s.currentCfg = cfg
-	fetcher := s.fetcher.WithConfig(cfg)
 	slog.Info("deploying from " + cfg.Settings.Repo + "/" + cfg.GetBranch())
 
-	patch, syncErr := fetcher.DiffWithRemote()
+	patch, syncErr := s.fetcher.DiffWithRemote()
 
 	if syncErr != nil && syncErr != git.NoErrAlreadyUpToDate {
 		return models.Deployment{}, fmt.Errorf("error getting config repo:  %w", syncErr)
@@ -120,7 +119,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		return deployment, err
 	}
 	go func() {
-		err := fetcher.PullBranch(WorkingBranch, "")
+		err := s.fetcher.PullBranch(WorkingBranch, "")
 		if err != nil {
 			s.updateDeploymentStatus(ctx, deployment, err)
 			return
@@ -133,7 +132,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 			return
 		}
 
-		err = fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
+		err = s.fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
 		s.updateDeploymentStatus(ctx, deployment, err)
 	}()
 
@@ -231,22 +230,11 @@ func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
 
 // GetDiff returns the changed files between what's deployed and the repo
 func (s *service) GetDiff() ([]models.FileDiff, error) {
-	cfg, err := s.getConfig()
-	if err != nil || cfg.Settings.Repo == "" {
-		return []models.FileDiff{}, fmt.Errorf("error getting repo : %v, %w", cfg.Settings.Repo, err)
-	}
-	patch, err := s.fetcher.WithConfig(cfg).DiffWithRemote()
+	patch, err := s.fetcher.DiffWithRemote()
 	if err != nil {
 		return []models.FileDiff{}, err
 	}
 	return patch.Files, nil
-}
-
-func (s *service) getConfig() (models.Config, error) {
-	if s.currentCfg.Settings.Repo != "" {
-		return s.currentCfg, nil
-	}
-	return s.configStore.Get()
 }
 
 // GetDeployments returns a paginated list of deployments.

@@ -107,7 +107,7 @@ func (run *runCommand) doRun() error {
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
-		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir()),
+		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore),
 		deploymentStore,
 		eventStore,
 		configStore,

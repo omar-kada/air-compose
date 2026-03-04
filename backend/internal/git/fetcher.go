@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 
 	"github.com/go-git/go-git/v6"
@@ -33,7 +34,6 @@ type Fetcher interface {
 	ClearRepo() error
 	CheckoutBranch(branch string) error
 	PullBranch(branch string, commitSHA string) error
-	WithConfig(cfg models.Config) Fetcher
 	DiffWithRemote() (Patch, error)
 }
 
@@ -41,34 +41,40 @@ type Fetcher interface {
 type fetcher struct {
 	parser         PatchParser
 	addPermissions os.FileMode
-	repoPath       string
-	cfg            models.Config
-	auth           *http.BasicAuth
+	repoDir        string
+	cfgStore       storage.ConfigStore
+
+	_cfg  models.Config
+	_auth *http.BasicAuth
 }
 
 // NewFetcher creates a new Syncer and returns it
-func NewFetcher(addPermissions os.FileMode, repoPath string) Fetcher {
+func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore storage.ConfigStore) Fetcher {
 	return &fetcher{
 		parser:         NewPatchParser(),
 		addPermissions: addPermissions,
-		repoPath:       repoPath,
+		repoDir:        repoDir,
+		cfgStore:       cfgStore,
 	}
 }
 
-// WithConfig sets the configuration for the fetcher and returns the modified fetcher.
-// This allows for method chaining when configuring the fetcher.
-func (f *fetcher) WithConfig(cfg models.Config) Fetcher {
-	newFetcher := NewFetcher(f.addPermissions, f.repoPath).(*fetcher)
-	newFetcher.cfg = cfg
-	newFetcher.auth = &http.BasicAuth{
+// setConfig sets the configuration for the fetcher
+func (f *fetcher) setConfig() error {
+
+	cfg, err := f.cfgStore.Get()
+	if err != nil {
+		return err
+	}
+	f._cfg = cfg
+	f._auth = &http.BasicAuth{
 		Username: cfg.Settings.Username,
 		Password: cfg.Settings.Token,
 	}
-	return newFetcher
+	return nil
 }
 
 func (f *fetcher) addPerm() error {
-	return filepath.Walk(f.repoPath, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(f.repoDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -82,14 +88,18 @@ func (f *fetcher) addPerm() error {
 
 // ClearRepo removes the repository directory and all its contents.
 func (f *fetcher) ClearRepo() error {
-	return os.RemoveAll(f.repoPath)
+	return os.RemoveAll(f.repoDir)
 }
 
 // CheckoutBranch checks out the given local branch. If the branch does not
 // exist locally but exists on the remote (origin/<branch>), it will create
 // the local branch from the remote HEAD and check it out.
 func (f *fetcher) CheckoutBranch(branch string) error {
-	_, err := f.openRepo(branch)
+	err := f.setConfig()
+	if err != nil {
+		return err
+	}
+	_, err = f.openRepo(branch)
 	if err != nil {
 		return fmt.Errorf("error while opening repo: %w", err)
 	}
@@ -99,6 +109,10 @@ func (f *fetcher) CheckoutBranch(branch string) error {
 // PullBranch pulls changes for a local target branch from the remote branch
 // (optionally resetting to a provided commit SHA).
 func (f *fetcher) PullBranch(branch string, commitHash string) error {
+	err := f.setConfig()
+	if err != nil {
+		return err
+	}
 	repo, err := f.openRepo(branch)
 	if err != nil {
 		return err
@@ -109,22 +123,22 @@ func (f *fetcher) PullBranch(branch string, commitHash string) error {
 }
 
 func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
-	if !repoExists(f.repoPath) {
-		repo, err = git.PlainClone(f.repoPath, &git.CloneOptions{
-			URL:           f.cfg.Settings.Repo,
-			ReferenceName: plumbing.NewBranchReferenceName(f.cfg.GetBranch()),
+	if !repoExists(f.repoDir) {
+		repo, err = git.PlainClone(f.repoDir, &git.CloneOptions{
+			URL:           f._cfg.Settings.Repo,
+			ReferenceName: plumbing.NewBranchReferenceName(f._cfg.GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelInfo),
-			Auth:          f.auth,
+			Auth:          f._auth,
 		})
 	} else {
-		repo, err = git.PlainOpen(f.repoPath)
+		repo, err = git.PlainOpen(f.repoDir)
 	}
 	if err != nil {
 		return repo, fmt.Errorf("error while opening repo : %w, %v", err, *f)
 	}
 	err = repo.Fetch(&git.FetchOptions{
-		Auth: f.auth,
+		Auth: f._auth,
 	})
 
 	if err != nil && err != NoErrAlreadyUpToDate {
@@ -142,7 +156,11 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 }
 
 func (f *fetcher) DiffWithRemote() (Patch, error) {
-	repo, err := f.openRepo(f.cfg.GetBranch())
+	err := f.setConfig()
+	if err != nil {
+		return Patch{}, err
+	}
+	repo, err := f.openRepo(f._cfg.GetBranch())
 	if err != nil {
 		return Patch{}, err
 	}
@@ -159,7 +177,7 @@ func (f *fetcher) reset(repo *git.Repository, branch string, hash string) error 
 	if hash != "" {
 		targetHash = plumbing.NewHash(hash)
 	} else {
-		remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", f.cfg.GetBranch()), true)
+		remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", f._cfg.GetBranch()), true)
 		if err != nil {
 			return fmt.Errorf("error while getting reference for remote branch '%v': %w", branch, err)
 		}
@@ -259,7 +277,7 @@ func (f *fetcher) getPatch(repo *git.Repository) (Patch, error) {
 }
 
 func (f *fetcher) getRemoteCommit(repo *git.Repository) (*gitObject.Commit, error) {
-	remoteRefName := plumbing.NewRemoteReferenceName("origin", f.cfg.GetBranch())
+	remoteRefName := plumbing.NewRemoteReferenceName("origin", f._cfg.GetBranch())
 
 	remoteRef, err := repo.Reference(remoteRefName, true)
 	if err != nil {
