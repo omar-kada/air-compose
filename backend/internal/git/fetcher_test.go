@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 	"omar-kada/air-compose/testutil"
 
@@ -19,6 +20,12 @@ var mockConfig = models.Config{
 		Repo:   "https://github.com/test/repo.git",
 		Branch: "main",
 	},
+}
+
+func configStoreWith(t *testing.T, cfg models.Config) storage.ConfigStore {
+	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore.Update(cfg)
+	return configStore
 }
 
 var (
@@ -48,7 +55,7 @@ func assertFileContent(t *testing.T, filePath string, wantContent string) {
 }
 
 func TestClearRepo(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0o000), t.TempDir()+"/clone-repo")
+	fetcher := NewFetcher(os.FileMode(0o000), t.TempDir()+"/clone-repo", configStoreWith(t, mockConfig))
 
 	err := fetcher.ClearRepo()
 	assert.NoError(t, err)
@@ -64,7 +71,7 @@ func TestCheckoutBranch(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
 
 	err := fetcher.CheckoutBranch("main")
 	assert.NoError(t, err)
@@ -76,7 +83,7 @@ func TestPullBranch(t *testing.T) {
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
 	clonePath := t.TempDir() + "/clone-repo"
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 
@@ -91,7 +98,7 @@ func TestDiffWithRemote(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
 
 	// Initial pull to set up the repo
 	err := fetcher.PullBranch("main", "")
@@ -121,7 +128,7 @@ func TestDiffWithRemote_NoChanges(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
 
 	err := fetcher.PullBranch("main", "")
 	assert.NoError(t, err)
@@ -135,12 +142,12 @@ func TestDiffWithRemote_NoChanges(t *testing.T) {
 func TestPullBranch_NonExistentRepo(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(models.Config{
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, models.Config{
 		Settings: models.Settings{
 			Repo:   "/path/does/not/exist",
 			Branch: "main",
 		},
-	})
+	}))
 	err := fetcher.PullBranch("main", "")
 	assert.Error(t, err)
 }
@@ -149,7 +156,7 @@ func TestFetch_NonExistentBranch(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
 
 	err := fetcher.CheckoutBranch("non-existent-branch")
 
@@ -161,7 +168,7 @@ func TestFetch_WithAddPermissions(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o755), clonePath).WithConfig(mockConfig)
+	fetcher := NewFetcher(os.FileMode(0o755), clonePath, configStoreWith(t, mockConfig))
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 

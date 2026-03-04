@@ -82,11 +82,6 @@ func (m *Mocker) PullBranch(branch string, commitSHA string) error {
 	return args.Error(0)
 }
 
-func (m *Mocker) WithConfig(cfg models.Config) git.Fetcher {
-	args := m.Called(cfg)
-	return args.Get(0).(git.Fetcher)
-}
-
 func (m *Mocker) DiffWithRemote() (git.Patch, error) {
 	args := m.Called()
 	return args.Get(0).(git.Patch), args.Error(1)
@@ -173,7 +168,6 @@ func TestSync_Success(t *testing.T) {
 
 	wantCfg := mockConfigOld
 	service.configStore.Update(wantCfg)
-	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
@@ -210,7 +204,6 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 
 	wantCfg := mockConfigNew
 	service.configStore.Update(wantCfg)
-	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
@@ -245,7 +238,6 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
 	service.configStore.Update(wantCfg)
-	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
@@ -272,7 +264,6 @@ func TestSync_Errors(t *testing.T) {
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
 	service.configStore.Update(wantCfg)
-	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{Diff: "test"}, nil)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container"}, nil)
@@ -401,7 +392,6 @@ func TestGetDiff_Success(t *testing.T) {
 		{OldFile: "file2.txt", NewFile: "file2.txt", Diff: "diff2"},
 	}
 
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Files: expectedDiff}, nil)
 
 	diff, err := service.GetDiff()
@@ -415,7 +405,6 @@ func TestGetDiff_ErrorDiffWithRemote(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{}, mockConfigOld)
 
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{}, ErrFetch)
 
 	diff, err := service.GetDiff()
@@ -475,7 +464,6 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 	}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
 
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 
 	dep, err := service.SyncDeployment()
@@ -506,7 +494,6 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 	}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
 
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
@@ -540,7 +527,6 @@ func TestSync_NoStacksRunning(t *testing.T) {
 
 	mocker.On("GetManagedStacks", "/services").Return(map[string][]models.ContainerSummary{}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
@@ -572,7 +558,6 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	service.configStore.Update(mockConfigOld)
 
 	mocker.On("GetManagedStacks", "/services").Return(map[string][]models.ContainerSummary{}, errors.New("failed to get stacks"))
-	mocker.On("WithConfig", mockConfigOld).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
@@ -663,7 +648,6 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 		{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "diff1"},
 	}
 
-	mocker.On("WithConfig", mockConfigOld).Return(svc.fetcher)
 	mocker.On("DiffWithRemote").Return(git.Patch{Files: expectedDiff}, nil)
 
 	diff, err := svc.GetDiff()
@@ -671,27 +655,6 @@ func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedDiff, diff)
 	mocker.AssertExpectations(t)
-}
-
-func TestGetDiff_ErrorGettingConfigFromStore(t *testing.T) {
-	mocker := &Mocker{}
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
-	depStore, eventStore := initStores(t)
-	svc := NewService(
-		models.DeploymentParams{},
-		mocker,
-		mocker,
-		mocker,
-		depStore, eventStore,
-		configStore,
-		events.NewVoidDispatcher(),
-		mocker,
-	).(*service)
-
-	diff, err := svc.GetDiff()
-
-	assert.ErrorContains(t, err, "error getting repo")
-	assert.Equal(t, 0, len(diff))
 }
 
 func TestGetDeployments_Success(t *testing.T) {
@@ -759,7 +722,6 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 	}, nil)
 	mocker.On("GetServiceContainers", mock.Anything, mock.Anything).Return([]string{"container1"}, nil)
 
-	mocker.On("WithConfig", wantCfg).Return(service.fetcher)
 	mocker.On("DiffWithRemote").Once().Return(git.Patch{}, git.NoErrAlreadyUpToDate)
 
 	dep, err := service.SyncDeployment()
