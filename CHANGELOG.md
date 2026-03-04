@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/omar-kada/air-compose/compare/v0.1.0...v0.1.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* issue when changing repo url, diff should work immediatly ([#68](https://github.com/omar-kada/air-compose/issues/68)) ([e3d37fe](https://github.com/omar-kada/air-compose/commit/e3d37fe80fd8c7d6b4e75ebfc7457a5eb7341471))
+
 ## [0.1.0](https://github.com/omar-kada/air-compose/compare/v0.0.1...v0.1.0) (2026-03-01)
 
 
