@@ -279,7 +279,7 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token) {
 		Expires:  token.Expires,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/api",
 	})
 	http.SetCookie(w, &http.Cookie{
@@ -288,7 +288,7 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token) {
 		Expires:  token.RefreshExpires,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   true,
+		Secure:   false,
 		Path:     "/api",
 	})
 }
