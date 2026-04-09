@@ -10,7 +10,6 @@ import { AlertCircleIcon, CloudSync, FileDiff, History, TriangleAlert } from 'lu
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
 import { HumanTime } from '../view';
 import { DeploymentDiffDialog } from './deployment-diff-dialog';
@@ -40,7 +39,6 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             <span className="text-sm text-destructive">{t('ALERT.LOAD_STATE_ERROR')}</span>
           </>
         )}
-        {isPending ? <StateSkeleton /> : state && <></>}
       </div>
 
       <div className="flex flex-row items-center gap-1 justify-end-safe flex-1">
@@ -88,8 +86,4 @@ export function DeploymentToolbar({ className }: { className?: string }) {
       </div>
     </div>
   );
-}
-
-function StateSkeleton() {
-  return <Skeleton className="h-4 w-20"></Skeleton>;
 }

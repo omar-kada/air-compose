@@ -26,10 +26,7 @@ export function InitPage() {
     }
   }, [state, isPending]);
 
-  const { updateSettings, isPending: updateSettingsPending } = useUpdateSettings();
-  useEffect(() => {
-    console.log(' update tsettings pending : ', updateSettingsPending);
-  }, [updateSettingsPending]);
+  const { updateSettings } = useUpdateSettings();
 
   return (
     <div className="p-4 space-y-4 h-full flex items-center flex-col justify-center ">
