@@ -6,7 +6,7 @@ import "./features/deployment.tsp";
 import "./features/features.tsp";
 import "./features/notifications.tsp";
 import "./features/settings.tsp";
-import "./features/stats.tsp";
+import "./features/state.tsp";
 import "./features/status.tsp";
 import "./features/user.tsp";
 

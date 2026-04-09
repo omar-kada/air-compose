@@ -199,15 +199,12 @@ type StackStatus struct {
 	StackId  string            `json:"stackId"`
 }
 
-// Stats defines model for Stats.
-type Stats struct {
-	Author     string           `json:"author"`
-	Error      int32            `json:"error"`
-	Health     ContainerHealth  `json:"health"`
-	LastDeploy time.Time        `json:"lastDeploy"`
-	NextDeploy time.Time        `json:"nextDeploy"`
-	Status     DeploymentStatus `json:"status"`
-	Success    int32            `json:"success"`
+// State defines model for State.
+type State struct {
+	Health      ContainerHealth  `json:"health"`
+	Initialized bool             `json:"initialized"`
+	NextDeploy  time.Time        `json:"nextDeploy"`
+	Status      DeploymentStatus `json:"status"`
 }
 
 // User defines model for User.
@@ -377,8 +374,8 @@ type ClientInterface interface {
 
 	SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// StatsAPIGet request
-	StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// StateAPIGet request
+	StateAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// StatusAPIGet request
 	StatusAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -623,8 +620,8 @@ func (c *Client) SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequ
 	return c.Client.Do(req)
 }
 
-func (c *Client) StatsAPIGet(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewStatsAPIGetRequest(c.Server, days)
+func (c *Client) StateAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewStateAPIGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1227,23 +1224,16 @@ func NewSettingsAPISetRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
-// NewStatsAPIGetRequest generates requests for StatsAPIGet
-func NewStatsAPIGetRequest(server string, days int32) (*http.Request, error) {
+// NewStateAPIGetRequest generates requests for StateAPIGet
+func NewStateAPIGetRequest(server string) (*http.Request, error) {
 	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "days", runtime.ParamLocationPath, days)
-	if err != nil {
-		return nil, err
-	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/stats/%s", pathParam0)
+	operationPath := fmt.Sprintf("/api/state")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1478,8 +1468,8 @@ type ClientWithResponsesInterface interface {
 
 	SettingsAPISetWithResponse(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error)
 
-	// StatsAPIGetWithResponse request
-	StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error)
+	// StateAPIGetWithResponse request
+	StateAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StateAPIGetResponse, error)
 
 	// StatusAPIGetWithResponse request
 	StatusAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StatusAPIGetResponse, error)
@@ -1849,15 +1839,15 @@ func (r SettingsAPISetResponse) StatusCode() int {
 	return 0
 }
 
-type StatsAPIGetResponse struct {
+type StateAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Stats
+	JSON200      *State
 	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r StatsAPIGetResponse) Status() string {
+func (r StateAPIGetResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1865,7 +1855,7 @@ func (r StatsAPIGetResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r StatsAPIGetResponse) StatusCode() int {
+func (r StateAPIGetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2131,13 +2121,13 @@ func (c *ClientWithResponses) SettingsAPISetWithResponse(ctx context.Context, bo
 	return ParseSettingsAPISetResponse(rsp)
 }
 
-// StatsAPIGetWithResponse request returning *StatsAPIGetResponse
-func (c *ClientWithResponses) StatsAPIGetWithResponse(ctx context.Context, days int32, reqEditors ...RequestEditorFn) (*StatsAPIGetResponse, error) {
-	rsp, err := c.StatsAPIGet(ctx, days, reqEditors...)
+// StateAPIGetWithResponse request returning *StateAPIGetResponse
+func (c *ClientWithResponses) StateAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StateAPIGetResponse, error) {
+	rsp, err := c.StateAPIGet(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseStatsAPIGetResponse(rsp)
+	return ParseStateAPIGetResponse(rsp)
 }
 
 // StatusAPIGetWithResponse request returning *StatusAPIGetResponse
@@ -2687,22 +2677,22 @@ func ParseSettingsAPISetResponse(rsp *http.Response) (*SettingsAPISetResponse, e
 	return response, nil
 }
 
-// ParseStatsAPIGetResponse parses an HTTP response from a StatsAPIGetWithResponse call
-func ParseStatsAPIGetResponse(rsp *http.Response) (*StatsAPIGetResponse, error) {
+// ParseStateAPIGetResponse parses an HTTP response from a StateAPIGetWithResponse call
+func ParseStateAPIGetResponse(rsp *http.Response) (*StateAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &StatsAPIGetResponse{
+	response := &StateAPIGetResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Stats
+		var dest State
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2900,8 +2890,8 @@ type ServerInterface interface {
 	// (POST /api/settings)
 	SettingsAPISet(w http.ResponseWriter, r *http.Request)
 
-	// (GET /api/stats/{days})
-	StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32)
+	// (GET /api/state)
+	StateAPIGet(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/status)
 	StatusAPIGet(w http.ResponseWriter, r *http.Request)
@@ -3274,19 +3264,8 @@ func (siw *ServerInterfaceWrapper) SettingsAPISet(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
-// StatsAPIGet operation middleware
-func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "days" -------------
-	var days int32
-
-	err = runtime.BindStyledParameterWithOptions("simple", "days", r.PathValue("days"), &days, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "days", Err: err})
-		return
-	}
+// StateAPIGet operation middleware
+func (siw *ServerInterfaceWrapper) StateAPIGet(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -3295,7 +3274,7 @@ func (siw *ServerInterfaceWrapper) StatsAPIGet(w http.ResponseWriter, r *http.Re
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.StatsAPIGet(w, r, days)
+		siw.Handler.StateAPIGet(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3520,7 +3499,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/notifications", wrapper.NotificationsAPIList)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
-	m.HandleFunc("GET "+options.BaseURL+"/api/stats/{days}", wrapper.StatsAPIGet)
+	m.HandleFunc("GET "+options.BaseURL+"/api/state", wrapper.StateAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/user", wrapper.UserAPIDelete)
 	m.HandleFunc("GET "+options.BaseURL+"/api/user", wrapper.UserAPIGet)
@@ -3972,29 +3951,28 @@ func (response SettingsAPISetdefaultJSONResponse) VisitSettingsAPISetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type StatsAPIGetRequestObject struct {
-	Days int32 `json:"days"`
+type StateAPIGetRequestObject struct {
 }
 
-type StatsAPIGetResponseObject interface {
-	VisitStatsAPIGetResponse(w http.ResponseWriter) error
+type StateAPIGetResponseObject interface {
+	VisitStateAPIGetResponse(w http.ResponseWriter) error
 }
 
-type StatsAPIGet200JSONResponse Stats
+type StateAPIGet200JSONResponse State
 
-func (response StatsAPIGet200JSONResponse) VisitStatsAPIGetResponse(w http.ResponseWriter) error {
+func (response StateAPIGet200JSONResponse) VisitStateAPIGetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type StatsAPIGetdefaultJSONResponse struct {
+type StateAPIGetdefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response StatsAPIGetdefaultJSONResponse) VisitStatsAPIGetResponse(w http.ResponseWriter) error {
+func (response StateAPIGetdefaultJSONResponse) VisitStateAPIGetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -4162,8 +4140,8 @@ type StrictServerInterface interface {
 	// (POST /api/settings)
 	SettingsAPISet(ctx context.Context, request SettingsAPISetRequestObject) (SettingsAPISetResponseObject, error)
 
-	// (GET /api/stats/{days})
-	StatsAPIGet(ctx context.Context, request StatsAPIGetRequestObject) (StatsAPIGetResponseObject, error)
+	// (GET /api/state)
+	StateAPIGet(ctx context.Context, request StateAPIGetRequestObject) (StateAPIGetResponseObject, error)
 
 	// (GET /api/status)
 	StatusAPIGet(ctx context.Context, request StatusAPIGetRequestObject) (StatusAPIGetResponseObject, error)
@@ -4601,25 +4579,23 @@ func (sh *strictHandler) SettingsAPISet(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// StatsAPIGet operation middleware
-func (sh *strictHandler) StatsAPIGet(w http.ResponseWriter, r *http.Request, days int32) {
-	var request StatsAPIGetRequestObject
-
-	request.Days = days
+// StateAPIGet operation middleware
+func (sh *strictHandler) StateAPIGet(w http.ResponseWriter, r *http.Request) {
+	var request StateAPIGetRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.StatsAPIGet(ctx, request.(StatsAPIGetRequestObject))
+		return sh.ssi.StateAPIGet(ctx, request.(StateAPIGetRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "StatsAPIGet")
+		handler = middleware(handler, "StateAPIGet")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(StatsAPIGetResponseObject); ok {
-		if err := validResponse.VisitStatsAPIGetResponse(w); err != nil {
+	} else if validResponse, ok := response.(StateAPIGetResponseObject); ok {
+		if err := validResponse.VisitStateAPIGetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

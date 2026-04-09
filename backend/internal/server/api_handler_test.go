@@ -24,9 +24,9 @@ func (m *MockProcess) SyncDeployment() (models.Deployment, error) {
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func (m *MockProcess) GetCurrentStats(days int) (models.Stats, error) {
-	args := m.Called(days)
-	return args.Get(0).(models.Stats), args.Error(1)
+func (m *MockProcess) GetCurrentState() (models.State, error) {
+	args := m.Called()
+	return args.Get(0).(models.State), args.Error(1)
 }
 
 func (m *MockProcess) GetDiff() ([]models.FileDiff, error) {
@@ -218,24 +218,21 @@ func TestStatusAPIGet_Success(t *testing.T) {
 	m.AssertExpectations(t)
 }
 
-func TestStatsAPIGet_Success(t *testing.T) {
+func TestStateAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
 	next := time.Now().Add(1 * time.Hour)
-	stats := models.Stats{Author: "bob", Error: 1, Success: 2, LastStatus: models.DeploymentStatusError, NextDeploy: next}
-	m.On("GetCurrentStats", 7).Return(stats, nil)
+	state := models.State{LastStatus: models.DeploymentStatusError, NextDeploy: next}
+	m.On("GetCurrentState").Return(state, nil)
 
-	req := api.StatsAPIGetRequestObject{Days: 7}
-	resp, err := h.StatsAPIGet(context.Background(), req)
+	req := api.StateAPIGetRequestObject{}
+	resp, err := h.StateAPIGet(context.Background(), req)
 	assert.NoError(t, err)
 
 	switch r := resp.(type) {
-	case api.StatsAPIGet200JSONResponse:
-		assert.Equal(t, int32(2), r.Success)
-		assert.Equal(t, int32(1), r.Error)
-		assert.Equal(t, "bob", r.Author)
+	case api.StateAPIGet200JSONResponse:
 		assert.Equal(t, next, r.NextDeploy)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
@@ -332,18 +329,18 @@ func TestStatusAPIGet_Error(t *testing.T) {
 	m.AssertExpectations(t)
 }
 
-func TestStatsAPIGet_Error(t *testing.T) {
+func TestStateAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	errStats := errors.New("stats error")
-	m.On("GetCurrentStats", 7).Return(models.Stats{}, errStats)
+	errState := errors.New("state error")
+	m.On("GetCurrentState").Return(models.State{}, errState)
 
-	req := api.StatsAPIGetRequestObject{Days: 7}
-	resp, err := h.StatsAPIGet(context.Background(), req)
+	req := api.StateAPIGetRequestObject{}
+	resp, err := h.StateAPIGet(context.Background(), req)
 	assert.Nil(t, resp)
-	assert.Equal(t, errStats, err)
+	assert.Equal(t, errState, err)
 
 	m.AssertExpectations(t)
 }

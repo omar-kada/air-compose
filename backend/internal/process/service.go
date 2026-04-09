@@ -24,7 +24,7 @@ const (
 // Service abstracts service deployment operations
 type Service interface {
 	SyncDeployment() (models.Deployment, error)
-	GetCurrentStats(days int) (models.Stats, error)
+	GetCurrentState() (models.State, error)
 	GetDiff() ([]models.FileDiff, error)
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
 	GetDeployments(limit int, offset uint64) ([]models.Deployment, error)
@@ -199,33 +199,18 @@ func (s *service) GetManagedStacks() (map[string][]models.ContainerSummary, erro
 	return s.containersInspector.GetManagedStacks(s.params.ServicesDir)
 }
 
-// GetCurrentStats returns the statistics of deployments for the last N days
-func (s *service) GetCurrentStats(_ int) (models.Stats, error) {
-	// TODO change this to either take number of deployment or implement days into it
-	deps, err := s.store.GetDeployments(storage.NewIDCursor(100, 0))
-	if err != nil {
-		return models.Stats{}, err
-	}
-	var stats models.Stats
-	for _, d := range deps {
-		switch d.Status {
-		case models.DeploymentStatusSuccess:
-			stats.Success++
-		case models.DeploymentStatusError:
-			stats.Error++
-		}
-	}
-	if len(deps) > 0 {
-		last := deps[0]
-		stats.Author = last.Author
-		stats.LastDeploy = last.Time
-		stats.LastStatus = last.Status
-	}
-	stats.NextDeploy = s.scheduler.GetNext()
-
+// GetCurrentState returns the statistics of deployments for the last N days
+func (s *service) GetCurrentState() (models.State, error) {
+	dep, _ := s.store.GetLastDeployment()
 	stackstate, _ := s.getStacksState(s.currentCfg)
-	stats.Health = stackstate.GetGlobalHealth()
-	return stats, nil
+	cfg, _ := s.configStore.Get()
+
+	return models.State{
+		LastStatus:  dep.Status,
+		NextDeploy:  s.scheduler.GetNext(),
+		Health:      stackstate.GetGlobalHealth(),
+		Initialized: cfg.Settings.Repo != "",
+	}, nil
 }
 
 // GetDiff returns the changed files between what's deployed and the repo

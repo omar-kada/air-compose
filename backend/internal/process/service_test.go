@@ -286,7 +286,7 @@ func TestSync_Errors(t *testing.T) {
 	assert.Equal(t, models.DeploymentStatusError, newDep.Status)
 }
 
-func TestGetCurrentStats_NoDeployments(t *testing.T) {
+func TestGetCurrentState_NoDeployments(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
 
@@ -294,16 +294,12 @@ func TestGetCurrentStats_NoDeployments(t *testing.T) {
 	mocker.On("GetNext").Return(next)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, nil)
 
-	stats, err := service.GetCurrentStats(7)
+	state, err := service.GetCurrentState()
 	assert.NoError(t, err)
-	assert.Equal(t, int32(0), stats.Success)
-	assert.Equal(t, int32(0), stats.Error)
-	assert.Equal(t, "", stats.Author)
-	assert.True(t, stats.LastDeploy.IsZero())
-	assert.Equal(t, next, stats.NextDeploy)
+	assert.Equal(t, next, state.NextDeploy)
 }
 
-func TestGetCurrentStats_WithDeployments(t *testing.T) {
+func TestGetCurrentState_WithDeployments(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
 
@@ -322,13 +318,10 @@ func TestGetCurrentStats_WithDeployments(t *testing.T) {
 	assert.NoError(t, err)
 	err = service.store.EndDeployment(dep2.ID, models.DeploymentStatusError)
 	assert.NoError(t, err)
-	stats, err := service.GetCurrentStats(7)
+	state, err := service.GetCurrentState()
 	assert.NoError(t, err)
-	assert.Equal(t, int32(1), stats.Success)
-	assert.Equal(t, int32(1), stats.Error)
-	assert.Equal(t, "bob", stats.Author)
-	assert.Equal(t, models.DeploymentStatusError, stats.LastStatus)
-	assert.Equal(t, next, stats.NextDeploy)
+	assert.Equal(t, models.DeploymentStatusError, state.LastStatus)
+	assert.Equal(t, next, state.NextDeploy)
 }
 
 func TestGetManagedStacks(t *testing.T) {
@@ -579,7 +572,7 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
 }
 
-func TestGetCurrentStats_ErrorGettingStacks(t *testing.T) {
+func TestGetCurrentState_ErrorGettingStacks(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
 
@@ -587,16 +580,16 @@ func TestGetCurrentStats_ErrorGettingStacks(t *testing.T) {
 	mocker.On("GetNext").Return(next)
 	mocker.On("GetManagedStacks", mock.Anything).Return(map[string][]models.ContainerSummary{}, errors.New("failed to get stacks"))
 
-	stats, err := service.GetCurrentStats(7)
+	state, err := service.GetCurrentState()
 
 	assert.NoError(t, err)
-	assert.Equal(t, models.Stats{
+	assert.Equal(t, models.State{
 		NextDeploy: next,
 		Health:     models.StackStatusUnknown,
-	}, stats)
+	}, state)
 }
 
-func TestGetCurrentStats_MultipleDeploymentsVariousStatuses(t *testing.T) {
+func TestGetCurrentState_MultipleDeploymentsVariousStatuses(t *testing.T) {
 	mocker := &Mocker{}
 	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
 
@@ -617,14 +610,11 @@ func TestGetCurrentStats_MultipleDeploymentsVariousStatuses(t *testing.T) {
 	dep4, _ := service.store.InitDeployment("fourth", "david", "diff4", nil)
 	service.store.EndDeployment(dep4.ID, models.DeploymentStatusError)
 
-	stats, err := service.GetCurrentStats(7)
+	state, err := service.GetCurrentState()
 
 	assert.NoError(t, err)
-	assert.Equal(t, int32(2), stats.Success)
-	assert.Equal(t, int32(2), stats.Error)
-	assert.Equal(t, "david", stats.Author)
-	assert.Equal(t, models.DeploymentStatusError, stats.LastStatus)
-	assert.Equal(t, next, stats.NextDeploy)
+	assert.Equal(t, models.DeploymentStatusError, state.LastStatus)
+	assert.Equal(t, next, state.NextDeploy)
 }
 
 func TestGetDiff_NoCurrentConfigUsingConfigStore(t *testing.T) {

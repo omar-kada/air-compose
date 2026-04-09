@@ -17,15 +17,12 @@ const (
 	StackStatusHealthy   StackStatus = "healthy"
 )
 
-// Stats defines model for Stats.
-type Stats struct {
-	Author     string
-	Error      int32
-	LastDeploy time.Time
-	LastStatus DeploymentStatus
-	NextDeploy time.Time
-	Success    int32
-	Health     StackStatus
+// State defines model for State of AirCompose.
+type State struct {
+	LastStatus  DeploymentStatus
+	NextDeploy  time.Time
+	Health      StackStatus
+	Initialized bool
 }
 
 // StacksState represents the state of multiple services in a stack.

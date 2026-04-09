@@ -1,4 +1,3 @@
-export * from '../status/environement-health';
 export * from './deployment-detail';
 export * from './deployment-diff';
 export * from './deployment-event-log';

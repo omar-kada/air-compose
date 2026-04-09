@@ -34,7 +34,7 @@ type Handler struct {
 	eventMapper      mappers.EventMapper
 	diffMapper       mappers.DiffMapper
 	statusMapper     mappers.StatusMapper
-	statsMapper      mappers.StatsMapper
+	stateMapper      mappers.StateMapper
 	configMapper     mappers.ConfigMapper
 	settingsMapper   mappers.SettingsMapper
 	featuresMapper   mappers.FeaturesMapper
@@ -54,7 +54,7 @@ func NewHandler(configStore storage.ConfigStore, processService process.Service,
 		eventMapper:      eventMapper,
 		diffMapper:       diffMapper,
 		statusMapper:     mappers.StatusMapper{},
-		statsMapper:      mappers.StatsMapper{},
+		stateMapper:      mappers.StateMapper{},
 		configMapper:     mappers.ConfigMapper{},
 	}
 }
@@ -142,13 +142,13 @@ func (h *Handler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObjec
 	return api.StatusAPIGet200JSONResponse(response), nil
 }
 
-// StatsAPIGet retrieves statistics for a specified number of days
-func (h *Handler) StatsAPIGet(_ context.Context, req api.StatsAPIGetRequestObject) (api.StatsAPIGetResponseObject, error) {
-	stats, err := h.processService.GetCurrentStats(int(req.Days))
+// StateAPIGet retrieves the state of AirCompose
+func (h *Handler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
+	state, err := h.processService.GetCurrentState()
 	if err != nil {
 		return nil, err
 	}
-	return api.StatsAPIGet200JSONResponse(h.statsMapper.Map(stats)), nil
+	return api.StateAPIGet200JSONResponse(h.stateMapper.Map(state)), nil
 }
 
 // DiffAPIGet retrieves the differences in files

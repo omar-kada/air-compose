@@ -1,13 +1,13 @@
-import { getStatsAPIGetQueryOptions, type Error as ApiError, type Stats } from '@/api/api';
+import { getStateAPIGetQueryOptions, type Error as ApiError, type State } from '@/api/api';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError, AxiosResponse } from 'axios';
 
-export const getStatsQueryOptions = (
+export const getStateQueryOptions = (
   queryOptions?: Partial<
-    UseQueryOptions<AxiosResponse<Stats, unknown>, AxiosError<ApiError>, Stats>
+    UseQueryOptions<AxiosResponse<State, unknown>, AxiosError<ApiError>, State>
   >,
 ) => {
-  return getStatsAPIGetQueryOptions(30, {
+  return getStateAPIGetQueryOptions({
     query: {
       select: (data) => data?.data,
       refetchInterval: 20 * 1000,
