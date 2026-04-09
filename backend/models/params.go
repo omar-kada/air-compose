@@ -39,5 +39,16 @@ func (p DeploymentParams) GetDBDir() string {
 
 // ServerParams groups parameters related to the API server
 type ServerParams struct {
-	Port int
+	Port     int
+	HTTPMode string
+}
+
+// IsServerSecure checks if HTTP_MODE is activated or not
+func (p ServerParams) IsServerSecure() bool {
+	httpMode, err := strconv.ParseBool(p.HTTPMode)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("invalid param HttpMode = %v", p.HTTPMode))
+		return true
+	}
+	return !httpMode
 }

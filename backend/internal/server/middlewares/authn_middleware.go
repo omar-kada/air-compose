@@ -45,7 +45,7 @@ func UsernameFromContext(ctx context.Context) (string, bool) {
 // @param next http.Handler - the next handler in the chain
 // @param authService user.AuthService - the authentication service
 // @return http.Handler - the authentication middleware
-func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Handler {
+func AuthnMiddleware(next http.Handler, authService users.AuthService, secureToken bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url, ok := strings.CutPrefix(r.URL.Path, "/api/")
 		if !ok {
@@ -54,16 +54,16 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Hand
 		}
 		switch url {
 		case "auth/register":
-			registerHandler(w, r, authService)
+			registerHandler(w, r, authService, secureToken)
 			return
 		case "auth/login":
-			loginHandler(w, r, authService)
+			loginHandler(w, r, authService, secureToken)
 			return
 		case "auth/logout":
-			logoutHandler(w, r, authService)
+			logoutHandler(w, r, authService, secureToken)
 			return
 		case "auth/refresh":
-			refreshHandler(w, r, authService)
+			refreshHandler(w, r, authService, secureToken)
 			return
 		}
 		inWhiteList := isWhitelisted(url, r.Method)
@@ -101,7 +101,7 @@ func isWhitelisted(url, method string) bool {
 	return false
 }
 
-func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
+func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
 	switch r.Method {
 	case http.MethodPost:
 		var req api.Credentials
@@ -128,7 +128,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 			return
 		}
 
-		setTokenInCookies(w, token)
+		setTokenInCookies(w, token, secureToken)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -153,7 +153,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 	}
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
+func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -182,14 +182,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 		return
 	}
 
-	setTokenInCookies(w, auth)
+	setTokenInCookies(w, auth, secureToken)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
 	})
 }
 
-func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
+func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -210,7 +210,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.Au
 		return
 	}
 
-	setTokenInCookies(w, newToken)
+	setTokenInCookies(w, newToken, secureToken)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -218,7 +218,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.Au
 	})
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
+func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -243,7 +243,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.Aut
 		Expires:        time.Unix(0, 0),
 		RefreshToken:   "",
 		RefreshExpires: time.Unix(0, 0),
-	})
+	}, secureToken)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -272,14 +272,14 @@ func getTokenFromCookies(r *http.Request) models.Token {
 	}
 }
 
-func setTokenInCookies(w http.ResponseWriter, token models.Token) {
+func setTokenInCookies(w http.ResponseWriter, token models.Token, secureToken bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     _tokenKey,
 		Value:    string(token.Value),
 		Expires:  token.Expires,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   false,
+		Secure:   secureToken,
 		Path:     "/api",
 	})
 	http.SetCookie(w, &http.Cookie{
@@ -288,7 +288,7 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token) {
 		Expires:  token.RefreshExpires,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   false,
+		Secure:   secureToken,
 		Path:     "/api",
 	})
 }

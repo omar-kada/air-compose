@@ -13,13 +13,14 @@ import (
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
+	"omar-kada/air-compose/models"
 
 	"github.com/rs/cors"
 )
 
 // Server will listen to requests on a port
 type Server interface {
-	Serve(port int) error
+	Serve(params models.ServerParams) error
 	Shutdown(ctx context.Context)
 }
 
@@ -43,7 +44,7 @@ func NewServer(configStore storage.ConfigStore, service process.Service, userSer
 }
 
 // Serve initializes routes from generated api and serves on the given port
-func (s *HTTPServer) Serve(port int) error {
+func (s *HTTPServer) Serve(params models.ServerParams) error {
 	// Create a new serve mux
 	mux := http.NewServeMux()
 
@@ -58,7 +59,7 @@ func (s *HTTPServer) Serve(port int) error {
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
 	h = middlewares.AuthorizationMiddleware(h)
-	h = middlewares.AuthnMiddleware(h, s.userSvc)
+	h = middlewares.AuthnMiddleware(h, s.userSvc, params.IsServerSecure())
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
@@ -80,10 +81,10 @@ func (s *HTTPServer) Serve(port int) error {
 	// })
 	s.server = &http.Server{
 		Handler:           middlewares.LoggingMiddleware(h),
-		Addr:              ":" + strconv.Itoa(port),
+		Addr:              ":" + strconv.Itoa(params.Port),
 		ReadHeaderTimeout: 3 * time.Second,
 	}
-	slog.Info("server starting", "port", port)
+	slog.Info("server starting", "port", params.Port)
 
 	// And we serve HTTP until the world ends.
 	return s.server.ListenAndServe()
