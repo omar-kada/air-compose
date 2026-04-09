@@ -7,12 +7,14 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getStateQueryOptions } from '../stacks';
 
 export const getUpdateSettingsOptions = () => {
   return getSettingsAPISetMutationOptions({
     mutation: {
       onSuccess: (data, _, __, context) => {
         context.client.setQueryData(getSettingsAPIGetQueryKey(), data);
+        context.client.refetchQueries(getStateQueryOptions());
       },
     },
   });

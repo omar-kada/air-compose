@@ -1,53 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import {
   ConfigPage,
   DeploymentsPage,
   EnvironementHealth,
   ErrorAlert,
+  InitPage,
   LoginPage,
   NavBar,
   RegisterPage,
   StatusPage,
   Topbar,
 } from './components';
-import { useRegistered, useUser } from './hooks';
-import { ROUTES } from './lib';
+import { getStateQueryOptions, useRegistered, useUser } from './hooks';
+import { cn, ROUTES } from './lib';
 
-function RouteBasedTopBar() {
+function RouteBasedTopBar({ children }: { children: ReactNode }) {
   const { data: isRegistered, isPending, error } = useRegistered();
   const { data: user, isPending: userPending, error: userError } = useUser();
+  const { data: state, isPending: statePending } = useQuery(
+    getStateQueryOptions({
+      enabled: !!user,
+    }),
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
   const [showTopBar, setShowTopBar] = useState(!!user);
 
   useEffect(() => {
-    setShowTopBar(!!isRegistered && !!user);
-  }, [setShowTopBar, isRegistered, user]);
+    setShowTopBar(!!isRegistered && !!user && state?.initialized === true);
+  }, [setShowTopBar, isRegistered, user, state]);
 
   useEffect(() => {
-    if (isPending) {
+    const waitAndNavigate = (pending: boolean, condition: boolean, route: string) => {
+      if (!pending && condition && location.pathname !== route) {
+        navigate(route);
+      }
+      return pending || condition;
+    };
+    if (
+      waitAndNavigate(isPending, !isRegistered, ROUTES.REGISTER) ||
+      waitAndNavigate(userPending, !user, ROUTES.LOGIN) ||
+      waitAndNavigate(statePending, !state?.initialized, ROUTES.INIT)
+    ) {
       return;
-    } else if (!isRegistered) {
-      navigate(ROUTES.REGISTER);
-    } else {
-      if (location.pathname === ROUTES.REGISTER) {
-        navigate(ROUTES.DEPLOYMENTS);
-      }
-      if (userPending) {
-        return;
-      } else if (user) {
-        if (location.pathname === ROUTES.LOGIN) {
-          navigate(ROUTES.DEPLOYMENTS);
-        }
-      }
     }
-  }, [navigate, location, isRegistered, user, isPending, userPending]);
+    if ([ROUTES.INIT, ROUTES.REGISTER, ROUTES.LOGIN].includes(location.pathname)) {
+      navigate(ROUTES.DEPLOYMENTS);
+    }
+  }, [navigate, location, isRegistered, user, isPending, userPending, state, statePending]);
 
   const mergedError = error ?? userError;
   return (
-    <>
+    <div className={cn('flex flex-col h-screen', showTopBar ? 'pb-12 md:pb-0' : '')}>
       {showTopBar && (
         <>
           <Topbar>
@@ -62,17 +69,18 @@ function RouteBasedTopBar() {
         </>
       )}
       <ErrorAlert title={mergedError?.message ?? null} />
-    </>
+      {children}
+    </div>
   );
 }
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col h-screen pb-12 md:pb-0">
-        <RouteBasedTopBar />
+      <RouteBasedTopBar>
         <Routes>
           <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.DEPLOYMENTS}></Navigate>} />
+          <Route path={ROUTES.INIT} element={<InitPage />} />
           <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path={ROUTES.DEPLOYMENTS} element={<DeploymentsPage />} />
@@ -81,7 +89,7 @@ function App() {
           <Route path={ROUTES.LOGS} element={<div> logs </div>} />
           <Route path={ROUTES.CONFIG} element={<ConfigPage />} />
         </Routes>
-      </div>
+      </RouteBasedTopBar>
     </BrowserRouter>
   );
 }

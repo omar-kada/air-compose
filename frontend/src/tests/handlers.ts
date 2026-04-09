@@ -1,7 +1,7 @@
-import { ContainerHealth, DeploymentStatus, type StackStatus, type Stats } from '@/api/api';
+import { ContainerHealth, DeploymentStatus, type StackStatus, type State } from '@/api/api';
 import { http } from 'msw';
 
-const mockState: StackStatus = {
+const mockStatus: StackStatus = {
   name: 'homepage',
   stackId: 'stack-1',
   services: [
@@ -15,24 +15,21 @@ const mockState: StackStatus = {
   ],
 };
 
-const mockStats: Stats = {
-  error: 5,
-  success: 15,
+const mockState: State = {
   nextDeploy: new Date().toString(),
-  lastDeploy: new Date().toString(),
   status: DeploymentStatus.success,
   health: ContainerHealth.healthy,
-  author: 'Test',
+  initialized: true,
 };
 
 export const handlers = [
   http.get('/api/status', () => {
-    return new Response(JSON.stringify(mockState), {
+    return new Response(JSON.stringify(mockStatus), {
       status: 200,
     });
   }),
-  http.get('/api/stats/:days', () => {
-    return new Response(JSON.stringify(mockStats), {
+  http.get('/api/state/:days', () => {
+    return new Response(JSON.stringify(mockState), {
       status: 200,
     });
   }),

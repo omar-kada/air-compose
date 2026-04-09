@@ -1,6 +1,6 @@
 import {
   getDiffQueryOptions,
-  getStatsQueryOptions,
+  getStateQueryOptions,
   useFilteredQuery,
   useIsMobile,
   useSync,
@@ -14,14 +14,13 @@ import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
 import { HumanTime } from '../view';
 import { DeploymentDiffDialog } from './deployment-diff-dialog';
-import { DeploymentStatusBadge } from './deployment-status-badge';
 
 export function DeploymentToolbar({ className }: { className?: string }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { sync, error: syncError, isPending: isSyncLoading } = useSync();
 
-  const { data: stats, isPending, error } = useFilteredQuery(getStatsQueryOptions());
+  const { data: state, isPending, error } = useFilteredQuery(getStateQueryOptions());
   const {
     data: diffs,
     isFetching: isDiffsLoading,
@@ -38,27 +37,10 @@ export function DeploymentToolbar({ className }: { className?: string }) {
         {error && (
           <>
             <AlertCircleIcon className="size-4 text-destructive" />
-            <span className="text-sm text-destructive">{t('ALERT.LOAD_STATS_ERROR')}</span>
+            <span className="text-sm text-destructive">{t('ALERT.LOAD_STATE_ERROR')}</span>
           </>
         )}
-        {isPending ? (
-          <StatsSkeleton />
-        ) : (
-          stats && (
-            <>
-              <DeploymentStatusBadge
-                status="success"
-                label={String(stats.success)}
-              ></DeploymentStatusBadge>
-              {stats.error ? (
-                <DeploymentStatusBadge
-                  status="error"
-                  label={String(stats.error)}
-                ></DeploymentStatusBadge>
-              ) : null}
-            </>
-          )
-        )}
+        {isPending ? <StateSkeleton /> : state && <></>}
       </div>
 
       <div className="flex flex-row items-center gap-1 justify-end-safe flex-1">
@@ -73,7 +55,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
                   ) : isPending ? (
                     <Spinner className="inline"></Spinner>
                   ) : (
-                    <HumanTime time={stats?.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
+                    <HumanTime time={state?.nextDeploy} defaultValue={t('DISABLED')}></HumanTime>
                   )}
                 </>
               )}
@@ -108,6 +90,6 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   );
 }
 
-function StatsSkeleton() {
+function StateSkeleton() {
   return <Skeleton className="h-4 w-20"></Skeleton>;
 }

@@ -35,6 +35,36 @@
       "SUBMIT": "Login"
     }
   },
+  "ONBOARDING": {
+    "FORM": {
+      "TITLE": "Welcome to Air-compose",
+      "repo": "Repository",
+      "repo_REQUIRED": "Repository is required",
+      "branch": "Branch",
+      "username": "Username",
+      "token": "Token",
+      "cron": "Cron period",
+      "cron_PLACEHOLDER": "disabled when empty",
+      "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
+      "enableNotifications": "Enable notifications",
+      "notificationURL": "Notification URL",
+      "notificationURL_PLACEHOLDER": "check Shoutrrr docs for configuration",
+      "notificationTypes": "Notification Types",
+      "notificationTypes_DESCRIPTION": "Choose which types of notification to enable",
+      "SUBMIT": "Save",
+      "NEXT": "Next",
+      "PREVIOUS": "Previous",
+      "REPO_FORM_DESCRIPTION": "Configure the repository used for stack definition",
+      "CRON_FORM_DESCRIPTION": "Configure the frequency of auto-sync",
+      "NOTIFICATION_FORM_DESCRIPTION": "Configure notifications (using Shoutrrr services)",
+      "PRIVATE_REPO": "Private repository",
+      "TEST_CONNECTION": "Test Connection",
+      "CRON_DISABLED": "Never",
+      "CRON_EVERY_10_MIN": "Every 10 min",
+      "CRON_HOURLY": "Hourly",
+      "CRON_DAILY": "Daily"
+    }
+  },
   "DEPLOYMENTS": {
     "DEPLOYMENTS": "Deployments",
     "EVENTS_LOG": "Events log",
@@ -148,7 +178,7 @@
     "LOAD_DEPLOYMENT_ERROR": "Error while loading deployment",
     "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
     "LOAD_NOTIFICATIONS_ERROR": "Error while loading notifications",
-    "LOAD_STATS_ERROR": "Error while loading stats",
+    "LOAD_STATE_ERROR": "Error while loading state",
     "LOAD_STATUS_ERROR": "Error while loading status",
     "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
     "LOAD_SETTINGS_ERROR": "Error while loading settings",

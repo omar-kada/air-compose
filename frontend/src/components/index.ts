@@ -1,6 +1,7 @@
 export * from './config-page';
 export * from './deployment';
 export * from './deployments-page';
+export * from './init-page';
 export * from './login-page';
 export * from './navbar';
 export * from './register-page';

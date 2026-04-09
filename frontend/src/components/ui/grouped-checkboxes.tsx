@@ -2,6 +2,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib";
 import { Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "./button";
@@ -17,6 +18,7 @@ export type OptionGroup = {
 };
 
 interface GroupedCheckboxesProps {
+  variant?: "horizontal" | "vertical";
   groups: OptionGroup[];
   value: string[];               // currently selected values
   onChange: (selected: string[]) => void;  // update function
@@ -27,7 +29,7 @@ interface GroupedCheckboxesProps {
   onChange: (selected: string[]) => void;
 }
 
-export function GroupedCheckboxes({ groups, value, onChange }: GroupedCheckboxesProps) {
+export function GroupedCheckboxes({ groups, value, onChange, variant = "vertical" }: GroupedCheckboxesProps) {
   value = value ?? []
   const {t} = useTranslation();
   // Helper to toggle a single option
@@ -94,7 +96,7 @@ export function GroupedCheckboxes({ groups, value, onChange }: GroupedCheckboxes
             <Separator className="my-2" />
 
             {/* Checkbox list for the group */}
-            <div className="space-y-2">
+            <div className={cn("flex gap-2", variant === "vertical" ? "flex-col": "flex-wrap")}>
               {group.items.map((option) => (
                 <div key={option.value} className="flex items-center space-x-2">
                   <Checkbox
@@ -104,7 +106,7 @@ export function GroupedCheckboxes({ groups, value, onChange }: GroupedCheckboxes
                       handleCheckboxChange(option.value, checked === true)
                     }
                   />
-                  <Label htmlFor={option.value} className="text-sm font-normal">
+                  <Label htmlFor={option.value} className={cn("text-sm font-normal", variant === "vertical" ? "": "text-nowrap")}>
                     {t(option.label)}
                   </Label>
                 </div>

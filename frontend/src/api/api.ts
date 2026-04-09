@@ -191,14 +191,11 @@ export interface StackStatus {
   services: ContainerStatus[];
 }
 
-export interface Stats {
-  error: number;
-  success: number;
+export interface State {
   nextDeploy: string;
-  lastDeploy: string;
-  author: string;
   status: DeploymentStatus;
   health: ContainerHealth;
+  initialized: boolean;
 }
 
 export interface User {
@@ -1324,79 +1321,79 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       return useMutation(mutationOptions, queryClient);
     }
     
-export const statsAPIGet = (
-    days: number, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Stats>> => {
+export const stateAPIGet = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<State>> => {
     
     
     return axios.default.get(
-      `/api/stats/${days}`,options
+      `/api/state`,options
     );
   }
 
 
 
 
-export const getStatsAPIGetQueryKey = (days?: number,) => {
+export const getStateAPIGetQueryKey = () => {
     return [
-    `/api/stats/${days}`
+    `/api/state`
     ] as const;
     }
 
     
-export const getStatsAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getStateAPIGetQueryOptions = <TData = Awaited<ReturnType<typeof stateAPIGet>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getStatsAPIGetQueryKey(days);
+  const queryKey =  queryOptions?.queryKey ?? getStateAPIGetQueryKey();
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof statsAPIGet>>> = ({ signal }) => statsAPIGet(days, { signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof stateAPIGet>>> = ({ signal }) => stateAPIGet({ signal, ...axiosOptions });
 
       
 
       
 
-   return  { queryKey, queryFn, enabled: !!(days), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type StatsAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof statsAPIGet>>>
-export type StatsAPIGetQueryError = AxiosError<Error>
+export type StateAPIGetQueryResult = NonNullable<Awaited<ReturnType<typeof stateAPIGet>>>
+export type StateAPIGetQueryError = AxiosError<Error>
 
 
-export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
- days: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>> & Pick<
+export function useStateAPIGet<TData = Awaited<ReturnType<typeof stateAPIGet>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof statsAPIGet>>,
+          Awaited<ReturnType<typeof stateAPIGet>>,
           TError,
-          Awaited<ReturnType<typeof statsAPIGet>>
+          Awaited<ReturnType<typeof stateAPIGet>>
         > , 'initialData'
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
- days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>> & Pick<
+export function useStateAPIGet<TData = Awaited<ReturnType<typeof stateAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof statsAPIGet>>,
+          Awaited<ReturnType<typeof stateAPIGet>>,
           TError,
-          Awaited<ReturnType<typeof statsAPIGet>>
+          Awaited<ReturnType<typeof stateAPIGet>>
         > , 'initialData'
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
- days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useStateAPIGet<TData = Awaited<ReturnType<typeof stateAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useStatsAPIGet<TData = Awaited<ReturnType<typeof statsAPIGet>>, TError = AxiosError<Error>>(
- days: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof statsAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useStateAPIGet<TData = Awaited<ReturnType<typeof stateAPIGet>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof stateAPIGet>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getStatsAPIGetQueryOptions(days,options)
+  const queryOptions = getStateAPIGetQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

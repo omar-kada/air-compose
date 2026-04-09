@@ -10,6 +10,7 @@ export const ROUTES = {
   CONFIG: '/config',
   LOGS: '/logs',
   REGISTER: '/register',
+  INIT: '/init',
   LOGIN: '/login',
 };
 
