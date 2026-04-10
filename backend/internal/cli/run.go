@@ -126,5 +126,5 @@ func (run *runCommand) doRun() error {
 		}
 	}()
 	server := server.NewServer(configStore, service, userService)
-	return server.Serve(params.Port)
+	return server.Serve(params.ServerParams)
 }
