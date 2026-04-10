@@ -17,8 +17,9 @@ export type OptionGroup = {
   items: Option[];
 };
 
+export type GroupedCheckboxesVariant = "horizontal" | "vertical"
 interface GroupedCheckboxesProps {
-  variant?: "horizontal" | "vertical";
+  variant?: GroupedCheckboxesVariant;
   groups: OptionGroup[];
   value: string[];               // currently selected values
   onChange: (selected: string[]) => void;  // update function
