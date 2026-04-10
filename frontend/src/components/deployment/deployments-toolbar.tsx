@@ -6,7 +6,7 @@ import {
   useSync,
 } from '@/hooks';
 import { cn } from '@/lib';
-import { AlertCircleIcon, CloudSync, FileDiff, History, TriangleAlert } from 'lucide-react';
+import { AlertCircleIcon, CloudSync, FileDiff, TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -28,19 +28,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
 
   return (
     <div className={cn('flex flex-wrap items-center align-bottom gap-4', className)}>
-      <div className="flex items-center p-2 gap-2">
-        <span className="text-sm font-light mx-1 flex-1 flex gap-1 items-center">
-          <History className="size-4"></History>
-          {t('TIME.LAST_X_DAYS', { days: 30 })} :
-        </span>
-        {error && (
-          <>
-            <AlertCircleIcon className="size-4 text-destructive" />
-            <span className="text-sm text-destructive">{t('ALERT.LOAD_STATE_ERROR')}</span>
-          </>
-        )}
-      </div>
-
+      <h2 className="text-2xl font-bold">{t('DEPLOYMENTS.DEPLOYMENTS')}</h2>
       <div className="flex flex-row items-center gap-1 justify-end-safe flex-1">
         <span className="text-sm font-light text-muted-foreground mr-2">
           {syncError

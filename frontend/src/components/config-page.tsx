@@ -94,6 +94,8 @@ export function ConfigPage() {
     <HeaderLayout
       header={
         <div className="flex w-full justify-between gap-2">
+          <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
+
           <div>
             {isMobile && (
               <Toggle
