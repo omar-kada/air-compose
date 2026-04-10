@@ -96,7 +96,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 		mocker.On("Copy", "repo/services/svc1", serviceDir).Return(nil),
 		mocker.On("WriteToFile", envFilePath, wantEnv).Return(nil),
 		mocker.On(
-			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
+			"Exec", "env", []string{"-i", "docker", "compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
 		).Return([]byte{}, nil),
 	)
 	errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
@@ -115,10 +115,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 
 	deployer := newDeployerWithMocks(mocker)
 	mocker.On(
-		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
+		"Exec", "env", []string{"-i", "docker", "compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
 	).Return([]byte{}, nil)
 	mocker.On(
-		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
+		"Exec", "env", []string{"-i", "docker", "compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
 	).Return([]byte{}, fmt.Errorf("mock error"))
 	errs := deployer.RemoveServices([]string{"svc1", "svc2"}, baseDir)
 
@@ -163,7 +163,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			deployer := newDeployerWithMocks(mocker)
 			mocker.On("Copy", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
-			mocker.On("Exec", "docker", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
+			mocker.On("Exec", "env", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
 			errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
 				ServicesDir: "/services",
 			})
@@ -184,7 +184,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 		).Return(nil),
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
 		mocker.On(
-			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+			"Exec", "env", []string{"-i", "docker", "compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 		).Return([]byte{}, nil),
 	)
 
@@ -232,7 +232,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
-					"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+					"Exec", "env", []string{"-i", "docker", "compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 				).Return([]byte{}, tc.errors.runErr),
 			)
 

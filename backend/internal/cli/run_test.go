@@ -56,8 +56,8 @@ func TestRunCommand_CmdParams(t *testing.T) {
 	os.MkdirAll(workingDir, 0o750)
 
 	mocker.On(
-		"Exec", "docker",
-		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+		"Exec", "env",
+		[]string{"-i", "docker", "compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
 	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)
@@ -110,8 +110,8 @@ func TestRunCommand_EnvParams(t *testing.T) {
 	os.MkdirAll(workingDir, 0o750)
 
 	mocker.On(
-		"Exec", "docker",
-		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+		"Exec", "env",
+		[]string{"-i", "docker", "compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
 	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)
