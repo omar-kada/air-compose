@@ -87,6 +87,11 @@ func (m *Mocker) DiffWithRemote() (git.Patch, error) {
 	return args.Get(0).(git.Patch), args.Error(1)
 }
 
+func (m *Mocker) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	args := m.Called(repo, branch, username, token)
+	return args.Bool(0), args.Error(1)
+}
+
 var (
 	mockConfigOld = models.Config{
 		Settings: models.Settings{
@@ -718,5 +723,31 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, models.Deployment{}, dep)
+	mocker.AssertExpectations(t)
+}
+
+func TestTestGitConnection_Success(t *testing.T) {
+	mocker := &Mocker{}
+	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
+
+	mocker.On("TestGitConnection", "https://example.com/repo.git", "main", "user", "token").Return(true, nil)
+
+	success, err := service.TestGitConnection("https://example.com/repo.git", "main", "user", "token")
+
+	assert.NoError(t, err)
+	assert.True(t, success)
+	mocker.AssertExpectations(t)
+}
+
+func TestTestGitConnection_Failure(t *testing.T) {
+	mocker := &Mocker{}
+	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
+
+	mocker.On("TestGitConnection", "https://example.com/repo.git", "main", "user", "token").Return(false, errors.New("connection failed"))
+
+	success, err := service.TestGitConnection("https://example.com/repo.git", "main", "user", "token")
+
+	assert.Error(t, err)
+	assert.False(t, success)
 	mocker.AssertExpectations(t)
 }

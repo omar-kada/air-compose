@@ -209,6 +209,14 @@ func (h *Handler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestO
 	return api.SettingsAPISet200JSONResponse(h.settingsMapper.Map(settings)), nil
 }
 
+// SettingsAPITestGitConnection tests the connection to a Git repository
+func (h *Handler) SettingsAPITestGitConnection(_ context.Context, r api.SettingsAPITestGitConnectionRequestObject) (api.SettingsAPITestGitConnectionResponseObject, error) {
+	res, err := h.processService.TestGitConnection(r.Body.Repo, *r.Body.Branch, *r.Body.Username, *r.Body.Token)
+	return api.SettingsAPITestGitConnection200JSONResponse{
+		Success: res,
+	}, err
+}
+
 // FeaturesAPIGet retrieves the current features
 func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
 	return api.FeaturesAPIGet200JSONResponse(h.featuresMapper.Map(models.LoadFeatures())), nil

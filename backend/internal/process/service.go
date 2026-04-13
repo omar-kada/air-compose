@@ -24,6 +24,7 @@ const (
 // Service abstracts service deployment operations
 type Service interface {
 	SyncDeployment() (models.Deployment, error)
+	TestGitConnection(repo, branch, username, token string) (bool, error)
 	GetCurrentState() (models.State, error)
 	GetDiff() ([]models.FileDiff, error)
 	GetManagedStacks() (map[string][]models.ContainerSummary, error)
@@ -235,4 +236,8 @@ func (s *service) GetNotifications(limit int, offset uint64) ([]models.Event, er
 // GetDeployment returns a deployment.
 func (s *service) GetDeployment(id uint64) (models.Deployment, error) {
 	return s.store.GetDeployment(id)
+}
+
+func (s *service) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	return s.fetcher.TestGitConnection(repo, branch, username, token)
 }

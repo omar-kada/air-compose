@@ -2,10 +2,12 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/storage"
@@ -35,6 +37,7 @@ type Fetcher interface {
 	CheckoutBranch(branch string) error
 	PullBranch(branch string, commitSHA string) error
 	DiffWithRemote() (Patch, error)
+	TestGitConnection(repo, branch, username, token string) (bool, error)
 }
 
 // Syncer is responsible for syncing files from repo
@@ -301,4 +304,34 @@ func getLocalHeadCommit(repo *git.Repository) (*gitObject.Commit, error) {
 		return nil, fmt.Errorf("error while getting commitObject : %w", err)
 	}
 	return localCommit, nil
+}
+
+func (f *fetcher) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	err := os.RemoveAll("temporary-git-test-repo")
+	if err != nil {
+		slog.Error("Failed to remove temporary git folder", "err", err)
+		return false, err
+	}
+	var auth *http.BasicAuth
+	if token != "" {
+		auth = &http.BasicAuth{
+			Username: username,
+			Password: token,
+		}
+	}
+	res, err := git.PlainClone("temporary-git-test-repo", &git.CloneOptions{
+		URL:           repo,
+		Auth:          auth,
+		ReferenceName: plumbing.NewBranchReferenceName(branch),
+	})
+	slog.Debug("Testing git connection", "res", res, "err", err)
+	if err == nil {
+		return true, nil
+	}
+
+	parts := strings.Split(err.Error(), ": ")
+	if len(parts) > 1 {
+		return false, errors.New(parts[len(parts)-1])
+	}
+	return false, err
 }

@@ -1,4 +1,4 @@
-import { EventType, type Settings } from '@/api/api';
+import { EventType, type GitCredentails, type Settings } from '@/api/api';
 import z from 'zod';
 
 export const repoSchema = z
@@ -13,14 +13,14 @@ export const repoSchema = z
     if (data.privateRepo && !data.token) {
       ctx.addIssue({
         code: 'custom',
-        message: 'ONBOARDING.FORM.TOKEN_REQUIRED',
+        message: 'ONBOARDING.FORM.token_REQUIRED',
         path: ['token'],
       });
     }
     if (data.privateRepo && !data.username) {
       ctx.addIssue({
         code: 'custom',
-        message: 'ONBOARDING.FORM.USERNAME_REQUIRED',
+        message: 'ONBOARDING.FORM.username_REQUIRED',
         path: ['username'],
       });
     }
@@ -56,13 +56,22 @@ export type OnboardingFormValues = RepoFormValues & CronFormValues & Notificatio
 
 export function toSettings(formValues: OnboardingFormValues): Settings {
   return {
-    repo: formValues.repo,
-    branch: formValues.branch,
-    username: formValues.username,
-    token: formValues.token,
-    cron: formValues.cron,
-    notificationURL: formValues.notificationURL,
+    repo: formValues.repo?.trim(),
+    branch: formValues.branch?.trim(),
+    username: formValues.username?.trim(),
+    token: formValues.token?.trim(),
+    cron: formValues.cron?.trim(),
+    notificationURL: formValues.notificationURL?.trim(),
     notificationTypes: formValues.notificationTypes,
+  };
+}
+
+export function toGitCredentaials(formValues: RepoFormValues): GitCredentails {
+  return {
+    repo: formValues.repo?.trim(),
+    branch: formValues.branch?.trim(),
+    username: formValues.username?.trim(),
+    token: formValues.token?.trim(),
   };
 }
 

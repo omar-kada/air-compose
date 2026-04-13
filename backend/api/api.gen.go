@@ -175,6 +175,14 @@ type FileDiff struct {
 	OldFile string `json:"oldFile"`
 }
 
+// GitCredentails defines model for GitCredentails.
+type GitCredentails struct {
+	Branch   *string `json:"branch,omitempty"`
+	Repo     string  `json:"repo"`
+	Token    *string `json:"token,omitempty"`
+	Username *string `json:"username,omitempty"`
+}
+
 // PageInfo defines model for PageInfo.
 type PageInfo struct {
 	EndCursor   string `json:"endCursor"`
@@ -244,6 +252,9 @@ type ConfigAPISetJSONRequestBody = Config
 
 // SettingsAPISetJSONRequestBody defines body for SettingsAPISet for application/json ContentType.
 type SettingsAPISetJSONRequestBody = Settings
+
+// SettingsAPITestGitConnectionJSONRequestBody defines body for SettingsAPITestGitConnection for application/json ContentType.
+type SettingsAPITestGitConnectionJSONRequestBody = GitCredentails
 
 // UserAPIChangePasswordJSONRequestBody defines body for UserAPIChangePassword for application/json ContentType.
 type UserAPIChangePasswordJSONRequestBody UserAPIChangePasswordJSONBody
@@ -373,6 +384,11 @@ type ClientInterface interface {
 	SettingsAPISetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SettingsAPITestGitConnectionWithBody request with any body
+	SettingsAPITestGitConnectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SettingsAPITestGitConnection(ctx context.Context, body SettingsAPITestGitConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// StateAPIGet request
 	StateAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -610,6 +626,30 @@ func (c *Client) SettingsAPISetWithBody(ctx context.Context, contentType string,
 
 func (c *Client) SettingsAPISet(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSettingsAPISetRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SettingsAPITestGitConnectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSettingsAPITestGitConnectionRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SettingsAPITestGitConnection(ctx context.Context, body SettingsAPITestGitConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSettingsAPITestGitConnectionRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1224,6 +1264,46 @@ func NewSettingsAPISetRequestWithBody(server string, contentType string, body io
 	return req, nil
 }
 
+// NewSettingsAPITestGitConnectionRequest calls the generic SettingsAPITestGitConnection builder with application/json body
+func NewSettingsAPITestGitConnectionRequest(server string, body SettingsAPITestGitConnectionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSettingsAPITestGitConnectionRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSettingsAPITestGitConnectionRequestWithBody generates requests for SettingsAPITestGitConnection with any type of body
+func NewSettingsAPITestGitConnectionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/settings/test-git")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewStateAPIGetRequest generates requests for StateAPIGet
 func NewStateAPIGetRequest(server string) (*http.Request, error) {
 	var err error
@@ -1467,6 +1547,11 @@ type ClientWithResponsesInterface interface {
 	SettingsAPISetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error)
 
 	SettingsAPISetWithResponse(ctx context.Context, body SettingsAPISetJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPISetResponse, error)
+
+	// SettingsAPITestGitConnectionWithBodyWithResponse request with any body
+	SettingsAPITestGitConnectionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SettingsAPITestGitConnectionResponse, error)
+
+	SettingsAPITestGitConnectionWithResponse(ctx context.Context, body SettingsAPITestGitConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPITestGitConnectionResponse, error)
 
 	// StateAPIGetWithResponse request
 	StateAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*StateAPIGetResponse, error)
@@ -1839,6 +1924,28 @@ func (r SettingsAPISetResponse) StatusCode() int {
 	return 0
 }
 
+type SettingsAPITestGitConnectionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BooleanResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r SettingsAPITestGitConnectionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SettingsAPITestGitConnectionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type StateAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2119,6 +2226,23 @@ func (c *ClientWithResponses) SettingsAPISetWithResponse(ctx context.Context, bo
 		return nil, err
 	}
 	return ParseSettingsAPISetResponse(rsp)
+}
+
+// SettingsAPITestGitConnectionWithBodyWithResponse request with arbitrary body returning *SettingsAPITestGitConnectionResponse
+func (c *ClientWithResponses) SettingsAPITestGitConnectionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SettingsAPITestGitConnectionResponse, error) {
+	rsp, err := c.SettingsAPITestGitConnectionWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSettingsAPITestGitConnectionResponse(rsp)
+}
+
+func (c *ClientWithResponses) SettingsAPITestGitConnectionWithResponse(ctx context.Context, body SettingsAPITestGitConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SettingsAPITestGitConnectionResponse, error) {
+	rsp, err := c.SettingsAPITestGitConnection(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSettingsAPITestGitConnectionResponse(rsp)
 }
 
 // StateAPIGetWithResponse request returning *StateAPIGetResponse
@@ -2677,6 +2801,32 @@ func ParseSettingsAPISetResponse(rsp *http.Response) (*SettingsAPISetResponse, e
 	return response, nil
 }
 
+// ParseSettingsAPITestGitConnectionResponse parses an HTTP response from a SettingsAPITestGitConnectionWithResponse call
+func ParseSettingsAPITestGitConnectionResponse(rsp *http.Response) (*SettingsAPITestGitConnectionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SettingsAPITestGitConnectionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BooleanResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseStateAPIGetResponse parses an HTTP response from a StateAPIGetWithResponse call
 func ParseStateAPIGetResponse(rsp *http.Response) (*StateAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -2889,6 +3039,9 @@ type ServerInterface interface {
 
 	// (POST /api/settings)
 	SettingsAPISet(w http.ResponseWriter, r *http.Request)
+
+	// (POST /api/settings/test-git)
+	SettingsAPITestGitConnection(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/state)
 	StateAPIGet(w http.ResponseWriter, r *http.Request)
@@ -3264,6 +3417,26 @@ func (siw *ServerInterfaceWrapper) SettingsAPISet(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// SettingsAPITestGitConnection operation middleware
+func (siw *ServerInterfaceWrapper) SettingsAPITestGitConnection(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SettingsAPITestGitConnection(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // StateAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) StateAPIGet(w http.ResponseWriter, r *http.Request) {
 
@@ -3499,6 +3672,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/notifications", wrapper.NotificationsAPIList)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
+	m.HandleFunc("POST "+options.BaseURL+"/api/settings/test-git", wrapper.SettingsAPITestGitConnection)
 	m.HandleFunc("GET "+options.BaseURL+"/api/state", wrapper.StateAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/status", wrapper.StatusAPIGet)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/user", wrapper.UserAPIDelete)
@@ -3951,6 +4125,23 @@ func (response SettingsAPISetdefaultJSONResponse) VisitSettingsAPISetResponse(w 
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type SettingsAPITestGitConnectionRequestObject struct {
+	Body *SettingsAPITestGitConnectionJSONRequestBody
+}
+
+type SettingsAPITestGitConnectionResponseObject interface {
+	VisitSettingsAPITestGitConnectionResponse(w http.ResponseWriter) error
+}
+
+type SettingsAPITestGitConnection200JSONResponse BooleanResponse
+
+func (response SettingsAPITestGitConnection200JSONResponse) VisitSettingsAPITestGitConnectionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type StateAPIGetRequestObject struct {
 }
 
@@ -4139,6 +4330,9 @@ type StrictServerInterface interface {
 
 	// (POST /api/settings)
 	SettingsAPISet(ctx context.Context, request SettingsAPISetRequestObject) (SettingsAPISetResponseObject, error)
+
+	// (POST /api/settings/test-git)
+	SettingsAPITestGitConnection(ctx context.Context, request SettingsAPITestGitConnectionRequestObject) (SettingsAPITestGitConnectionResponseObject, error)
 
 	// (GET /api/state)
 	StateAPIGet(ctx context.Context, request StateAPIGetRequestObject) (StateAPIGetResponseObject, error)
@@ -4572,6 +4766,37 @@ func (sh *strictHandler) SettingsAPISet(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SettingsAPISetResponseObject); ok {
 		if err := validResponse.VisitSettingsAPISetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SettingsAPITestGitConnection operation middleware
+func (sh *strictHandler) SettingsAPITestGitConnection(w http.ResponseWriter, r *http.Request) {
+	var request SettingsAPITestGitConnectionRequestObject
+
+	var body SettingsAPITestGitConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SettingsAPITestGitConnection(ctx, request.(SettingsAPITestGitConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SettingsAPITestGitConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SettingsAPITestGitConnectionResponseObject); ok {
+		if err := validResponse.VisitSettingsAPITestGitConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

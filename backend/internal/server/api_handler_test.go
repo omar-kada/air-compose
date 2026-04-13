@@ -69,6 +69,11 @@ func (m *MockProcess) ChangePassword(username string, oldPass, newPass string) (
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockProcess) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	args := m.Called(repo, branch, username, token)
+	return args.Bool(0), args.Error(1)
+}
+
 type MockStore struct {
 	mock.Mock
 }

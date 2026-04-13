@@ -182,3 +182,33 @@ func TestFetch_WithAddPermissions(t *testing.T) {
 	expectedPerm := os.FileMode(0o755)
 	assert.Equal(t, expectedPerm, fileInfo.Mode().Perm())
 }
+
+func TestTestGitConnection(t *testing.T) {
+	t.Run("successful connection", func(t *testing.T) {
+		remoteRepoPath := testutil.SetupRemoteRepo(t)
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+
+		success, err := fetcher.TestGitConnection(remoteRepoPath, "main", "", "")
+		assert.NoError(t, err)
+		assert.True(t, success)
+	})
+
+	t.Run("failed connection", func(t *testing.T) {
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+
+		success, err := fetcher.TestGitConnection("invalid-repo-url", "main", "", "")
+		assert.Error(t, err)
+		assert.False(t, success)
+	})
+
+	t.Run("with authentication", func(t *testing.T) {
+		remoteRepoPath := testutil.SetupRemoteRepo(t)
+		mockConfig.Settings.Username = "testuser"
+		mockConfig.Settings.Token = "testtoken"
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+
+		success, err := fetcher.TestGitConnection(remoteRepoPath, "main", "testuser", "testtoken")
+		assert.NoError(t, err)
+		assert.True(t, success)
+	})
+}
