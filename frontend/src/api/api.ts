@@ -170,6 +170,13 @@ export interface FileDiff {
   diff: string;
 }
 
+export interface GitCredentials {
+  repo: string;
+  branch?: string;
+  username?: string;
+  token?: string;
+}
+
 export interface PageInfo {
   hasNextPage: boolean;
   endCursor: string;
@@ -1317,6 +1324,62 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       > => {
 
       const mutationOptions = getSettingsAPISetMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+export const settingsAPITestGitConnection = (
+    gitCredentials: GitCredentials, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<BooleanResponse>> => {
+    
+    
+    return axios.default.post(
+      `/api/settings/test-git`,
+      gitCredentials,options
+    );
+  }
+
+
+
+export const getSettingsAPITestGitConnectionMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext> => {
+
+const mutationKey = ['settingsAPITestGitConnection'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, {data: GitCredentials}> = (props) => {
+          const {data} = props ?? {};
+
+          return  settingsAPITestGitConnection(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SettingsAPITestGitConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof settingsAPITestGitConnection>>>
+    export type SettingsAPITestGitConnectionMutationBody = GitCredentials
+    export type SettingsAPITestGitConnectionMutationError = AxiosError<Error>
+
+    export const useSettingsAPITestGitConnection = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof settingsAPITestGitConnection>>,
+        TError,
+        {data: GitCredentials},
+        TContext
+      > => {
+
+      const mutationOptions = getSettingsAPITestGitConnectionMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

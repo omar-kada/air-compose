@@ -9,6 +9,9 @@ namespace AirComposeService;
 interface SettingsAPI {
   @get get(): Settings | Error;
   @post set(@body settings: Settings): Settings | Error;
+  @post @route("/test-git") testGitConnection(
+    @body gitCredentials: GitCredentials,
+  ): BooleanResponse | Error;
 }
 
 model Settings {
@@ -19,4 +22,11 @@ model Settings {
   token?: string;
   notificationURL?: string;
   notificationTypes: Array<EventType>;
+}
+
+model GitCredentials {
+  repo: string;
+  branch?: string;
+  username?: string;
+  token?: string;
 }

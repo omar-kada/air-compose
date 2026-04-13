@@ -2,10 +2,12 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/storage"
@@ -35,6 +37,7 @@ type Fetcher interface {
 	CheckoutBranch(branch string) error
 	PullBranch(branch string, commitSHA string) error
 	DiffWithRemote() (Patch, error)
+	TestGitConnection(repo, branch, username, token string) (bool, error)
 }
 
 // Syncer is responsible for syncing files from repo
@@ -301,4 +304,40 @@ func getLocalHeadCommit(repo *git.Repository) (*gitObject.Commit, error) {
 		return nil, fmt.Errorf("error while getting commitObject : %w", err)
 	}
 	return localCommit, nil
+}
+
+// TestGitConnection tests the connection to a Git repository by attempting to clone it.
+func (*fetcher) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	tempDir, err := os.MkdirTemp("", "git-test-*")
+	if err != nil {
+		return false, fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+	var auth *http.BasicAuth
+	if token != "" {
+		auth = &http.BasicAuth{
+			Username: username,
+			Password: token,
+		}
+	}
+	refName := plumbing.NewBranchReferenceName(branch)
+	if branch == "" {
+		refName = plumbing.NewBranchReferenceName(models.DefaultBranch)
+	}
+
+	res, err := git.PlainClone(tempDir, &git.CloneOptions{
+		URL:           repo,
+		Auth:          auth,
+		ReferenceName: refName,
+	})
+	slog.Debug("Testing git connection", "res", res, "err", err)
+	if err == nil {
+		return true, nil
+	}
+
+	parts := strings.Split(err.Error(), ": ")
+	if len(parts) > 1 {
+		return false, errors.New(parts[len(parts)-1])
+	}
+	return false, err
 }

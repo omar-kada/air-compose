@@ -1,17 +1,22 @@
+import { useTestConnection } from '@/hooks';
+import { Cable } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldTitle } from '../ui/field';
 import { Input } from '../ui/input';
+import { Spinner } from '../ui/spinner';
 import { Switch } from '../ui/switch';
-import type { RepoFormValues } from './onboarding-schema';
+import { toGitCredentaials, type RepoFormValues } from './onboarding-schema';
 
 export function RepoForm({ form }: { form: UseFormReturn<RepoFormValues> }) {
   const { t } = useTranslation();
 
+  const { testConnection, isPending } = useTestConnection();
+
   const handleTestConnection = useCallback(() => {
-    // add test connection logic here
+    testConnection(toGitCredentaials(form.getValues()));
   }, [form]);
 
   useEffect(() => {
@@ -40,7 +45,12 @@ export function RepoForm({ form }: { form: UseFormReturn<RepoFormValues> }) {
               </Field>
             )}
           />
-          <Button type="button" onClick={handleTestConnection}>
+          <Button
+            type="button"
+            onClick={handleTestConnection}
+            disabled={isPending || !form.watch('repo')}
+          >
+            {isPending ? <Spinner /> : <Cable />}
             {t('ONBOARDING.FORM.TEST_CONNECTION')}
           </Button>
         </div>
