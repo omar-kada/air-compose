@@ -1,4 +1,4 @@
-import { EventType, type GitCredentails, type Settings } from '@/api/api';
+import { EventType, type GitCredentials, type Settings } from '@/api/api';
 import z from 'zod';
 
 export const repoSchema = z
@@ -66,7 +66,7 @@ export function toSettings(formValues: OnboardingFormValues): Settings {
   };
 }
 
-export function toGitCredentaials(formValues: RepoFormValues): GitCredentails {
+export function toGitCredentaials(formValues: RepoFormValues): GitCredentials {
   return {
     repo: formValues.repo?.trim(),
     branch: formValues.branch?.trim(),

@@ -170,7 +170,7 @@ export interface FileDiff {
   diff: string;
 }
 
-export interface GitCredentails {
+export interface GitCredentials {
   repo: string;
   branch?: string;
   username?: string;
@@ -1329,21 +1329,21 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     }
     
 export const settingsAPITestGitConnection = (
-    gitCredentails: GitCredentails, options?: AxiosRequestConfig
+    gitCredentials: GitCredentials, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<BooleanResponse>> => {
     
     
     return axios.default.post(
       `/api/settings/test-git`,
-      gitCredentails,options
+      gitCredentials,options
     );
   }
 
 
 
-export const getSettingsAPITestGitConnectionMutationOptions = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentails}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentails}, TContext> => {
+export const getSettingsAPITestGitConnectionMutationOptions = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext> => {
 
 const mutationKey = ['settingsAPITestGitConnection'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -1355,7 +1355,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, {data: GitCredentails}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, {data: GitCredentials}> = (props) => {
           const {data} = props ?? {};
 
           return  settingsAPITestGitConnection(data,axiosOptions)
@@ -1367,15 +1367,15 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SettingsAPITestGitConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof settingsAPITestGitConnection>>>
-    export type SettingsAPITestGitConnectionMutationBody = GitCredentails
-    export type SettingsAPITestGitConnectionMutationError = AxiosError<unknown>
+    export type SettingsAPITestGitConnectionMutationBody = GitCredentials
+    export type SettingsAPITestGitConnectionMutationError = AxiosError<Error>
 
-    export const useSettingsAPITestGitConnection = <TError = AxiosError<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentails}, TContext>, axios?: AxiosRequestConfig}
+    export const useSettingsAPITestGitConnection = <TError = AxiosError<Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof settingsAPITestGitConnection>>, TError,{data: GitCredentials}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof settingsAPITestGitConnection>>,
         TError,
-        {data: GitCredentails},
+        {data: GitCredentials},
         TContext
       > => {
 

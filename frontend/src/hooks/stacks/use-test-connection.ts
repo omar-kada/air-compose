@@ -1,5 +1,6 @@
-import { getSettingsAPITestGitConnectionMutationOptions, type GitCredentails } from '@/api/api';
+import { getSettingsAPITestGitConnectionMutationOptions, type GitCredentials } from '@/api/api';
 import { useMutation } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -10,18 +11,13 @@ export const useTestConnection = () => {
   const testConnectionMutation = useMutation(getSettingsAPITestGitConnectionMutationOptions());
 
   const handleTestConnection = useCallback(
-    (credentials: GitCredentails) => {
+    (credentials: GitCredentials) => {
       toast.promise(() => testConnectionMutation.mutateAsync({ data: credentials }), {
         loading: t('ALERT.TESTING_CONNECTION'),
         success: t('ALERT.TESTING_CONNECTION_SUCCESS'),
-        error: (error) => {
-          console.log(error);
+        error: (error: AxiosError<string>) => {
           return {
-            message: t(
-              error === false
-                ? 'ALERT.TESTING_CONNECTION_FAILED'
-                : 'ALERT.TESTING_CONNECTION_ERROR',
-            ),
+            message: t('ALERT.TESTING_CONNECTION_FAILED'),
             description: error?.response?.data ?? '',
           };
         },

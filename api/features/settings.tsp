@@ -10,8 +10,8 @@ interface SettingsAPI {
   @get get(): Settings | Error;
   @post set(@body settings: Settings): Settings | Error;
   @post @route("/test-git") testGitConnection(
-    @body gitCredentials: GitCredentails,
-  ): BooleanResponse;
+    @body gitCredentials: GitCredentials,
+  ): BooleanResponse | Error;
 }
 
 model Settings {
@@ -24,7 +24,7 @@ model Settings {
   notificationTypes: Array<EventType>;
 }
 
-model GitCredentails {
+model GitCredentials {
   repo: string;
   branch?: string;
   username?: string;

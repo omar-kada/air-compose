@@ -175,8 +175,8 @@ type FileDiff struct {
 	OldFile string `json:"oldFile"`
 }
 
-// GitCredentails defines model for GitCredentails.
-type GitCredentails struct {
+// GitCredentials defines model for GitCredentials.
+type GitCredentials struct {
 	Branch   *string `json:"branch,omitempty"`
 	Repo     string  `json:"repo"`
 	Token    *string `json:"token,omitempty"`
@@ -254,7 +254,7 @@ type ConfigAPISetJSONRequestBody = Config
 type SettingsAPISetJSONRequestBody = Settings
 
 // SettingsAPITestGitConnectionJSONRequestBody defines body for SettingsAPITestGitConnection for application/json ContentType.
-type SettingsAPITestGitConnectionJSONRequestBody = GitCredentails
+type SettingsAPITestGitConnectionJSONRequestBody = GitCredentials
 
 // UserAPIChangePasswordJSONRequestBody defines body for UserAPIChangePassword for application/json ContentType.
 type UserAPIChangePasswordJSONRequestBody UserAPIChangePasswordJSONBody
@@ -1928,6 +1928,7 @@ type SettingsAPITestGitConnectionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *BooleanResponse
+	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2821,6 +2822,13 @@ func ParseSettingsAPITestGitConnectionResponse(rsp *http.Response) (*SettingsAPI
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 
@@ -4140,6 +4148,18 @@ func (response SettingsAPITestGitConnection200JSONResponse) VisitSettingsAPITest
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type SettingsAPITestGitConnectiondefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response SettingsAPITestGitConnectiondefaultJSONResponse) VisitSettingsAPITestGitConnectionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type StateAPIGetRequestObject struct {

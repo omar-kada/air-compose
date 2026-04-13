@@ -948,3 +948,63 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 
 	m.AssertExpectations(t)
 }
+
+func TestSettingsAPITestGitConnection_Success(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(true, nil)
+
+	req := api.SettingsAPITestGitConnectionRequestObject{
+		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{
+			Repo:     "test-repo",
+			Branch:   ptr("main"),
+			Username: ptr("user"),
+			Token:    ptr("token"),
+		},
+	}
+
+	resp, err := h.SettingsAPITestGitConnection(context.Background(), req)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPITestGitConnection200JSONResponse:
+		assert.True(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
+}
+
+func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
+	m := &MockProcess{}
+	store := &MockStore{}
+	h := NewHandler(store, m, m)
+
+	errTest := errors.New("connection failed")
+	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(false, errTest)
+
+	req := api.SettingsAPITestGitConnectionRequestObject{
+		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{
+			Repo:     "test-repo",
+			Branch:   ptr("main"),
+			Username: ptr("user"),
+			Token:    ptr("token"),
+		},
+	}
+
+	resp, err := h.SettingsAPITestGitConnection(context.Background(), req)
+	assert.Error(t, err)
+	assert.Equal(t, errTest, err)
+
+	switch r := resp.(type) {
+	case api.SettingsAPITestGitConnection200JSONResponse:
+		assert.False(t, r.Success)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
+
+	m.AssertExpectations(t)
+}

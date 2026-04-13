@@ -306,12 +306,13 @@ func getLocalHeadCommit(repo *git.Repository) (*gitObject.Commit, error) {
 	return localCommit, nil
 }
 
-func (f *fetcher) TestGitConnection(repo, branch, username, token string) (bool, error) {
-	err := os.RemoveAll("temporary-git-test-repo")
+// TestGitConnection tests the connection to a Git repository by attempting to clone it.
+func (*fetcher) TestGitConnection(repo, branch, username, token string) (bool, error) {
+	tempDir, err := os.MkdirTemp("", "git-test-*")
 	if err != nil {
-		slog.Error("Failed to remove temporary git folder", "err", err)
-		return false, err
+		return false, fmt.Errorf("failed to create temp dir: %w", err)
 	}
+	defer os.RemoveAll(tempDir)
 	var auth *http.BasicAuth
 	if token != "" {
 		auth = &http.BasicAuth{
@@ -319,10 +320,15 @@ func (f *fetcher) TestGitConnection(repo, branch, username, token string) (bool,
 			Password: token,
 		}
 	}
-	res, err := git.PlainClone("temporary-git-test-repo", &git.CloneOptions{
+	refName := plumbing.NewBranchReferenceName(branch)
+	if branch == "" {
+		refName = plumbing.NewBranchReferenceName(models.DefaultBranch)
+	}
+
+	res, err := git.PlainClone(tempDir, &git.CloneOptions{
 		URL:           repo,
 		Auth:          auth,
-		ReferenceName: plumbing.NewBranchReferenceName(branch),
+		ReferenceName: refName,
 	})
 	slog.Debug("Testing git connection", "res", res, "err", err)
 	if err == nil {
