@@ -54,7 +54,7 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
 
   const mergedError = error ?? userError;
   return (
-    <div className={cn('flex flex-col h-screen', showTopBar ? 'pb-12 md:pb-0' : '')}>
+    <div className={cn('flex flex-col h-dvh', showTopBar ? 'pb-12 md:pb-0' : '')}>
       {showTopBar && (
         <>
           <Topbar>

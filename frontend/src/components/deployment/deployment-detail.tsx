@@ -1,6 +1,6 @@
 import { DeploymentStatus } from '@/api/api';
 import { getDeploymentOptions, getDeploymentsQueryOptions, useFilteredQuery } from '@/hooks';
-import { formatElapsed, ROUTES } from '@/lib';
+import { cn, formatElapsed, ROUTES } from '@/lib';
 import { useQueryClient } from '@tanstack/react-query';
 import { Timer, User } from 'lucide-react';
 import { useEffect, type ReactElement } from 'react';
@@ -13,7 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
 import { ErrorAlert, HumanTime } from '../view';
 
-export function DeploymentDetail({ id }: { id: string }) {
+export function DeploymentDetail({ id, className }: { id: string; className?: string }) {
   const { t } = useTranslation();
   const {
     data: deployment,
@@ -37,7 +37,7 @@ export function DeploymentDetail({ id }: { id: string }) {
     return <DeploymentDetailSkeleton />;
   }
   return (
-    <div className="flex flex-col h-full">
+    <div className={cn("flex flex-col", className)}>
       <ErrorAlert
         className="mx-4 mt-4"
         title={error && 'ALERT.LOAD_DEPLOYMENT_ERROR'}

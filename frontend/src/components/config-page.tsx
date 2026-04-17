@@ -94,21 +94,19 @@ export function ConfigPage() {
     <HeaderLayout
       header={
         <div className="flex w-full justify-between gap-2">
-          <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
-
-          <div>
-            {isMobile && (
-              <Toggle
-                pressed={showYaml}
-                onPressedChange={setShowYaml}
-                aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-                variant="outline"
-              >
-                <Code />
-                {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-              </Toggle>
-            )}
-          </div>
+          {!isMobile ? (
+            <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
+          ) : (
+            <Toggle
+              pressed={showYaml}
+              onPressedChange={setShowYaml}
+              aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+              variant="outline"
+            >
+              <Code />
+              {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+            </Toggle>
+          )}
           {!disabled && (
             <div className="flex">
               {form.formState.isDirty && (
@@ -166,7 +164,7 @@ function EnvVarSkeleton({ repeat }: { repeat: number }) {
       {Array(repeat)
         .fill({})
         .map((_, index) => (
-          <span className="flex gap-4" key={index}>
+          <span className="flex gap-4" key={"var-skeleton-"+index}>
             <Skeleton className="h-6 w-50" />
             <Skeleton className="h-6 w-50" />
           </span>

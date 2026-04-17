@@ -1,6 +1,7 @@
 import { getStatusQueryOptions, useFilteredQuery } from '@/hooks';
 import { useTranslation } from 'react-i18next';
 import { ServiceStatus, ServiceStatusSkeleton } from './status';
+import { ScrollArea } from './ui/scroll-area';
 import { ErrorAlert, HeaderLayout, InfoEmpty } from './view';
 
 export function StatusPage() {
@@ -9,21 +10,21 @@ export function StatusPage() {
 
   return (
     <HeaderLayout header={<h2 className="text-2xl font-bold">{t('STATUS.STATUS')}</h2>}>
-      <div className="space-y-2">
+      <ScrollArea className="space-y-2 h-0 flex-1">
         <ErrorAlert title={error && 'ALERT.LOAD_STATUS_ERROR'} details={error?.message} />
 
         {isPending ? (
           Array(3)
             .fill({})
-            .map((_, index) => <ServiceStatusSkeleton key={index} />)
+            .map((_, index) => <ServiceStatusSkeleton key={"status-skeleton-"+index} />)
         ) : data?.length ? (
           data.map((stackStatus) => (
-            <div key={stackStatus.stackId}>
+              <div key={stackStatus.stackId}>
               <ServiceStatus
                 serviceName={stackStatus.name}
                 serviceContainers={stackStatus.services}
               />
-            </div>
+              </div>
           ))
         ) : (
           <InfoEmpty
@@ -31,7 +32,7 @@ export function StatusPage() {
             details="STATUS.NO_STACKS_FOUND_DESCRIPTION"
           ></InfoEmpty>
         )}
-      </div>
+      </ScrollArea>
     </HeaderLayout>
   );
 }

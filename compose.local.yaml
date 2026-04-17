@@ -8,3 +8,4 @@ services:
     environment:
       ENV: "${ENV:-DEV}"
       AIR_COMPOSE_ADD_WRITE_PERM: "${AIR_COMPOSE_ADD_WRITE_PERM:-true}"
+      AIR_COMPOSE_HTTP_MODE: "true"
