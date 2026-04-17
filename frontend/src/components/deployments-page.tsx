@@ -75,7 +75,7 @@ export function DeploymentsPage() {
       ) : !selectedItemOrDefault ? (
         <InfoEmpty title="DEPLOYMENTS.SELECT_DEPLOYMENT_FOR_DETAILS"></InfoEmpty>
       ) : (
-        <DeploymentDetail id={selectedItemOrDefault} />
+        <DeploymentDetail id={selectedItemOrDefault} className="h-[calc(100%-3rem)] sm:h-full" />
       )}
     </AsideLayout>
   );

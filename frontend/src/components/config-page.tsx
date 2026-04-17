@@ -93,10 +93,9 @@ export function ConfigPage() {
   return (
     <HeaderLayout
       header={
-        <div className="flex w-full justify-between gap-2">
+        <div className="flex w-full justify-between gap-2 flex-wrap">
           <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
-
-          <div>
+          <div className="flex flex-1 justify-end-safe gap-2">
             {isMobile && (
               <Toggle
                 pressed={showYaml}
@@ -108,23 +107,22 @@ export function ConfigPage() {
                 {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
               </Toggle>
             )}
+            {form.formState.isDirty && (
+              <Button variant="outline" onClick={resetForm}>
+                <RotateCcw />
+                {t('ACTION.RESET')}
+              </Button>
+            )}
+            {!disabled && (
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={disabled || !form.formState.isDirty}
+              >
+                {isSavePending ? <Spinner /> : <Save />}
+                {t('ACTION.SAVE')}
+              </Button>
+            )}
           </div>
-          {!disabled && (
-            <div className="flex">
-              {form.formState.isDirty && (
-                <Button variant="outline" onClick={resetForm}>
-                  <RotateCcw />
-                  {t('ACTION.RESET')}
-                </Button>
-              )}
-              {!disabled && (
-                <Button onClick={form.handleSubmit(onSubmit)} disabled={!form.formState.isDirty}>
-                  {isSavePending ? <Spinner /> : <Save />}
-                  {t('ACTION.SAVE')}
-                </Button>
-              )}
-            </div>
-          )}
         </div>
       }
     >
