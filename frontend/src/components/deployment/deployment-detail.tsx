@@ -37,7 +37,7 @@ export function DeploymentDetail({ id, className }: { id: string; className?: st
     return <DeploymentDetailSkeleton />;
   }
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn('flex flex-col', className)}>
       <ErrorAlert
         className="mx-4 mt-4"
         title={error && 'ALERT.LOAD_DEPLOYMENT_ERROR'}

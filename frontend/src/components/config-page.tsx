@@ -93,36 +93,36 @@ export function ConfigPage() {
   return (
     <HeaderLayout
       header={
-        <div className="flex w-full justify-between gap-2">
-          {!isMobile ? (
-            <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
-          ) : (
-            <Toggle
-              pressed={showYaml}
-              onPressedChange={setShowYaml}
-              aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-              variant="outline"
-            >
-              <Code />
-              {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
-            </Toggle>
-          )}
-          {!disabled && (
-            <div className="flex">
-              {form.formState.isDirty && (
-                <Button variant="outline" onClick={resetForm}>
-                  <RotateCcw />
-                  {t('ACTION.RESET')}
-                </Button>
-              )}
-              {!disabled && (
-                <Button onClick={form.handleSubmit(onSubmit)} disabled={!form.formState.isDirty}>
-                  {isSavePending ? <Spinner /> : <Save />}
-                  {t('ACTION.SAVE')}
-                </Button>
-              )}
-            </div>
-          )}
+        <div className="flex w-full justify-between gap-2 flex-wrap">
+          <h2 className="text-2xl font-bold">{t('CONFIGURATION.CONFIGURATION')}</h2>
+          <div className="flex flex-1 justify-end-safe gap-2">
+            {isMobile && (
+              <Toggle
+                pressed={showYaml}
+                onPressedChange={setShowYaml}
+                aria-label={showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+                variant="outline"
+              >
+                <Code />
+                {showYaml ? t('ACTION.HIDE_FILE') : t('ACTION.VIEW_FILE')}
+              </Toggle>
+            )}
+            {form.formState.isDirty && (
+              <Button variant="outline" onClick={resetForm}>
+                <RotateCcw />
+                {t('ACTION.RESET')}
+              </Button>
+            )}
+            {!disabled && (
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={disabled || !form.formState.isDirty}
+              >
+                {isSavePending ? <Spinner /> : <Save />}
+                {t('ACTION.SAVE')}
+              </Button>
+            )}
+          </div>
         </div>
       }
     >
@@ -164,7 +164,7 @@ function EnvVarSkeleton({ repeat }: { repeat: number }) {
       {Array(repeat)
         .fill({})
         .map((_, index) => (
-          <span className="flex gap-4" key={"var-skeleton-"+index}>
+          <span className="flex gap-4" key={index}>
             <Skeleton className="h-6 w-50" />
             <Skeleton className="h-6 w-50" />
           </span>

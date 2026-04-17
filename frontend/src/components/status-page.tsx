@@ -10,21 +10,21 @@ export function StatusPage() {
 
   return (
     <HeaderLayout header={<h2 className="text-2xl font-bold">{t('STATUS.STATUS')}</h2>}>
-      <ScrollArea className="space-y-2 h-0 flex-1">
+      <ScrollArea className="space-y-2 min-h-0 flex-1">
         <ErrorAlert title={error && 'ALERT.LOAD_STATUS_ERROR'} details={error?.message} />
 
         {isPending ? (
           Array(3)
             .fill({})
-            .map((_, index) => <ServiceStatusSkeleton key={"status-skeleton-"+index} />)
+            .map((_, index) => <ServiceStatusSkeleton key={'status-skeleton-' + index} />)
         ) : data?.length ? (
           data.map((stackStatus) => (
-              <div key={stackStatus.stackId}>
+            <div key={stackStatus.stackId}>
               <ServiceStatus
                 serviceName={stackStatus.name}
                 serviceContainers={stackStatus.services}
               />
-              </div>
+            </div>
           ))
         ) : (
           <InfoEmpty
