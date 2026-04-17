@@ -13,6 +13,7 @@ import {
   ItemSeparator,
   ItemTitle,
 } from '../ui/item';
+import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
 import { ErrorAlert } from '../view';
 import { NotificationBadge } from './notification-badge';
@@ -46,7 +47,7 @@ export function NotificationList({
 
   return (
     <>
-      {isPending && <Spinner />}
+      {isPending && <NotificationSkeleton />}
       {error && <ErrorAlert title="ALERT.LOAD_NOTIFICATIONS_ERROR" details={error.message} />}
       {filteredNotifications && (
         <ItemGroup className="grid auto-rows-min px-4 mb-10">
@@ -106,4 +107,14 @@ function getNotificationObjectTitle(notif: Event): string {
     return `#${notif.objectId} "${notif.objectName}"`;
   }
   return '';
+}
+
+export function NotificationSkeleton() {
+  return (
+    <div className="flex flex-col space-y-3 m-4">
+      <Skeleton className="h-15 w-full rounded-lg" />
+      <Skeleton className="h-15 w-full rounded-lg" />
+      <Skeleton className="h-15 w-full rounded-lg" />
+    </div>
+  );
 }
