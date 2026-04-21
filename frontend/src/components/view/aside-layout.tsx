@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { Separator } from '../ui/separator';
 import { HeaderLayout } from './header-layout';
 
 export function AsideLayout({
@@ -18,11 +19,12 @@ export function AsideLayout({
       <div className="w-full flex h-full">
         {aside && (
           <aside
-            className={`w-full h-full max-h-full flex flex-col sm:w-75 sm:shrink-0 pb-4 ${focusMain ? 'hidden sm:flex' : ''}`}
+            className={`w-full h-full max-h-full flex flex-col sm:w-75 sm:shrink-0 ${focusMain ? 'hidden sm:flex' : ''}`}
           >
             {aside}
           </aside>
         )}
+        {aside && <Separator orientation="vertical" />}
 
         {/* Main content (hidden on mobile until main is focused) */}
         <main className={`${!focusMain ? 'hidden sm:block sm:flex-1' : 'w-full'}`}>{children}</main>

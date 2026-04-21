@@ -60,7 +60,7 @@ export function DeploymentsPage() {
         <DeploymentList
           selectedDeployment={isMobile ? undefined : selectedItemOrDefault}
           onSelect={handleSelect}
-          className="border rounded-lg h-full max-h-full bg-muted/30"
+          className="h-full max-h-full"
         />
       }
     >

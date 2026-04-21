@@ -22,7 +22,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
   const { data: state, isPending, error } = useFilteredQuery(getStateQueryOptions());
   const {
     data: diffs,
-    isFetching: isDiffsLoading,
+    isPending: isDiffsLoading,
     error: diffError,
   } = useFilteredQuery(getDiffQueryOptions());
 

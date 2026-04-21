@@ -22,7 +22,7 @@ export function DeploymentListItem({
 
   return (
     <Item
-      className={`cursor-pointer ${isSelected ? 'bg-accent' : ''}`}
+      className={`cursor-pointer ${isSelected ? 'bg-sidebar' : ''}`}
       onClick={onDeploymentClick(deployment)}
       variant="outline"
     >

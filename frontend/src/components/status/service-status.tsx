@@ -8,13 +8,15 @@ import { ContainerStatusBadge } from './container-status-badge';
 export function ServiceStatus({
   serviceName,
   serviceContainers,
+  className,
 }: {
   serviceName: string;
   serviceContainers: Array<ContainerStatus>;
+  className?: string;
 }) {
   const time = serviceContainers[0]?.startedAt;
   return (
-    <Item variant="outline">
+    <Item variant="outline" className={className}>
       <ItemMedia>
         <ServiceLogo service={serviceName} />
       </ItemMedia>
