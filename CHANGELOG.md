@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/omar-kada/air-compose/compare/v0.1.2...v0.2.0) (2026-04-21)
+
+
+### Features
+
+* add http insecure mode ([#73](https://github.com/omar-kada/air-compose/issues/73)) ([2e554c8](https://github.com/omar-kada/air-compose/commit/2e554c8afd13d83306c76f3dc316ae6870502c9c))
+* add onboarding screen ([#71](https://github.com/omar-kada/air-compose/issues/71)) ([403a27f](https://github.com/omar-kada/air-compose/commit/403a27f18986815522dc036e7b403389c193a315))
+* add test connection in onboarding form ([#77](https://github.com/omar-kada/air-compose/issues/77)) ([94c0d9e](https://github.com/omar-kada/air-compose/commit/94c0d9ebf63df7cc59deb3a6e835c5305d0d0f11))
+* add timeline component in deployment event log ([#79](https://github.com/omar-kada/air-compose/issues/79)) ([abfd18e](https://github.com/omar-kada/air-compose/commit/abfd18e6bb3a83ee8a63b2879622deeaecff8ecc))
+
+
+### Bug Fixes
+
+* mobile UI spacing & scroll enhancements ([#78](https://github.com/omar-kada/air-compose/issues/78)) ([5ed9c72](https://github.com/omar-kada/air-compose/commit/5ed9c72b00e548a9fc9fc202a464efa1fc84ea31))
+
 ## [0.1.2](https://github.com/omar-kada/air-compose/compare/v0.1.1...v0.1.2) (2026-03-18)
 
 
