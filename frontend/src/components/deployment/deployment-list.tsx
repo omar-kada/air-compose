@@ -1,6 +1,5 @@
 import type { Deployment } from '@/api/api';
 import { getDeploymentsQueryOptions } from '@/hooks';
-import { cn } from '@/lib';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -73,8 +72,8 @@ function DeploymentListContainer({
   children: ReactNode;
 }) {
   return (
-    <ScrollArea className={cn('p-3', className)}>
-      <div className="flex flex-col gap-2">{children}</div>
+    <ScrollArea className={className}>
+      <div className="flex flex-col gap-2 p-3">{children}</div>
     </ScrollArea>
   );
 }

@@ -17,10 +17,13 @@ export function DeploymentEventLog({ events }: { events: Event[] }) {
       <h3 className="mb-4 font-bold text-xl">{t('DEPLOYMENTS.EVENTS_LOG')}</h3>
 
       <Timeline color="secondary" orientation="vertical">
-        {events.map((event) => (
-          <TimelineItem className={`whitespace-pre-wrap pb-4 ${logColor(event.type)}`}>
+        {events.map((event, index) => (
+          <TimelineItem
+            key={event.ID}
+            className={`whitespace-pre-wrap pb-4 ${logColor(event.type)}`}
+          >
             <TimelineHeader>
-              <TimelineSeparator />
+              {index !== events.length - 1 && <TimelineSeparator />}
               <TimelineIcon className="h-3 w-3" />
             </TimelineHeader>
             <TimelineBody className="-translate-y-1.5">

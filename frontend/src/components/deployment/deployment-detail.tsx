@@ -81,7 +81,7 @@ export function DeploymentDetail({ id, className }: { id: string; className?: st
 
 function InfoItem({ icon, label }: { icon: ReactElement; label: string }) {
   return (
-    <Item variant="muted" size="sm">
+    <Item variant="muted" className="border-accent" size="sm">
       <ItemMedia>{icon}</ItemMedia>
       <ItemContent>
         <ItemTitle>{label}</ItemTitle>

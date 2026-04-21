@@ -19,12 +19,12 @@ export function StatusPage() {
             .map((_, index) => <ServiceStatusSkeleton key={'status-skeleton-' + index} />)
         ) : data?.length ? (
           data.map((stackStatus) => (
-            <div key={stackStatus.stackId}>
-              <ServiceStatus
-                serviceName={stackStatus.name}
-                serviceContainers={stackStatus.services}
-              />
-            </div>
+            <ServiceStatus
+              key={stackStatus.stackId}
+              serviceName={stackStatus.name}
+              serviceContainers={stackStatus.services}
+              className="m-3"
+            />
           ))
         ) : (
           <InfoEmpty
