@@ -33,6 +33,19 @@ interface AuthAPI {
   logout(): BooleanResponse | Error;
 }
 
+@route("/oidc")
+@tag("OIDC")
+interface OIDCAPI {
+  @useAuth(NoAuth)
+  @route("login")
+  @get
+  oidcLogin(): void | Error;
+
+  @useAuth(NoAuth)
+  @route("callback")
+  @get
+  oidcCallback(@query code: string, @query state: string): void | Error;
+}
 model Credentials {
   username: string;
   @secret password: string;

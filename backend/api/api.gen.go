@@ -183,6 +183,13 @@ type GitCredentials struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// OidcSettings defines model for OidcSettings.
+type OidcSettings struct {
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	IssuerURL    string `json:"issuerURL"`
+}
+
 // PageInfo defines model for PageInfo.
 type PageInfo struct {
 	EndCursor   string `json:"endCursor"`
@@ -191,13 +198,14 @@ type PageInfo struct {
 
 // Settings defines model for Settings.
 type Settings struct {
-	Branch            *string     `json:"branch,omitempty"`
-	Cron              *string     `json:"cron,omitempty"`
-	NotificationTypes []EventType `json:"notificationTypes"`
-	NotificationURL   *string     `json:"notificationURL,omitempty"`
-	Repo              string      `json:"repo"`
-	Token             *string     `json:"token,omitempty"`
-	Username          *string     `json:"username,omitempty"`
+	Branch            *string       `json:"branch,omitempty"`
+	Cron              *string       `json:"cron,omitempty"`
+	NotificationTypes []EventType   `json:"notificationTypes"`
+	NotificationURL   *string       `json:"notificationURL,omitempty"`
+	Oidc              *OidcSettings `json:"oidc,omitempty"`
+	Repo              string        `json:"repo"`
+	Token             *string       `json:"token,omitempty"`
+	Username          *string       `json:"username,omitempty"`
 }
 
 // StackStatus defines model for StackStatus.
@@ -233,6 +241,12 @@ type DeployementAPIListParams struct {
 type NotificationsAPIListParams struct {
 	Limit  int32   `form:"limit" json:"limit"`
 	Offset *string `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// OIDCAPIOidcCallbackParams defines parameters for OIDCAPIOidcCallback.
+type OIDCAPIOidcCallbackParams struct {
+	Code  string `form:"code" json:"code"`
+	State string `form:"state" json:"state"`
 }
 
 // UserAPIChangePasswordJSONBody defines parameters for UserAPIChangePassword.
@@ -376,6 +390,12 @@ type ClientInterface interface {
 
 	// NotificationsAPIList request
 	NotificationsAPIList(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OIDCAPIOidcCallback request
+	OIDCAPIOidcCallback(ctx context.Context, params *OIDCAPIOidcCallbackParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// OIDCAPIOidcLogin request
+	OIDCAPIOidcLogin(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SettingsAPIGet request
 	SettingsAPIGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -590,6 +610,30 @@ func (c *Client) FeaturesAPIGet(ctx context.Context, reqEditors ...RequestEditor
 
 func (c *Client) NotificationsAPIList(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewNotificationsAPIListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) OIDCAPIOidcCallback(ctx context.Context, params *OIDCAPIOidcCallbackParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOIDCAPIOidcCallbackRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) OIDCAPIOidcLogin(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewOIDCAPIOidcLoginRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1197,6 +1241,90 @@ func NewNotificationsAPIListRequest(server string, params *NotificationsAPIListP
 	return req, nil
 }
 
+// NewOIDCAPIOidcCallbackRequest generates requests for OIDCAPIOidcCallback
+func NewOIDCAPIOidcCallbackRequest(server string, params *OIDCAPIOidcCallbackParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/oidc/callback")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "code", runtime.ParamLocationQuery, params.Code); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", false, "state", runtime.ParamLocationQuery, params.State); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewOIDCAPIOidcLoginRequest generates requests for OIDCAPIOidcLogin
+func NewOIDCAPIOidcLoginRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/oidc/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSettingsAPIGetRequest generates requests for SettingsAPIGet
 func NewSettingsAPIGetRequest(server string) (*http.Request, error) {
 	var err error
@@ -1540,6 +1668,12 @@ type ClientWithResponsesInterface interface {
 	// NotificationsAPIListWithResponse request
 	NotificationsAPIListWithResponse(ctx context.Context, params *NotificationsAPIListParams, reqEditors ...RequestEditorFn) (*NotificationsAPIListResponse, error)
 
+	// OIDCAPIOidcCallbackWithResponse request
+	OIDCAPIOidcCallbackWithResponse(ctx context.Context, params *OIDCAPIOidcCallbackParams, reqEditors ...RequestEditorFn) (*OIDCAPIOidcCallbackResponse, error)
+
+	// OIDCAPIOidcLoginWithResponse request
+	OIDCAPIOidcLoginWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OIDCAPIOidcLoginResponse, error)
+
 	// SettingsAPIGetWithResponse request
 	SettingsAPIGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SettingsAPIGetResponse, error)
 
@@ -1878,6 +2012,50 @@ func (r NotificationsAPIListResponse) StatusCode() int {
 	return 0
 }
 
+type OIDCAPIOidcCallbackResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r OIDCAPIOidcCallbackResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OIDCAPIOidcCallbackResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type OIDCAPIOidcLoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r OIDCAPIOidcLoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r OIDCAPIOidcLoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SettingsAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2201,6 +2379,24 @@ func (c *ClientWithResponses) NotificationsAPIListWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseNotificationsAPIListResponse(rsp)
+}
+
+// OIDCAPIOidcCallbackWithResponse request returning *OIDCAPIOidcCallbackResponse
+func (c *ClientWithResponses) OIDCAPIOidcCallbackWithResponse(ctx context.Context, params *OIDCAPIOidcCallbackParams, reqEditors ...RequestEditorFn) (*OIDCAPIOidcCallbackResponse, error) {
+	rsp, err := c.OIDCAPIOidcCallback(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOIDCAPIOidcCallbackResponse(rsp)
+}
+
+// OIDCAPIOidcLoginWithResponse request returning *OIDCAPIOidcLoginResponse
+func (c *ClientWithResponses) OIDCAPIOidcLoginWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*OIDCAPIOidcLoginResponse, error) {
+	rsp, err := c.OIDCAPIOidcLogin(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseOIDCAPIOidcLoginResponse(rsp)
 }
 
 // SettingsAPIGetWithResponse request returning *SettingsAPIGetResponse
@@ -2736,6 +2932,58 @@ func ParseNotificationsAPIListResponse(rsp *http.Response) (*NotificationsAPILis
 	return response, nil
 }
 
+// ParseOIDCAPIOidcCallbackResponse parses an HTTP response from a OIDCAPIOidcCallbackWithResponse call
+func ParseOIDCAPIOidcCallbackResponse(rsp *http.Response) (*OIDCAPIOidcCallbackResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OIDCAPIOidcCallbackResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseOIDCAPIOidcLoginResponse parses an HTTP response from a OIDCAPIOidcLoginWithResponse call
+func ParseOIDCAPIOidcLoginResponse(rsp *http.Response) (*OIDCAPIOidcLoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OIDCAPIOidcLoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSettingsAPIGetResponse parses an HTTP response from a SettingsAPIGetWithResponse call
 func ParseSettingsAPIGetResponse(rsp *http.Response) (*SettingsAPIGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -3041,6 +3289,12 @@ type ServerInterface interface {
 
 	// (GET /api/notifications)
 	NotificationsAPIList(w http.ResponseWriter, r *http.Request, params NotificationsAPIListParams)
+
+	// (GET /api/oidc/callback)
+	OIDCAPIOidcCallback(w http.ResponseWriter, r *http.Request, params OIDCAPIOidcCallbackParams)
+
+	// (GET /api/oidc/login)
+	OIDCAPIOidcLogin(w http.ResponseWriter, r *http.Request)
 
 	// (GET /api/settings)
 	SettingsAPIGet(w http.ResponseWriter, r *http.Request)
@@ -3385,6 +3639,69 @@ func (siw *ServerInterfaceWrapper) NotificationsAPIList(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// OIDCAPIOidcCallback operation middleware
+func (siw *ServerInterfaceWrapper) OIDCAPIOidcCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params OIDCAPIOidcCallbackParams
+
+	// ------------- Required query parameter "code" -------------
+
+	if paramValue := r.URL.Query().Get("code"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "code"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", false, true, "code", r.URL.Query(), &params.Code)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "state" -------------
+
+	if paramValue := r.URL.Query().Get("state"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", false, true, "state", r.URL.Query(), &params.State)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OIDCAPIOidcCallback(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// OIDCAPIOidcLogin operation middleware
+func (siw *ServerInterfaceWrapper) OIDCAPIOidcLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OIDCAPIOidcLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SettingsAPIGet operation middleware
 func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http.Request) {
 
@@ -3678,6 +3995,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/diff", wrapper.DiffAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/features", wrapper.FeaturesAPIGet)
 	m.HandleFunc("GET "+options.BaseURL+"/api/notifications", wrapper.NotificationsAPIList)
+	m.HandleFunc("GET "+options.BaseURL+"/api/oidc/callback", wrapper.OIDCAPIOidcCallback)
+	m.HandleFunc("GET "+options.BaseURL+"/api/oidc/login", wrapper.OIDCAPIOidcLogin)
 	m.HandleFunc("GET "+options.BaseURL+"/api/settings", wrapper.SettingsAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings", wrapper.SettingsAPISet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/settings/test-git", wrapper.SettingsAPITestGitConnection)
@@ -4076,6 +4395,61 @@ func (response NotificationsAPIListdefaultJSONResponse) VisitNotificationsAPILis
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type OIDCAPIOidcCallbackRequestObject struct {
+	Params OIDCAPIOidcCallbackParams
+}
+
+type OIDCAPIOidcCallbackResponseObject interface {
+	VisitOIDCAPIOidcCallbackResponse(w http.ResponseWriter) error
+}
+
+type OIDCAPIOidcCallback204Response struct {
+}
+
+func (response OIDCAPIOidcCallback204Response) VisitOIDCAPIOidcCallbackResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type OIDCAPIOidcCallbackdefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response OIDCAPIOidcCallbackdefaultJSONResponse) VisitOIDCAPIOidcCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type OIDCAPIOidcLoginRequestObject struct {
+}
+
+type OIDCAPIOidcLoginResponseObject interface {
+	VisitOIDCAPIOidcLoginResponse(w http.ResponseWriter) error
+}
+
+type OIDCAPIOidcLogin204Response struct {
+}
+
+func (response OIDCAPIOidcLogin204Response) VisitOIDCAPIOidcLoginResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type OIDCAPIOidcLogindefaultJSONResponse struct {
+	Body       Error
+	StatusCode int
+}
+
+func (response OIDCAPIOidcLogindefaultJSONResponse) VisitOIDCAPIOidcLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type SettingsAPIGetRequestObject struct {
 }
 
@@ -4344,6 +4718,12 @@ type StrictServerInterface interface {
 
 	// (GET /api/notifications)
 	NotificationsAPIList(ctx context.Context, request NotificationsAPIListRequestObject) (NotificationsAPIListResponseObject, error)
+
+	// (GET /api/oidc/callback)
+	OIDCAPIOidcCallback(ctx context.Context, request OIDCAPIOidcCallbackRequestObject) (OIDCAPIOidcCallbackResponseObject, error)
+
+	// (GET /api/oidc/login)
+	OIDCAPIOidcLogin(ctx context.Context, request OIDCAPIOidcLoginRequestObject) (OIDCAPIOidcLoginResponseObject, error)
 
 	// (GET /api/settings)
 	SettingsAPIGet(ctx context.Context, request SettingsAPIGetRequestObject) (SettingsAPIGetResponseObject, error)
@@ -4731,6 +5111,56 @@ func (sh *strictHandler) NotificationsAPIList(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(NotificationsAPIListResponseObject); ok {
 		if err := validResponse.VisitNotificationsAPIListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OIDCAPIOidcCallback operation middleware
+func (sh *strictHandler) OIDCAPIOidcCallback(w http.ResponseWriter, r *http.Request, params OIDCAPIOidcCallbackParams) {
+	var request OIDCAPIOidcCallbackRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OIDCAPIOidcCallback(ctx, request.(OIDCAPIOidcCallbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OIDCAPIOidcCallback")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OIDCAPIOidcCallbackResponseObject); ok {
+		if err := validResponse.VisitOIDCAPIOidcCallbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OIDCAPIOidcLogin operation middleware
+func (sh *strictHandler) OIDCAPIOidcLogin(w http.ResponseWriter, r *http.Request) {
+	var request OIDCAPIOidcLoginRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OIDCAPIOidcLogin(ctx, request.(OIDCAPIOidcLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OIDCAPIOidcLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OIDCAPIOidcLoginResponseObject); ok {
+		if err := validResponse.VisitOIDCAPIOidcLoginResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

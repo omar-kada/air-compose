@@ -224,32 +224,44 @@ func (h *Handler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestO
 
 // AuthAPIRegister registers a new user
 func (*Handler) AuthAPIRegister(_ context.Context, _ api.AuthAPIRegisterRequestObject) (api.AuthAPIRegisterResponseObject, error) {
-	// should be done in the auth middleware so if we react this return an error
+	// should be done in the auth middleware so if we reach this return an error
 	return api.AuthAPIRegister200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPILogin logs in a user
 func (*Handler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
-	// should be done in the auth middleware so if we react this return an error
+	// should be done in the auth middleware so if we reach this return an error
 	return api.AuthAPILogin200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPIRefresh refreshes token
 func (*Handler) AuthAPIRefresh(_ context.Context, _ api.AuthAPIRefreshRequestObject) (api.AuthAPIRefreshResponseObject, error) {
-	// should be done in the auth middleware so if we react this return an error
+	// should be done in the auth middleware so if we reach this return an error
 	return api.AuthAPIRefresh200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPILogout logs out a user
 func (*Handler) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObject) (api.AuthAPILogoutResponseObject, error) {
-	// should be done in the auth middleware so if we react this return an error
+	// should be done in the auth middleware so if we reach this return an error
 	return api.AuthAPILogout200JSONResponse{}, errShouldntReach
 }
 
 // AuthAPIRegistered checks if a user is registered
 func (*Handler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
-	// should be done in the auth middleware so if we react this return an error
+	// should be done in the auth middleware so if we reach this return an error
 	return api.AuthAPIRegistereddefaultJSONResponse{}, errShouldntReach
+}
+
+// OIDCAPIOidcCallback checks if a user is registered
+func (*Handler) OIDCAPIOidcCallback(_ context.Context, _ api.OIDCAPIOidcCallbackRequestObject) (api.OIDCAPIOidcCallbackResponseObject, error) {
+	// should be done in the oidc middleware so if we reach this return an error
+	return api.OIDCAPIOidcCallbackdefaultJSONResponse{}, errShouldntReach
+}
+
+// OIDCAPIOidcLogin checks if a user is registered
+func (*Handler) OIDCAPIOidcLogin(_ context.Context, _ api.OIDCAPIOidcLoginRequestObject) (api.OIDCAPIOidcLoginResponseObject, error) {
+	// should be done in the oidc middleware so if we reach this return an error
+	return api.OIDCAPIOidcLogindefaultJSONResponse{}, errShouldntReach
 }
 
 // UserAPIGet returns the authenticated user's information

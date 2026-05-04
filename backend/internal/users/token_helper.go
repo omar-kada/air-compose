@@ -2,7 +2,8 @@ package users
 
 import (
 	"crypto/rand"
-	"encoding/hex"
+	"encoding/base64"
+	"log/slog"
 	"time"
 
 	"omar-kada/air-compose/models"
@@ -26,21 +27,23 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func generateToken() (models.Token, error) {
+func generateToken() models.Token {
 	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
-		return models.Token{}, err
+		slog.Error("Unexpected error while generating token", "err", err)
+		return models.Token{}
 	}
 	refreshToken := make([]byte, 32)
 	_, err = rand.Read(refreshToken)
 	if err != nil {
-		return models.Token{}, err
+		slog.Error("Unexpected error while generating refresh token", "err", err)
+		return models.Token{}
 	}
 	return models.Token{
-		Value:          models.TokenValue(hex.EncodeToString(token)),
+		Value:          models.TokenValue(base64.RawURLEncoding.EncodeToString(token)),
 		Expires:        time.Now().Add(tokenExpiryDuration),
-		RefreshToken:   models.TokenValue(hex.EncodeToString(refreshToken)),
+		RefreshToken:   models.TokenValue(base64.RawURLEncoding.EncodeToString(refreshToken)),
 		RefreshExpires: time.Now().Add(refreshTokenExpiryDuration),
-	}, nil
+	}
 }

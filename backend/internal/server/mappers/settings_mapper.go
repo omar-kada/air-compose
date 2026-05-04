@@ -20,6 +20,7 @@ func (SettingsMapper) Map(settings models.Settings) api.Settings {
 		Username:          &settings.Username,
 		NotificationURL:   &notificationURL,
 		NotificationTypes: mapEventTypes(settings.NotificationTypes),
+		Oidc:              mapOidcConfig(settings.Oidc),
 	}
 }
 
@@ -32,6 +33,15 @@ func mapEventTypes(types []models.EventType) []api.EventType {
 		eventTypes[i] = api.EventType(et)
 	}
 	return eventTypes
+}
+
+func mapOidcConfig(config models.OidcConfig) *api.OidcSettings {
+	res := api.OidcSettings{
+		IssuerURL:    config.IssuerURL,
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+	}
+	return &res
 }
 
 // UnMap transforms back from api.Settings to models.Settings
@@ -55,6 +65,9 @@ func (SettingsMapper) UnMap(settings api.Settings) models.Settings {
 	if settings.NotificationURL != nil {
 		res.NotificationURL = *settings.NotificationURL
 	}
+	if settings.Oidc != nil {
+		res.Oidc = unmapOidcConfig(*settings.Oidc)
+	}
 	return res
 }
 
@@ -67,4 +80,12 @@ func unmapEventTypes(types []api.EventType) []models.EventType {
 		eventTypes[i] = models.EventType(et)
 	}
 	return eventTypes
+}
+
+func unmapOidcConfig(config api.OidcSettings) models.OidcConfig {
+	return models.OidcConfig{
+		IssuerURL:    config.IssuerURL,
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+	}
 }

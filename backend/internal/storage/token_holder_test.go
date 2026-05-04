@@ -1,4 +1,4 @@
-package users
+package storage
 
 import (
 	"testing"
@@ -80,4 +80,57 @@ func TestTokenHolderConcurrency(t *testing.T) {
 	// Wait for both goroutines to finish
 	<-done
 	<-done
+}
+func TestTokenHolderInsertExpiredToken(t *testing.T) {
+	th := NewTokenHolder()
+
+	token := models.TokenValue("expired-token")
+	username := "test-user"
+	err := th.InsertToken(token, username, time.Now().Add(-1*time.Minute))
+	assert.ErrorIs(t, err, ErrTokenExpired)
+	assert.Empty(t, th.GetUsernameFromToken(token))
+}
+
+func TestTokenHolderInsertEmptyUsername(t *testing.T) {
+	th := NewTokenHolder()
+	token := models.TokenValue("empty-username-token")
+	err := th.InsertToken(token, "", time.Now().Add(1*time.Minute))
+	assert.NoError(t, err)
+	assert.Empty(t, th.GetUsernameFromToken(token))
+}
+
+func TestTokenHolderInsertEmptyTokenValue(t *testing.T) {
+	th := NewTokenHolder()
+
+	username := "test-user"
+	err := th.InsertToken("", username, time.Now().Add(1*time.Minute))
+	assert.NoError(t, err)
+	assert.Equal(t, username, th.GetUsernameFromToken(""))
+}
+
+func TestTokenHolderRemoveNonExistentToken(t *testing.T) {
+	th := NewTokenHolder()
+	th.RemoveToken(models.TokenValue("non-existent-token"))
+	assert.Empty(t, th.GetUsernameFromToken(models.TokenValue("non-existent-token")))
+}
+
+func TestTokenHolderRemoveAllUserTokens(t *testing.T) {
+	th := NewTokenHolder()
+	token1 := models.TokenValue("user-token1")
+	token2 := models.TokenValue("user-token2")
+	username := "multi-token-user"
+	th.InsertToken(token1, username, time.Now().Add(1*time.Minute))
+	th.InsertToken(token2, username, time.Now().Add(1*time.Minute))
+	th.RemoveAllUserTokens(username)
+	assert.Empty(t, th.GetUsernameFromToken(token1))
+	assert.Empty(t, th.GetUsernameFromToken(token2))
+}
+
+func TestTokenHolderConcurrentExpiration(t *testing.T) {
+	th := NewTokenHolder()
+	token := models.TokenValue("concurrent-expiry-token")
+	username := "test-user"
+	th.InsertToken(token, username, time.Now().Add(10*time.Millisecond))
+	time.Sleep(20 * time.Millisecond)
+	assert.Empty(t, th.GetUsernameFromToken(token))
 }

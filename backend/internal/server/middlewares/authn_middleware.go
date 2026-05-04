@@ -4,7 +4,6 @@ package middlewares
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -19,9 +18,7 @@ import (
 type contextKey string
 
 const (
-	_tokenKey                   = "token"
-	_refreshTokenKey            = "refreshToken"
-	_usernameKey     contextKey = "username"
+	_usernameKey contextKey = "username"
 )
 
 // ContextWithUsername adds user information to the context.
@@ -80,14 +77,6 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService, secureTok
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func getUsernameFromCookies(r *http.Request, authService users.AuthService) (string, error) {
-	token := getTokenFromCookies(r)
-	if token.Value == "" {
-		return "", errors.New("no auth available")
-	}
-	return authService.GetUsernameByToken(token)
 }
 
 var _whitelisted = map[string][]string{
@@ -248,47 +237,5 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.Aut
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
-	})
-}
-
-func getTokenFromCookies(r *http.Request) models.Token {
-	cookie, err := r.Cookie(_tokenKey)
-	if err != nil {
-		cookie = &http.Cookie{
-			Value: "",
-		}
-	}
-	refreshCookie, err := r.Cookie(_refreshTokenKey)
-	if err != nil {
-		refreshCookie = &http.Cookie{
-			Value: "",
-		}
-	}
-	return models.Token{
-		Value:          models.TokenValue(cookie.Value),
-		Expires:        cookie.Expires,
-		RefreshToken:   models.TokenValue(refreshCookie.Value),
-		RefreshExpires: refreshCookie.Expires,
-	}
-}
-
-func setTokenInCookies(w http.ResponseWriter, token models.Token, secureToken bool) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     _tokenKey,
-		Value:    string(token.Value),
-		Expires:  token.Expires,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   secureToken,
-		Path:     "/api",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     _refreshTokenKey,
-		Value:    string(token.RefreshToken),
-		Expires:  token.RefreshExpires,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-		Secure:   secureToken,
-		Path:     "/api",
 	})
 }

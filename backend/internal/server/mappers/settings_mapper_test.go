@@ -18,6 +18,16 @@ func TestSettingsMapper_Map(t *testing.T) {
 	obfuscatedToken := models.Obfuscate(token)
 	obfuscatedURL := models.Obfuscate(notificationURL)
 	empty := ""
+	oidc := models.OidcConfig{
+		IssuerURL:    "issuer",
+		ClientID:     "client",
+		ClientSecret: "secret",
+	}
+	oidcAPI := api.OidcSettings{
+		IssuerURL:    "issuer",
+		ClientID:     "client",
+		ClientSecret: "secret",
+	}
 	cases := []struct {
 		name string
 		in   models.Settings
@@ -33,6 +43,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Token:             token,
 				NotificationURL:   notificationURL,
 				NotificationTypes: []models.EventType{},
+				Oidc:              oidc,
 			},
 			want: api.Settings{
 				Repo:              "https://github.com/example/repo",
@@ -42,6 +53,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Username:          &username,
 				NotificationURL:   &obfuscatedURL,
 				NotificationTypes: []api.EventType{},
+				Oidc:              &oidcAPI,
 			},
 		},
 		{
@@ -49,6 +61,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 			in: models.Settings{
 				Repo:              "",
 				NotificationTypes: []models.EventType{},
+				Oidc:              models.OidcConfig{},
 			},
 			want: api.Settings{
 				Repo:              "",
@@ -58,6 +71,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Username:          &empty,
 				NotificationURL:   &empty,
 				NotificationTypes: []api.EventType{},
+				Oidc:              &api.OidcSettings{},
 			},
 		},
 	}
@@ -79,6 +93,16 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 	token := "123456789123456789"
 	notificationURL := "gotify://123456789"
 
+	oidc := api.OidcSettings{
+		IssuerURL:    "issuer",
+		ClientID:     "client",
+		ClientSecret: "secret",
+	}
+	oidcModel := models.OidcConfig{
+		IssuerURL:    "issuer",
+		ClientID:     "client",
+		ClientSecret: "secret",
+	}
 	cases := []struct {
 		name string
 		in   api.Settings
@@ -94,6 +118,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Token:             &token,
 				NotificationURL:   &notificationURL,
 				NotificationTypes: []api.EventType{},
+				Oidc:              &oidc,
 			},
 			want: models.Settings{
 				Repo:              repo,
@@ -103,6 +128,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Token:             token,
 				NotificationURL:   notificationURL,
 				NotificationTypes: []models.EventType{},
+				Oidc:              oidcModel,
 			},
 		},
 		{
@@ -115,6 +141,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Token:             nil,
 				NotificationURL:   nil,
 				NotificationTypes: []api.EventType{},
+				Oidc:              &api.OidcSettings{},
 			},
 			want: models.Settings{
 				Repo:              "",
@@ -124,6 +151,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Token:             "",
 				NotificationURL:   "",
 				NotificationTypes: []models.EventType{},
+				Oidc:              models.OidcConfig{},
 			},
 		},
 	}

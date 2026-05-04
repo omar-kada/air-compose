@@ -38,8 +38,9 @@ func (m *Mocker) Copy(src, dest string) error {
 	return args.Error(0)
 }
 
-func newDeployerWithMocks(mocker *Mocker) *deployer {
-	db := testutil.NewMemoryStorage()
+func newDeployerWithMocks(t *testing.T, mocker *Mocker) *deployer {
+	t.Helper()
+	db := testutil.NewMemoryStorage(t)
 	depStore, _ := storage.NewDeploymentStorage(db)
 	dep, _ := depStore.InitDeployment("test commit", "Test", "", []models.FileDiff{})
 	ctx := events.GetDeploymentContext(context.Background(), dep)
@@ -68,7 +69,7 @@ var mockConfig = models.Config{
 
 func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(mocker)
+	deployer := newDeployerWithMocks(t, mocker)
 
 	baseDir := t.TempDir()
 	serviceDir := filepath.Join(baseDir, "svc1")
@@ -113,7 +114,7 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	err = os.Mkdir(filepath.Join(baseDir, "svc2"), 0o750)
 	assert.NoError(t, err)
 
-	deployer := newDeployerWithMocks(mocker)
+	deployer := newDeployerWithMocks(t, mocker)
 	mocker.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
 	).Return([]byte{}, nil)
@@ -160,7 +161,7 @@ func TestDeployServices_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(mocker)
+			deployer := newDeployerWithMocks(t, mocker)
 			mocker.On("Copy", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("Exec", "docker", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
@@ -176,7 +177,7 @@ func TestDeployServices_Errors(t *testing.T) {
 
 func TestRemoveAndDeployStacks_Success(t *testing.T) {
 	mocker := &Mocker{}
-	deployer := newDeployerWithMocks(mocker)
+	deployer := newDeployerWithMocks(t, mocker)
 
 	mock.InOrder(
 		mocker.On(
@@ -228,7 +229,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mocker := &Mocker{}
-			deployer := newDeployerWithMocks(mocker)
+			deployer := newDeployerWithMocks(t, mocker)
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.On(
