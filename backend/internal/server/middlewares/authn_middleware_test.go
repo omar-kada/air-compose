@@ -20,8 +20,15 @@ var userCreds = models.Credentials{
 }
 
 func newUsersService(t *testing.T) users.Service {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+	userStore, err := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
+	SessionStore, err := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
+	assert.NoError(t, err)
+
+	tokenHolder := storage.NewTokenHolder()
+	store, err := storage.NewAuthStorage(userStore, SessionStore, tokenHolder)
+	assert.NoError(t, err)
+
 	return users.NewService(store)
 }
 

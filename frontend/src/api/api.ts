@@ -177,6 +177,12 @@ export interface GitCredentials {
   token?: string;
 }
 
+export interface OidcSettings {
+  issuerURL: string;
+  clientID: string;
+  clientSecret: string;
+}
+
 export interface PageInfo {
   hasNextPage: boolean;
   endCursor: string;
@@ -190,6 +196,7 @@ export interface Settings {
   token?: string;
   notificationURL?: string;
   notificationTypes: EventType[];
+  oidc?: OidcSettings;
 }
 
 export interface StackStatus {
@@ -239,6 +246,11 @@ offset?: string;
 export type NotificationsAPIList200 = {
   items: Event[];
   pageInfo: PageInfo;
+};
+
+export type OIDCAPIOidcCallbackParams = {
+code: string;
+state: string;
 };
 
 export type UserAPIChangePasswordBody = {
@@ -1175,6 +1187,178 @@ export function useNotificationsAPIList<TData = Awaited<ReturnType<typeof notifi
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getNotificationsAPIListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+export const oIDCAPIOidcCallback = (
+    params: OIDCAPIOidcCallbackParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.default.get(
+      `/api/oidc/callback`,{
+    ...options,
+        params: {...params, ...options?.params},}
+    );
+  }
+
+
+
+
+export const getOIDCAPIOidcCallbackQueryKey = (params?: OIDCAPIOidcCallbackParams,) => {
+    return [
+    `/api/oidc/callback`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getOIDCAPIOidcCallbackQueryOptions = <TData = Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError = AxiosError<Error>>(params: OIDCAPIOidcCallbackParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOIDCAPIOidcCallbackQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>> = ({ signal }) => oIDCAPIOidcCallback(params, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OIDCAPIOidcCallbackQueryResult = NonNullable<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>>
+export type OIDCAPIOidcCallbackQueryError = AxiosError<Error>
+
+
+export function useOIDCAPIOidcCallback<TData = Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError = AxiosError<Error>>(
+ params: OIDCAPIOidcCallbackParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof oIDCAPIOidcCallback>>,
+          TError,
+          Awaited<ReturnType<typeof oIDCAPIOidcCallback>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOIDCAPIOidcCallback<TData = Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError = AxiosError<Error>>(
+ params: OIDCAPIOidcCallbackParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof oIDCAPIOidcCallback>>,
+          TError,
+          Awaited<ReturnType<typeof oIDCAPIOidcCallback>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOIDCAPIOidcCallback<TData = Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError = AxiosError<Error>>(
+ params: OIDCAPIOidcCallbackParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useOIDCAPIOidcCallback<TData = Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError = AxiosError<Error>>(
+ params: OIDCAPIOidcCallbackParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcCallback>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOIDCAPIOidcCallbackQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+
+export const oIDCAPIOidcLogin = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.default.get(
+      `/api/oidc/login`,options
+    );
+  }
+
+
+
+
+export const getOIDCAPIOidcLoginQueryKey = () => {
+    return [
+    `/api/oidc/login`
+    ] as const;
+    }
+
+    
+export const getOIDCAPIOidcLoginQueryOptions = <TData = Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError = AxiosError<Error>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOIDCAPIOidcLoginQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>> = ({ signal }) => oIDCAPIOidcLogin({ signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OIDCAPIOidcLoginQueryResult = NonNullable<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>>
+export type OIDCAPIOidcLoginQueryError = AxiosError<Error>
+
+
+export function useOIDCAPIOidcLogin<TData = Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError = AxiosError<Error>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof oIDCAPIOidcLogin>>,
+          TError,
+          Awaited<ReturnType<typeof oIDCAPIOidcLogin>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOIDCAPIOidcLogin<TData = Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof oIDCAPIOidcLogin>>,
+          TError,
+          Awaited<ReturnType<typeof oIDCAPIOidcLogin>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOIDCAPIOidcLogin<TData = Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useOIDCAPIOidcLogin<TData = Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError = AxiosError<Error>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof oIDCAPIOidcLogin>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOIDCAPIOidcLoginQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

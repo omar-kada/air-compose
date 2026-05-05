@@ -82,28 +82,31 @@ func (run *runCommand) doRun() error {
 	if err != nil {
 		return fmt.Errorf("couldn't init UserStorage %w", err)
 	}
+	sessionStore, err := storage.NewSessionStorage(db)
+	if err != nil {
+		return fmt.Errorf("couldn't init SessionStorage %w", err)
+	}
+	authStore, err := storage.NewAuthStorage(userStore, sessionStore, storage.NewTokenHolder())
+	if err != nil {
+		return fmt.Errorf("couldn't init AuthStorage %w", err)
+	}
 
 	configStore := storage.NewConfigStore(params.ConfigFile)
+	config, err := configStore.Get()
+	if err != nil {
+		slog.Warn("config not found", "err", err)
+	}
 	dispatcher := events.NewDefaultDispatcher([]events.EventHandler{
 		events.NewLoggingEventHandler(),
 		events.NewNotificationEventHandler(configStore, eventStore),
 	})
 	scheduler := process.NewConfigScheduler(configStore)
-	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
-		oldYamlCfg, _ := configStore.ToYaml(oldCfg)
-		newYamlCfg, _ := configStore.ToYaml(cfg)
-		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated,
-			files.DiffText(string(oldYamlCfg), string(newYamlCfg)))
-		if oldCfg.Settings.Cron != cfg.Settings.Cron {
-			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Cron, "newCron", cfg.Settings.Cron)
-			scheduler.ReSchedule()
-		}
-	})
+
 	inspector, err := docker.NewInspector()
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)
 	}
-	service := process.NewService(
+	processService := process.NewService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
@@ -113,10 +116,11 @@ func (run *runCommand) doRun() error {
 		configStore,
 		dispatcher,
 		scheduler)
-	userService := users.NewService(userStore)
+	oidcService := users.NewOidcService(config.Settings.Oidc, authStore)
+	userService := users.NewService(authStore)
 	go func() {
 		_, err = scheduler.Schedule(func() {
-			_, err := service.SyncDeployment()
+			_, err := processService.SyncDeployment()
 			if err != nil {
 				slog.Error(err.Error())
 			}
@@ -125,6 +129,18 @@ func (run *runCommand) doRun() error {
 			slog.Warn(err.Error())
 		}
 	}()
-	server := server.NewServer(configStore, service, userService)
+
+	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
+		oldYamlCfg, _ := configStore.ToYaml(oldCfg)
+		newYamlCfg, _ := configStore.ToYaml(cfg)
+		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated,
+			files.DiffText(string(oldYamlCfg), string(newYamlCfg)))
+		if oldCfg.Settings.Cron != cfg.Settings.Cron {
+			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Cron, "newCron", cfg.Settings.Cron)
+			scheduler.ReSchedule()
+		}
+		oidcService.OnConfigChanged(cfg.Settings.Oidc)
+	})
+	server := server.NewServer(configStore, processService, userService, oidcService)
 	return server.Serve(params.ServerParams)
 }

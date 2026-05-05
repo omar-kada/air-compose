@@ -18,12 +18,15 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	// ErrInvalidPassword indicates that the provided password is incorrect
 	ErrInvalidPassword = errors.New("invalid password")
+	// ErrInvalidLoginMethod indicates that a user it trying to login with an invalid method
+	ErrInvalidLoginMethod = errors.New("invalid login method")
+	// ErrEmptyToken indicates that the provided token is empty
+	ErrEmptyToken = errors.New("empty token")
 	// ErrInvalidRefreshToken indicates that the provided refreshtoken is incorrect
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+	// ErrUserDataCorrupted indicates that user or session information are not consistent
+	ErrUserDataCorrupted = errors.New("user data corrupted")
 )
-
-// use in memory storage for token , and user a timer to remove it from the map once expired,
-//
 
 // Service abstracts authorization operations
 type Service interface {
@@ -49,21 +52,19 @@ type AccountService interface {
 }
 
 type service struct {
-	userStore   storage.UserStorage
-	tokenHolder TokenHolder
+	authStore storage.AuthStore
 }
 
 // NewService creates a new userService
-func NewService(userStore storage.UserStorage) Service {
+func NewService(authStore storage.AuthStore) Service {
 	return &service{
-		userStore:   userStore,
-		tokenHolder: *NewTokenHolder(),
+		authStore: authStore,
 	}
 }
 
 // Login authenticates a user and returns their authentication token.
 func (a *service) Login(credentials models.Credentials) (models.Token, error) {
-	user, err := a.userStore.UserByUsername(credentials.Username)
+	user, err := a.authStore.UserByUsername(credentials.Username)
 	if err != nil {
 		return models.Token{}, fmt.Errorf("error finding user: %w", err)
 	}
@@ -76,12 +77,17 @@ func (a *service) Login(credentials models.Credentials) (models.Token, error) {
 		return models.Token{}, ErrInvalidPassword
 	}
 
-	return a.insertNewToken(user.Username)
+	if user.Type != models.UserTypeLocal {
+		return models.Token{}, ErrInvalidLoginMethod
+	}
+
+	return a.authStore.NewAuth(user.Username, generateToken())
+
 }
 
 // IsRegistered checks if any users are registered in the system.
 func (a *service) IsRegistered() (bool, error) {
-	hasUsers, err := a.userStore.HasUsers()
+	hasUsers, err := a.authStore.HasUsers()
 	if err != nil {
 		return false, fmt.Errorf("error checking if users exist: %w", err)
 	}
@@ -90,7 +96,7 @@ func (a *service) IsRegistered() (bool, error) {
 
 // Register creates a new user account with the provided credentials
 func (a *service) Register(credentials models.Credentials) (models.Token, error) {
-	hasUsers, err := a.userStore.HasUsers()
+	hasUsers, err := a.authStore.HasUsers()
 	if err != nil {
 		return models.Token{}, err
 	}
@@ -105,71 +111,49 @@ func (a *service) Register(credentials models.Credentials) (models.Token, error)
 	user := models.User{
 		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
+		Type:           models.UserTypeLocal,
 	}
-	_, err = a.userStore.UpsertUser(user)
+	_, err = a.authStore.UpsertUser(user)
 	if err != nil {
 		return models.Token{}, fmt.Errorf("error creating user: %w", err)
 	}
 
-	return a.insertNewToken(user.Username)
-}
-
-func (a *service) insertNewToken(username string) (models.Token, error) {
-	token, err := generateToken()
-	if err != nil {
-		return models.Token{}, err
-	}
-
-	_, err = a.userStore.NewSession(token, username)
-	if err != nil {
-		return models.Token{}, err
-	}
-	a.tokenHolder.InsertToken(token.Value, username, token.Expires)
-	return token, err
+	return a.authStore.NewAuth(user.Username, generateToken())
 }
 
 func (a *service) RefreshToken(token models.Token) (models.Token, error) {
-	session, err := a.userStore.SessionByRefreshToken(token.RefreshToken)
+	session, err := a.authStore.SessionByRefreshToken(token.RefreshToken)
 	if err != nil {
 		return models.Token{}, err
 	}
 	valid := !session.Revoked && session.RefreshExpires.After(time.Now())
 	if !valid {
 		slog.Warn("invalid session", "session", session)
-		err = a.userStore.RevokeAllUserSessions(session.Username)
+		err = a.authStore.RevokeAllTokens(session.Username)
 		if err != nil {
 			return models.Token{}, err
 		}
 		return models.Token{}, ErrInvalidRefreshToken
 	}
 
-	err = a.userStore.RevokeRefreshToken(token.RefreshToken)
+	err = a.authStore.RevokeToken(token)
 	if err != nil {
 		return models.Token{}, err
 	}
-
-	a.tokenHolder.RemoveToken(token.Value)
-	return a.insertNewToken(session.Username)
+	return a.authStore.NewAuth(session.Username, generateToken())
 }
 
 // Logout invalidates the user's authentication token.
 func (a *service) Logout(token models.Token) error {
-	if a.tokenHolder.GetUsernameFromToken(token.Value) == "" {
+	if a.authStore.GetUsernameFromToken(token.Value) == "" {
 		return ErrUserNotFound
 	}
-
-	err := a.userStore.RevokeRefreshToken(token.RefreshToken)
-	if err != nil {
-		return err
-	}
-	a.tokenHolder.RemoveToken(token.Value)
-
-	return nil
+	return a.authStore.RevokeToken(token)
 }
 
 // GetUsernameByToken retrieves a username by their authentication token.
 func (a *service) GetUsernameByToken(token models.Token) (string, error) {
-	username := a.tokenHolder.GetUsernameFromToken(token.Value)
+	username := a.authStore.GetUsernameFromToken(token.Value)
 	if username == "" {
 		return "", ErrUserNotFound
 	}
@@ -178,7 +162,7 @@ func (a *service) GetUsernameByToken(token models.Token) (string, error) {
 
 // GetUser retrieves a user by their username.
 func (a *service) GetUser(username string) (models.User, error) {
-	user, err := a.userStore.UserByUsername(username)
+	user, err := a.authStore.UserByUsername(username)
 	if err == nil && user.Username == "" {
 		return user, ErrUserNotFound
 	}
@@ -187,12 +171,12 @@ func (a *service) GetUser(username string) (models.User, error) {
 
 // DeleteUser removes a user from the system by their username.
 func (a *service) DeleteUser(username string) (bool, error) {
-	return a.userStore.DeleteUserByUserName(username)
+	return a.authStore.DeleteUserByUserName(username)
 }
 
 // ChangePassword updates a user's password after verifying the old password.
 func (a *service) ChangePassword(username string, oldPass string, newPass string) (bool, error) {
-	user, err := a.userStore.UserByUsername(username)
+	user, err := a.authStore.UserByUsername(username)
 	if err != nil {
 		return false, fmt.Errorf("error finding user: %w", err)
 	}
@@ -211,7 +195,7 @@ func (a *service) ChangePassword(username string, oldPass string, newPass string
 	}
 
 	user.HashedPassword = hashedPassword
-	if _, err := a.userStore.UpsertUser(user); err != nil {
+	if _, err := a.authStore.UpsertUser(user); err != nil {
 		return false, fmt.Errorf("error updating user: %w", err)
 	}
 

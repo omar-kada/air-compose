@@ -21,6 +21,14 @@ type Settings struct {
 	Cron              string      `mapstructure:"cron"`
 	NotificationURL   string      `mapstructure:"notificationURL"`
 	NotificationTypes []EventType `mapstructure:"notificationTypes"`
+	Oidc              OidcConfig  `mapstructure:"oidc"`
+}
+
+// OidcConfig represents the configuration for OpenID Connect authentication.
+type OidcConfig struct {
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
 }
 
 // Environment represents global environment variables.
@@ -78,6 +86,11 @@ func (settings Settings) GetObfuscatedToken() string {
 // GetObfuscatedNotificationURL returns an obfuscated notification URL
 func (settings Settings) GetObfuscatedNotificationURL() string {
 	return Obfuscate(settings.NotificationURL)
+}
+
+// GetObfuscatedClientSecret returns an obfuscated client secret
+func (config OidcConfig) GetObfuscatedClientSecret() string {
+	return Obfuscate(config.ClientSecret)
 }
 
 // Obfuscate replaces most of the input with asterisks to hide sensitive information

@@ -46,6 +46,9 @@ func (s *configStore) Update(cfg models.Config) (err error) {
 	if models.IsObfuscated(cfg.Settings.NotificationURL) {
 		cfg.Settings.NotificationURL = oldCfg.Settings.NotificationURL // keep old url when obfuscated
 	}
+	if models.IsObfuscated(cfg.Settings.Oidc.ClientSecret) {
+		cfg.Settings.Oidc.ClientSecret = oldCfg.Settings.Oidc.ClientSecret // keep old client secret when obfuscated
+	}
 
 	if s.OnConfigUpdate != nil {
 		defer func() {

@@ -22,6 +22,7 @@ model Settings {
   token?: string;
   notificationURL?: string;
   notificationTypes: Array<EventType>;
+  oidc?: OidcSettings;
 }
 
 model GitCredentials {
@@ -29,4 +30,10 @@ model GitCredentials {
   branch?: string;
   username?: string;
   token?: string;
+}
+
+model OidcSettings {
+  issuerURL: string;
+  clientID: string;
+  clientSecret: string;
 }

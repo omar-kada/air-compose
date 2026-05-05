@@ -24,10 +24,6 @@ func (m *Mocker) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func initMemoryStorage(_ RunParams) (*gorm.DB, error) {
-	return testutil.NewMemoryStorage(), nil
-}
-
 func initConfigRepo(t *testing.T) string {
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	homepageComposeFile, err := os.ReadFile("test_data/homepage/compose.yaml")
@@ -45,7 +41,9 @@ func initConfigRepo(t *testing.T) string {
 func TestRunCommand_CmdParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker, initMemoryStorage)
+	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
+		return testutil.NewMemoryStorage(t), nil
+	})
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
@@ -99,7 +97,9 @@ func TestRunCommand_CmdParams(t *testing.T) {
 func TestRunCommand_EnvParams(t *testing.T) {
 	baseDir := t.TempDir()
 	mocker := &Mocker{}
-	cmd := NewRunCommand(mocker, initMemoryStorage)
+	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
+		return testutil.NewMemoryStorage(t), nil
+	})
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")

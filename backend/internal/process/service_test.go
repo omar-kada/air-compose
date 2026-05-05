@@ -123,7 +123,7 @@ var (
 )
 
 func initStores(t *testing.T) (storage.DeploymentStorage, storage.EventStorage) {
-	db := testutil.NewMemoryStorage()
+	db := testutil.NewMemoryStorage(t)
 	depStore, err := storage.NewDeploymentStorage(db)
 	if err != nil {
 		t.Fatalf("error creating deployment storage : %v", err)

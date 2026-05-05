@@ -11,9 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLogin_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
+func newMemoryAuthStore(t *testing.T) storage.AuthStore {
+	userStore, err := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
+	SessionStore, err := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
+	assert.NoError(t, err)
+
+	tokenHolder := storage.NewTokenHolder()
+	store, err := storage.NewAuthStorage(userStore, SessionStore, tokenHolder)
+	assert.NoError(t, err)
+	return store
+}
+
+func TestLogin_Success(t *testing.T) {
+
+	store := newMemoryAuthStore(t)
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -25,6 +37,7 @@ func TestLogin_Success(t *testing.T) {
 	mockUser := models.User{
 		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
+		Type:           models.UserTypeLocal,
 	}
 
 	store.UpsertUser(mockUser)
@@ -36,8 +49,8 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -53,8 +66,8 @@ func TestLogin_UserNotFound(t *testing.T) {
 }
 
 func TestLogin_InvalidPassword(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -78,8 +91,8 @@ func TestLogin_InvalidPassword(t *testing.T) {
 }
 
 func TestIsRegistered_HasUsers(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	mockUser := models.User{
@@ -95,8 +108,8 @@ func TestIsRegistered_HasUsers(t *testing.T) {
 }
 
 func TestIsRegistered_NoUsers(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	isRegistered, err := service.IsRegistered()
@@ -106,8 +119,8 @@ func TestIsRegistered_NoUsers(t *testing.T) {
 }
 
 func TestRegister_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -122,8 +135,8 @@ func TestRegister_Success(t *testing.T) {
 }
 
 func TestRegister_AlreadyRegistered(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -145,14 +158,15 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 }
 
 func TestLogout_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	pass, _ := hashPassword("password")
 	mockUser := models.User{
 		Username:       "testuser",
 		HashedPassword: pass,
+		Type:           models.UserTypeLocal,
 	}
 
 	store.UpsertUser(mockUser)
@@ -171,28 +185,29 @@ func TestLogout_Success(t *testing.T) {
 }
 
 func TestLogout_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
-	err = service.Logout(models.Token{Value: "invalidtoken", RefreshToken: "invalidRefreshToken"})
+	err := service.Logout(models.Token{Value: "invalidtoken", RefreshToken: "invalidRefreshToken"})
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, ErrUserNotFound)
 }
 
 func TestGetUserByToken_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	pass, _ := hashPassword("password")
 	mockUser := models.User{
 		Username:       "testuser",
 		HashedPassword: pass,
+		Type:           models.UserTypeLocal,
 	}
 
-	_, err = store.UpsertUser(mockUser)
+	_, err := store.UpsertUser(mockUser)
 	assert.NoError(t, err)
 
 	token, err := service.Login(models.Credentials{
@@ -207,8 +222,8 @@ func TestGetUserByToken_Success(t *testing.T) {
 }
 
 func TestGetUserByToken_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	user, err := service.GetUsernameByToken(models.Token{Value: "invalidtoken"})
@@ -218,8 +233,8 @@ func TestGetUserByToken_UserNotFound(t *testing.T) {
 }
 
 func TestGetUser_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "testuser"
@@ -236,8 +251,8 @@ func TestGetUser_Success(t *testing.T) {
 }
 
 func TestGetUser_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -249,8 +264,8 @@ func TestGetUser_UserNotFound(t *testing.T) {
 }
 
 func TestDeleteUser_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "testuser"
@@ -267,8 +282,8 @@ func TestDeleteUser_Success(t *testing.T) {
 }
 
 func TestDeleteUser_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -280,8 +295,8 @@ func TestDeleteUser_UserNotFound(t *testing.T) {
 }
 
 func TestChangePassword_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "testuser"
@@ -305,8 +320,8 @@ func TestChangePassword_Success(t *testing.T) {
 }
 
 func TestChangePassword_UserNotFound(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "nonexistentuser"
@@ -321,8 +336,8 @@ func TestChangePassword_UserNotFound(t *testing.T) {
 }
 
 func TestChangePassword_InvalidOldPassword(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	username := "testuser"
@@ -345,8 +360,8 @@ func TestChangePassword_InvalidOldPassword(t *testing.T) {
 }
 
 func TestRefreshToken_Success(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -358,6 +373,7 @@ func TestRefreshToken_Success(t *testing.T) {
 	mockUser := models.User{
 		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
+		Type:           models.UserTypeLocal,
 	}
 	store.UpsertUser(mockUser)
 
@@ -386,8 +402,8 @@ func TestRefreshToken_Success(t *testing.T) {
 }
 
 func TestRefreshToken_InvalidToken(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	// Create expired token
@@ -405,8 +421,8 @@ func TestRefreshToken_InvalidToken(t *testing.T) {
 }
 
 func TestRefreshToken_RevokedToken(t *testing.T) {
-	store, err := storage.NewUsersStorage(testutil.NewMemoryStorage())
-	assert.NoError(t, err)
+	store := newMemoryAuthStore(t)
+
 	service := NewService(store)
 
 	credentials := models.Credentials{
@@ -418,6 +434,7 @@ func TestRefreshToken_RevokedToken(t *testing.T) {
 	mockUser := models.User{
 		Username:       credentials.Username,
 		HashedPassword: hashedPassword,
+		Type:           models.UserTypeLocal,
 	}
 	store.UpsertUser(mockUser)
 

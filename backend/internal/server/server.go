@@ -29,16 +29,18 @@ type HTTPServer struct {
 	configStore      storage.ConfigStore
 	processSvc       process.Service
 	userSvc          users.Service
+	oidcSvc          users.OidcService
 	websocketHandler *WebsocketHandler
 	server           *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(configStore storage.ConfigStore, service process.Service, userService users.Service) Server {
+func NewServer(configStore storage.ConfigStore, service process.Service, userService users.Service, oidcService users.OidcService) Server {
 	return &HTTPServer{
 		configStore:      configStore,
 		processSvc:       service,
 		userSvc:          userService,
+		oidcSvc:          oidcService,
 		websocketHandler: newWebsocketHandler(),
 	}
 }
@@ -60,6 +62,7 @@ func (s *HTTPServer) Serve(params models.ServerParams) error {
 	h := api.HandlerFromMux(strict, mux)
 	h = middlewares.AuthorizationMiddleware(h)
 	h = middlewares.AuthnMiddleware(h, s.userSvc, params.IsServerSecure())
+	h = middlewares.OidcMiddleware(h, s.oidcSvc, params.IsServerSecure())
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
