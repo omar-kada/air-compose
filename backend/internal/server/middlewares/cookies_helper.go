@@ -15,7 +15,6 @@ const (
 	_refreshTokenKey = "refreshToken"
 	_state           = "state"
 	_nonce           = "nonce"
-	_originalURL     = "originalURL"
 )
 
 func getUsernameFromCookies(r *http.Request, authService users.AuthService) (string, error) {

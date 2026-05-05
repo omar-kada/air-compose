@@ -180,6 +180,9 @@ func TestUpdateConfig(t *testing.T) {
 			Settings: models.Settings{
 				Token:           "my-secret-token-12345",
 				NotificationURL: "https://example.com/webhook?token=12345",
+				Oidc: models.OidcConfig{
+					ClientSecret: "my-secret-client-secret-12345",
+				},
 			},
 			Environment: models.Environment{},
 			Services:    map[string]models.ServiceConfig{},
@@ -197,11 +200,16 @@ func TestUpdateConfig(t *testing.T) {
 
 		storedURL := storedCfg.Settings.NotificationURL
 		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
+		clientSecret := storedCfg.Settings.Oidc.ClientSecret
+		assert.Equal(t, "my-secret-client-secret-12345", clientSecret)
 
 		input2 := models.Config{
 			Settings: models.Settings{
 				Token:           "my-secret-********************",
 				NotificationURL: "https://ex********************",
+				Oidc: models.OidcConfig{
+					ClientSecret: "my-secret-********************",
+				},
 			},
 			Environment: models.Environment{},
 			Services:    map[string]models.ServiceConfig{},
@@ -219,6 +227,9 @@ func TestUpdateConfig(t *testing.T) {
 
 		storedURL = storedCfg.Settings.NotificationURL
 		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
+
+		clientSecret = storedCfg.Settings.Oidc.ClientSecret
+		assert.Equal(t, "my-secret-client-secret-12345", clientSecret)
 	})
 }
 

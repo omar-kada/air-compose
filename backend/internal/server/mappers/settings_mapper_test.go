@@ -26,7 +26,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 	oidcAPI := api.OidcSettings{
 		IssuerURL:    "issuer",
 		ClientID:     "client",
-		ClientSecret: "secret",
+		ClientSecret: "******************************",
 	}
 	cases := []struct {
 		name string

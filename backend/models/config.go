@@ -88,6 +88,11 @@ func (settings Settings) GetObfuscatedNotificationURL() string {
 	return Obfuscate(settings.NotificationURL)
 }
 
+// GetObfuscatedClientSecret returns an obfuscated client secret
+func (config OidcConfig) GetObfuscatedClientSecret() string {
+	return Obfuscate(config.ClientSecret)
+}
+
 // Obfuscate replaces most of the input with asterisks to hide sensitive information
 func Obfuscate(token string) string {
 	if token == "" {

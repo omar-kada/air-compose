@@ -39,7 +39,7 @@ func mapOidcConfig(config models.OidcConfig) *api.OidcSettings {
 	res := api.OidcSettings{
 		IssuerURL:    config.IssuerURL,
 		ClientID:     config.ClientID,
-		ClientSecret: config.ClientSecret,
+		ClientSecret: config.GetObfuscatedClientSecret(),
 	}
 	return &res
 }

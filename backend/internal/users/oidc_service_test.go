@@ -65,9 +65,8 @@ func TestOidcService_LoginOidc(t *testing.T) {
 	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
 		"email": testutil.Email,
 	})
-	nonce := ""
 
-	token, err := oidcService.LoginOidc(code, nonce)
+	token, err := oidcService.LoginOidc(code, testutil.Nonce)
 
 	// Assert
 	assert.NoError(t, err)
@@ -78,6 +77,43 @@ func TestOidcService_LoginOidc(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, testutil.Email, user.Username)
+
+}
+
+func TestOidcService_LoginOidc_NonceMismatch(t *testing.T) {
+	// Setup
+	mockServer := testutil.NewOidcTestServerWithToken(t)
+	defer mockServer.Close()
+
+	userStore, _ := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
+	sessionStore, _ := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
+	tokenHolder := storage.NewTokenHolder()
+	authStore, _ := storage.NewAuthStorage(userStore, sessionStore, tokenHolder)
+
+	oidcConfig := models.OidcConfig{
+		IssuerURL: mockServer.IssuerURL,
+		ClientID:  testutil.ClientID,
+	}
+
+	oidcService := NewOidcService(oidcConfig, authStore)
+
+	// Test
+	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
+		"email": testutil.Email,
+	})
+
+	// Use a different nonce than what was expected
+	token, err := oidcService.LoginOidc(code, "wrong-nonce")
+
+	// Assert
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrNonceMismatch, err)
+	assert.Empty(t, token.Value)
+	assert.Empty(t, token.RefreshToken)
+	// Verify no user was created
+	user, _ := userStore.UserByUsername(testutil.Email)
+	assert.Empty(t, user.Username)
 }
 
 func TestOidcService_OnConfigChanged(t *testing.T) {

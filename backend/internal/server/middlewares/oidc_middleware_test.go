@@ -117,12 +117,17 @@ func TestOidcMiddleware_Callback(t *testing.T) {
 		Value: "teststate",
 	})
 
+	req.AddCookie(&http.Cookie{
+		Name:  _nonce,
+		Value: testutil.Nonce,
+	})
+
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusFound, rr.Code)
 	assert.Contains(t, rr.Header().Get("Location"), "http://")
 
-	// Check that state and nonce cookies are cleared (if implementation does this)
+	// Check that state and nonce cookies are cleared
 	cookies := rr.Result().Cookies()
 	for _, cookie := range cookies {
 		if cookie.Name == _state || cookie.Name == _nonce {
@@ -203,6 +208,10 @@ func TestOidcMiddleware_InsecureCookies(t *testing.T) {
 	req.AddCookie(&http.Cookie{
 		Name:  _state,
 		Value: "teststate",
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  _nonce,
+		Value: testutil.Nonce,
 	})
 
 	handler.ServeHTTP(rr, req)

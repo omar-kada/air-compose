@@ -22,6 +22,9 @@ const User = "test-user"
 // Email is the default email address used for testing OIDC flows.
 const Email = "test-user@example.com"
 
+// Nonce is the default nonce used for testing OIDC flows.
+const Nonce = "test-nonce"
+
 // NewOidcTestServerWithToken starts an OIDC test server with a /token endpoint for OAuth2 flows.
 // Returns a models.OidcConfig and a cleanup function to close the servers.
 func NewOidcTestServerWithToken(t *testing.T) *MockOIDCServer {
@@ -61,6 +64,7 @@ func NewOidcTestServerWithToken(t *testing.T) *MockOIDCServer {
 			"expires_in":   3600,
 			"id_token": mockServer.SignIDToken(ClientID, User, map[string]any{
 				"email": Email,
+				"nonce": Nonce,
 			}),
 			"refresh_token": "test-refresh-token",
 		}

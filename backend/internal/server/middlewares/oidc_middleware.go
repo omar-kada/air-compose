@@ -62,6 +62,7 @@ func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService use
 	}
 
 	setTokenInCookies(w, token, secureToken)
+	setStateInCookies(w, "", "", secureToken)
 	http.Redirect(w, r, getBaseURL(r), http.StatusFound)
 }
 
