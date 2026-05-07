@@ -6,4 +6,5 @@ export * from './human-time';
 export * from './info-empty';
 export * from './navbar-element';
 export * from './notification-multiselect';
+export * from './text-separator';
 export * from './theme-toggle';

@@ -1,12 +1,12 @@
 import { getAuthAPIRegisteredQueryOptions } from '@/api/api';
 import { useQuery } from '@tanstack/react-query';
 
-export function useRegistered() {
+export function useRegistration() {
   return useQuery(
     getAuthAPIRegisteredQueryOptions({
       query: {
         select: (data) => {
-          return data.data?.registered;
+          return data.data;
         },
       },
     }),

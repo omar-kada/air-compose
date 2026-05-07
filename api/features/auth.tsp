@@ -10,9 +10,7 @@ interface AuthAPI {
   @useAuth(NoAuth)
   @route("register")
   @get
-  registered(): {
-    registered: boolean;
-  } | Error;
+  registered(): RegistrationInfo | Error;
 
   @useAuth(NoAuth)
   @route("register")
@@ -49,4 +47,9 @@ interface OIDCAPI {
 model Credentials {
   username: string;
   @secret password: string;
+}
+
+model RegistrationInfo {
+  registered: boolean;
+  oidc: boolean;
 }

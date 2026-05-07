@@ -38,6 +38,7 @@ type Handler struct {
 	configMapper     mappers.ConfigMapper
 	settingsMapper   mappers.SettingsMapper
 	featuresMapper   mappers.FeaturesMapper
+	userMapper       mappers.UserMapper
 }
 
 // NewHandler creates a new Handler
@@ -56,6 +57,7 @@ func NewHandler(configStore storage.ConfigStore, processService process.Service,
 		statusMapper:     mappers.StatusMapper{},
 		stateMapper:      mappers.StateMapper{},
 		configMapper:     mappers.ConfigMapper{},
+		userMapper:       mappers.UserMapper{},
 	}
 }
 
@@ -247,33 +249,43 @@ func (*Handler) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObjec
 }
 
 // AuthAPIRegistered checks if a user is registered
-func (*Handler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
-	// should be done in the auth middleware so if we reach this return an error
-	return api.AuthAPIRegistereddefaultJSONResponse{}, errShouldntReach
+func (h *Handler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
+	hasUsers, err := h.accountService.IsRegistered()
+	if err != nil {
+		return api.AuthAPIRegistereddefaultJSONResponse{}, err
+	}
+	cfg, err := h.configStore.Get()
+	if err != nil {
+		return api.AuthAPIRegistereddefaultJSONResponse{}, err
+	}
+	return api.AuthAPIRegistered200JSONResponse{
+		Registered: hasUsers,
+		Oidc:       cfg.Settings.Oidc.IssuerURL != "",
+	}, nil
 }
 
-// OIDCAPIOidcCallback checks if a user is registered
+// OIDCAPIOidcCallback handles the OIDC callback after authentication
 func (*Handler) OIDCAPIOidcCallback(_ context.Context, _ api.OIDCAPIOidcCallbackRequestObject) (api.OIDCAPIOidcCallbackResponseObject, error) {
 	// should be done in the oidc middleware so if we reach this return an error
 	return api.OIDCAPIOidcCallbackdefaultJSONResponse{}, errShouldntReach
 }
 
-// OIDCAPIOidcLogin checks if a user is registered
+// OIDCAPIOidcLogin initiates the OIDC login flow
 func (*Handler) OIDCAPIOidcLogin(_ context.Context, _ api.OIDCAPIOidcLoginRequestObject) (api.OIDCAPIOidcLoginResponseObject, error) {
 	// should be done in the oidc middleware so if we reach this return an error
 	return api.OIDCAPIOidcLogindefaultJSONResponse{}, errShouldntReach
 }
 
 // UserAPIGet returns the authenticated user's information
-func (*Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
+func (h *Handler) UserAPIGet(ctx context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
 	username, exists := middlewares.UsernameFromContext(ctx)
-	if !exists {
+	if !exists || username == "" {
 		return nil, nil
 	}
 
-	return api.UserAPIGet200JSONResponse{
-		Username: username,
-	}, nil
+	user, err := h.accountService.GetUser(username)
+
+	return api.UserAPIGet200JSONResponse(h.userMapper.Map(user)), err
 }
 
 // UserAPIDelete deletes the authenticated user

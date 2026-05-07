@@ -15,6 +15,12 @@ interface UserAPI {
   @delete delete(): BooleanResponse | Error;
 }
 
+enum UserType {
+  Local: "LOCAL",
+  Oidc: "OIDC",
+}
+
 model User {
   username: string;
+  type: UserType;
 }

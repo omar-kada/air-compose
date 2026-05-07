@@ -4,6 +4,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
+/** @type {import('vite').UserConfig} */
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   resolve: {

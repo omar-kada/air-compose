@@ -54,16 +54,21 @@ func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService use
 		return
 	}
 
-	token, err := oidcService.LoginOidc(code, getNonceFromCookies(r))
+	token, err := oidcService.LoginOidc(code, getNonceFromCookies(r), getCallbackURL(r))
 	if err != nil {
 		slog.Error(err.Error())
 		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "OIDC authentication failed")
 		return
 	}
 
+	originURL := getOriginURLFromCookies(r)
+	if originURL == "" {
+		originURL = getBaseURL(r)
+	}
 	setTokenInCookies(w, token, secureToken)
 	setStateInCookies(w, "", "", secureToken)
-	http.Redirect(w, r, getBaseURL(r), http.StatusFound)
+
+	http.Redirect(w, r, originURL, http.StatusFound)
 }
 
 func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService, secureToken bool) {
@@ -84,7 +89,7 @@ func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcServic
 		return
 	}
 
-	authURL, err := oidcService.GetAuthURL(getBaseURL(r)+callbackEndpoint, state, nonce)
+	authURL, err := oidcService.GetAuthURL(getCallbackURL(r), state, nonce)
 	if err != nil {
 		slog.Error("error while getting auth URL", "err", err)
 		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "error while getting auth URL")
@@ -106,4 +111,7 @@ func getBaseURL(r *http.Request) string {
 		scheme = "https"
 	}
 	return scheme + "://" + r.Host
+}
+func getCallbackURL(r *http.Request) string {
+	return getBaseURL(r) + callbackEndpoint
 }

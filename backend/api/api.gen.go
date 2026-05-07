@@ -74,6 +74,12 @@ const (
 	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
 )
 
+// Defines values for UserType.
+const (
+	UserTypeLOCAL UserType = "LOCAL"
+	UserTypeOIDC  UserType = "OIDC"
+)
+
 // Defines values for Versions.
 const (
 	VersionsN10 Versions = "1.0"
@@ -196,6 +202,12 @@ type PageInfo struct {
 	HasNextPage bool   `json:"hasNextPage"`
 }
 
+// RegistrationInfo defines model for RegistrationInfo.
+type RegistrationInfo struct {
+	Oidc       bool `json:"oidc"`
+	Registered bool `json:"registered"`
+}
+
 // Settings defines model for Settings.
 type Settings struct {
 	Branch            *string       `json:"branch,omitempty"`
@@ -225,8 +237,12 @@ type State struct {
 
 // User defines model for User.
 type User struct {
-	Username string `json:"username"`
+	Type     UserType `json:"type"`
+	Username string   `json:"username"`
 }
+
+// UserType defines model for UserType.
+type UserType string
 
 // Versions defines model for Versions.
 type Versions string
@@ -1777,10 +1793,8 @@ func (r AuthAPIRefreshResponse) StatusCode() int {
 type AuthAPIRegisteredResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		Registered bool `json:"registered"`
-	}
-	JSONDefault *Error
+	JSON200      *RegistrationInfo
+	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2609,9 +2623,7 @@ func ParseAuthAPIRegisteredResponse(rsp *http.Response) (*AuthAPIRegisteredRespo
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			Registered bool `json:"registered"`
-		}
+		var dest RegistrationInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4101,9 +4113,7 @@ type AuthAPIRegisteredResponseObject interface {
 	VisitAuthAPIRegisteredResponse(w http.ResponseWriter) error
 }
 
-type AuthAPIRegistered200JSONResponse struct {
-	Registered bool `json:"registered"`
-}
+type AuthAPIRegistered200JSONResponse RegistrationInfo
 
 func (response AuthAPIRegistered200JSONResponse) VisitAuthAPIRegisteredResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

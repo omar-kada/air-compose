@@ -61,8 +61,12 @@ func TestAuthnMiddleware_Register(t *testing.T) {
 func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 	userService, _ := withInitUsers(t, newUsersService(t), userCreds)
 
-	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		t.Fail() // shouldn't be called
+	// The GET /api/auth/register should pass through to the next handler
+	called := false
+	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"ok":true}`))
 	}), userService, true)
 
 	req := httptest.NewRequest("GET", "/api/auth/register", http.NoBody)
@@ -70,8 +74,9 @@ func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
+	assert.True(t, called, "next handler should be called for GET /api/auth/register")
 	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.JSONEq(t, `{"registered": true}`, rr.Body.String())
+	assert.JSONEq(t, `{"ok":true}`, rr.Body.String())
 	checkCookiesAre(t, rr, "", "")
 	checkCookiesAreSecure(t, rr)
 }
@@ -166,6 +171,9 @@ func TestAuthnMiddleware_WhitelistedAccess(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 	checkCookiesAre(t, rr, "", "")
+
+	cookiesMap := cookiesToMap(rr.Result().Cookies())
+	assert.Equal(t, req.Referer(), cookiesMap[_originURL].Value)
 }
 
 func TestAuthnMiddleware_RegisterInvalidRequestBody(t *testing.T) {
@@ -491,6 +499,15 @@ func checkCookiesAre(t *testing.T, rr *httptest.ResponseRecorder, expectedToken,
 
 	assert.NotNil(t, refreshTokenCookie, "Refresh token cookie should be set")
 	assert.Equal(t, expectedRefreshToken, refreshTokenCookie.Value, "Refresh token cookie value should match")
+
+}
+
+func cookiesToMap(cookies []*http.Cookie) map[string]*http.Cookie {
+	cookiesMap := make(map[string]*http.Cookie)
+	for _, cookie := range cookies {
+		cookiesMap[cookie.Name] = cookie
+	}
+	return cookiesMap
 }
 
 func checkCookiesAreSecure(t *testing.T, rr *httptest.ResponseRecorder) {
