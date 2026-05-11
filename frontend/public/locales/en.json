@@ -28,6 +28,8 @@
     "LOGIN": "Login",
     "FORM": {
       "TITLE": "Login",
+      "LOGIN_WITH_OIDC": "Login with OIDC",
+      "OR": "Or with local user",
       "username": "Username",
       "username_MIN_3": "Username should be at least 3 characters",
       "password": "Password",

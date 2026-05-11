@@ -44,14 +44,18 @@ func UsernameFromContext(ctx context.Context) (string, bool) {
 // @return http.Handler - the authentication middleware
 func AuthnMiddleware(next http.Handler, authService users.AuthService, secureToken bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		url, ok := strings.CutPrefix(r.URL.Path, "/api/")
+		endpoint, ok := strings.CutPrefix(r.URL.Path, "/api/")
 		if !ok {
 			next.ServeHTTP(w, r)
 			return
 		}
-		switch url {
+		switch endpoint {
 		case "auth/register":
-			registerHandler(w, r, authService, secureToken)
+			if r.Method == http.MethodGet {
+				next.ServeHTTP(w, r)
+			} else {
+				registerHandler(w, r, authService, secureToken)
+			}
 			return
 		case "auth/login":
 			loginHandler(w, r, authService, secureToken)
@@ -63,7 +67,7 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService, secureTok
 			refreshHandler(w, r, authService, secureToken)
 			return
 		}
-		inWhiteList := isWhitelisted(url, r.Method)
+		inWhiteList := isWhitelisted(endpoint, r.Method)
 
 		username, err := getUsernameFromCookies(r, authService)
 		if err != nil {
@@ -91,55 +95,40 @@ func isWhitelisted(url, method string) bool {
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
-	switch r.Method {
-	case http.MethodPost:
-		var req api.Credentials
-
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			slog.Error(err.Error())
-			sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Invalid request body")
-			return
-		}
-
-		if req.Username == "" || req.Password == "" {
-			sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Username and password are required")
-			return
-		}
-
-		token, err := authService.Register(models.Credentials{
-			Username: req.Username,
-			Password: req.Password,
-		})
-		if err != nil {
-			slog.Error(err.Error())
-			sendErrorMessage(w, api.ErrorCodeSERVERERROR, "Registration failed")
-
-			return
-		}
-
-		setTokenInCookies(w, token, secureToken)
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(api.BooleanResponse{
-			Success: true,
-		})
-		return
-	case http.MethodGet:
-		hasUsers, err := authService.IsRegistered()
-		if err != nil {
-			slog.Error(err.Error())
-			sendError(w, api.ErrorCodeSERVERERROR)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(api.AuthAPIRegistered200JSONResponse{
-			Registered: hasUsers,
-		})
-		return
-	default:
+	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
 	}
+	var req api.Credentials
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error(err.Error())
+		sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Invalid request body")
+		return
+	}
+
+	if req.Username == "" || req.Password == "" {
+		sendErrorMessage(w, api.ErrorCodeINVALIDREQUEST, "Username and password are required")
+		return
+	}
+
+	token, err := authService.Register(models.Credentials{
+		Username: req.Username,
+		Password: req.Password,
+	})
+	if err != nil {
+		slog.Error(err.Error())
+		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "Registration failed")
+
+		return
+	}
+
+	setTokenInCookies(w, token, secureToken)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(api.BooleanResponse{
+		Success: true,
+	})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {

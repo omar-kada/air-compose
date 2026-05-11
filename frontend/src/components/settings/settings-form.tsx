@@ -1,4 +1,5 @@
-import { useDeleteAccount } from '@/hooks';
+import { UserType } from '@/api';
+import { useDeleteAccount, useUser } from '@/hooks';
 import { GitBranch, KeyRound, Timer, Trash, UserIcon, type LucideProps } from 'lucide-react';
 import { type ComponentType, type ReactNode } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
@@ -22,17 +23,20 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
   const { t } = useTranslation();
 
   const { deleteAccount } = useDeleteAccount();
+  const { data: user, isPending } = useUser();
 
   return (
     <form>
       <FieldGroup className="mt-2">
         <SettingsSection title={t('SETTINGS.FORM.ACCOUNT')} Icon={UserIcon} className="flex gap-2">
-          <ChangePasswordDialog>
-            <Button type="button">
-              <KeyRound />
-              {t('SETTINGS.FORM.CHANGE_PASSWORD')}
-            </Button>
-          </ChangePasswordDialog>
+          {!isPending && user?.type === UserType.LOCAL && (
+            <ChangePasswordDialog>
+              <Button type="button">
+                <KeyRound />
+                {t('SETTINGS.FORM.CHANGE_PASSWORD')}
+              </Button>
+            </ChangePasswordDialog>
+          )}
           <ConfirmationDialog
             title={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.TITLE')}
             description={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.DESCRIPTION')}

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/users"
@@ -23,15 +24,20 @@ const (
 // @return http.Handler - the authentication middleware
 func OidcMiddleware(next http.Handler, oidcService users.OidcService, secureToken bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/api/oidc/login":
-			oidcLoginRedirectHandler(w, r, oidcService, secureToken)
-			return
-		case "/api/oidc/callback":
-			oidcCallbackHandler(w, r, oidcService, secureToken)
+		oidcOperation, ok := strings.CutPrefix(r.URL.Path, "/api/oidc/")
+		if ok {
+			switch oidcOperation {
+			case "login":
+				oidcLoginRedirectHandler(w, r, oidcService, secureToken)
+			case "callback":
+				oidcCallbackHandler(w, r, oidcService, secureToken)
+			default:
+				sendError(w, api.ErrorCodeINVALIDREQUEST)
+			}
 			return
 		}
 
+		setOriginURLInCookies(w, r.Referer(), secureToken)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -54,16 +60,21 @@ func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService use
 		return
 	}
 
-	token, err := oidcService.LoginOidc(code, getNonceFromCookies(r))
+	token, err := oidcService.LoginOidc(code, getNonceFromCookies(r), getCallbackURL(r))
 	if err != nil {
 		slog.Error(err.Error())
 		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "OIDC authentication failed")
 		return
 	}
 
+	originURL := getOriginURLFromCookies(r)
+	if originURL == "" {
+		originURL = getBaseURL(r)
+	}
 	setTokenInCookies(w, token, secureToken)
 	setStateInCookies(w, "", "", secureToken)
-	http.Redirect(w, r, getBaseURL(r), http.StatusFound)
+
+	http.Redirect(w, r, originURL, http.StatusFound)
 }
 
 func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService, secureToken bool) {
@@ -84,7 +95,7 @@ func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcServic
 		return
 	}
 
-	authURL, err := oidcService.GetAuthURL(getBaseURL(r)+callbackEndpoint, state, nonce)
+	authURL, err := oidcService.GetAuthURL(getCallbackURL(r), state, nonce)
 	if err != nil {
 		slog.Error("error while getting auth URL", "err", err)
 		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "error while getting auth URL")
@@ -106,4 +117,7 @@ func getBaseURL(r *http.Request) string {
 		scheme = "https"
 	}
 	return scheme + "://" + r.Host
+}
+func getCallbackURL(r *http.Request) string {
+	return getBaseURL(r) + callbackEndpoint
 }

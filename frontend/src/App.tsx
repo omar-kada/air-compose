@@ -13,11 +13,11 @@ import {
   StatusPage,
   Topbar,
 } from './components';
-import { getStateQueryOptions, useRegistered, useUser } from './hooks';
+import { getStateQueryOptions, useRegisteration, useUser } from './hooks';
 import { cn, ROUTES } from './lib';
 
 function RouteBasedTopBar({ children }: { children: ReactNode }) {
-  const { data: isRegistered, isPending, error } = useRegistered();
+  const { data: registration, isPending, error } = useRegisteration();
   const { data: user, isPending: userPending, error: userError } = useUser();
   const { data: state, isPending: statePending } = useQuery(
     getStateQueryOptions({
@@ -30,27 +30,28 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
   const [showTopBar, setShowTopBar] = useState(!!user);
 
   useEffect(() => {
-    setShowTopBar(!!isRegistered && !!user && state?.initialized === true);
-  }, [setShowTopBar, isRegistered, user, state]);
+    setShowTopBar(!!registration?.registered && !!user && state?.initialized === true);
+  }, [setShowTopBar, registration, user, state]);
 
   useEffect(() => {
     const waitAndNavigate = (pending: boolean, condition: boolean, route: string) => {
       if (!pending && condition && location.pathname !== route) {
+        setLastRoute(location.pathname);
         navigate(route);
       }
       return pending || condition;
     };
     if (
-      waitAndNavigate(isPending, !isRegistered, ROUTES.REGISTER) ||
+      waitAndNavigate(isPending, !registration?.registered, ROUTES.REGISTER) ||
       waitAndNavigate(userPending, !user, ROUTES.LOGIN) ||
       waitAndNavigate(statePending, !state?.initialized, ROUTES.INIT)
     ) {
       return;
     }
     if ([ROUTES.INIT, ROUTES.REGISTER, ROUTES.LOGIN].includes(location.pathname)) {
-      navigate(ROUTES.DEPLOYMENTS);
+      navigate(getLastRoute() || ROUTES.DEPLOYMENTS);
     }
-  }, [navigate, location, isRegistered, user, isPending, userPending, state, statePending]);
+  }, [navigate, location, registration, user, isPending, userPending, state, statePending]);
 
   const mergedError = error ?? userError;
   return (
@@ -92,6 +93,17 @@ function App() {
       </RouteBasedTopBar>
     </BrowserRouter>
   );
+}
+
+const LAST_ROUTE = 'LAST_ROUTE';
+function setLastRoute(route: string) {
+  if (![ROUTES.REGISTER, ROUTES.LOGIN].includes(route)) {
+    localStorage.setItem(LAST_ROUTE, route);
+  }
+}
+
+function getLastRoute(): string | null {
+  return localStorage.getItem(LAST_ROUTE);
 }
 
 export default App;

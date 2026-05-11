@@ -69,6 +69,11 @@ func (m *MockProcess) ChangePassword(username string, oldPass, newPass string) (
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockProcess) IsRegistered() (bool, error) {
+	args := m.Called()
+	return args.Bool(0), args.Error(1)
+}
+
 func (m *MockProcess) TestGitConnection(repo, branch, username, token string) (bool, error) {
 	args := m.Called(repo, branch, username, token)
 	return args.Bool(0), args.Error(1)
@@ -708,8 +713,9 @@ func TestUserAPIGet_Success(t *testing.T) {
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	user := models.User{Username: "testuser"}
+	user := models.User{Username: "testuser", Type: models.UserTypeLocal}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
+	m.On("GetUser", "testuser").Return(user, nil)
 
 	resp, err := h.UserAPIGet(ctx, api.UserAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -717,6 +723,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 	switch r := resp.(type) {
 	case api.UserAPIGet200JSONResponse:
 		assert.Equal(t, "testuser", r.Username)
+		assert.Equal(t, api.UserTypeLOCAL, r.Type)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -800,16 +807,29 @@ func TestAuthAPIRegistered(t *testing.T) {
 	store := &MockStore{}
 	h := NewHandler(store, m, m)
 
-	resp, err := h.AuthAPIRegistered(context.Background(), api.AuthAPIRegisteredRequestObject{})
-	assert.Error(t, err)
-	assert.Equal(t, errShouldntReach, err)
+	// Mock IsRegistered and Get
+	m.On("IsRegistered").Return(true, nil)
+	store.On("Get").Return(models.Config{
+		Settings: models.Settings{
+			Oidc: models.OidcConfig{
+				IssuerURL: "https://issuer.example.com",
+			},
+		},
+	}, nil)
 
-	switch resp.(type) {
-	case api.AuthAPIRegistereddefaultJSONResponse:
-		// No specific assertions needed for default response
+	resp, err := h.AuthAPIRegistered(context.Background(), api.AuthAPIRegisteredRequestObject{})
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.AuthAPIRegistered200JSONResponse:
+		assert.True(t, r.Registered)
+		assert.True(t, r.Oidc)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
+
+	m.AssertExpectations(t)
+	store.AssertExpectations(t)
 }
 
 func TestAuthAPILogout(t *testing.T) {

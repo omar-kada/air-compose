@@ -15,6 +15,7 @@ const (
 	_refreshTokenKey = "refreshToken"
 	_state           = "state"
 	_nonce           = "nonce"
+	_originURL       = "originURL"
 )
 
 func getUsernameFromCookies(r *http.Request, authService users.AuthService) (string, error) {
@@ -66,19 +67,27 @@ func setTokenInCookies(w http.ResponseWriter, token models.Token, secureToken bo
 }
 
 func setStateInCookies(w http.ResponseWriter, state, nonce string, secureToken bool) {
+	maxAgeState := int(time.Hour.Seconds())
+	if state == "" {
+		maxAgeState = -1
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     _state,
 		Value:    state,
-		MaxAge:   int(time.Hour.Seconds()),
+		MaxAge:   maxAgeState,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Secure:   secureToken,
 		Path:     "/api",
 	})
+	maxAgeNonce := int(time.Hour.Seconds())
+	if state == "" {
+		maxAgeNonce = -1
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     _nonce,
 		Value:    nonce,
-		MaxAge:   int(time.Hour.Seconds()),
+		MaxAge:   maxAgeNonce,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Secure:   secureToken,
@@ -96,6 +105,26 @@ func getStateFromCookies(r *http.Request) string {
 
 func getNonceFromCookies(r *http.Request) string {
 	cookie, err := r.Cookie(_nonce)
+	if err != nil {
+		return ""
+	}
+	return cookie.Value
+}
+
+func setOriginURLInCookies(w http.ResponseWriter, originURL string, secureToken bool) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     _originURL,
+		Value:    originURL,
+		MaxAge:   int(time.Hour.Seconds()),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   secureToken,
+		Path:     "/api",
+	})
+}
+
+func getOriginURLFromCookies(r *http.Request) string {
+	cookie, err := r.Cookie(_originURL)
 	if err != nil {
 		return ""
 	}

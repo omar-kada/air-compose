@@ -121,11 +121,15 @@ func TestOidcMiddleware_Callback(t *testing.T) {
 		Name:  _nonce,
 		Value: testutil.Nonce,
 	})
+	req.AddCookie(&http.Cookie{
+		Name:  _originURL,
+		Value: "http://test.com",
+	})
 
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusFound, rr.Code)
-	assert.Contains(t, rr.Header().Get("Location"), "http://")
+	assert.Contains(t, rr.Header().Get("Location"), "http://test.com")
 
 	// Check that state and nonce cookies are cleared
 	cookies := rr.Result().Cookies()
@@ -231,4 +235,41 @@ func TestOidcMiddleware_InsecureCookies(t *testing.T) {
 			assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite, "Refresh token cookie should be SameSiteStrictMode")
 		}
 	}
+}
+
+func TestOidcMiddleware_NextHandlerCalled(t *testing.T) {
+	_, oidcService := newOidcService(t)
+	called := false
+
+	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		called = true
+	}), oidcService, true)
+
+	req := httptest.NewRequest("GET", "/api/some-other-endpoint", http.NoBody)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.True(t, called, "Next handler should be called for non-OIDC endpoints")
+}
+
+func TestOidcMiddleware_OriginURLSet(t *testing.T) {
+	_, oidcService := newOidcService(t)
+	called := false
+
+	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		called = true
+	}), oidcService, true)
+
+	req := httptest.NewRequest("GET", "/api/some-other-endpoint", http.NoBody)
+	req.Header.Set("Referer", "http://example.com")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.True(t, called, "Next handler should be called")
+	cookiesMap := testutil.CookiesToMap(rr.Result().Cookies())
+	cookie, found := cookiesMap[_originURL]
+	assert.True(t, found, "Origin URL cookie should be set")
+	assert.Equal(t, "http://example.com", cookie.Value, "Origin URL should be set from Referer header")
 }

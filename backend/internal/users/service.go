@@ -38,7 +38,6 @@ type Service interface {
 type AuthService interface {
 	Login(credentials models.Credentials) (models.Token, error)
 	Register(credentials models.Credentials) (models.Token, error)
-	IsRegistered() (bool, error)
 	Logout(token models.Token) error
 	GetUsernameByToken(token models.Token) (string, error)
 	RefreshToken(token models.Token) (models.Token, error)
@@ -46,6 +45,7 @@ type AuthService interface {
 
 // AccountService abstracts account management operations
 type AccountService interface {
+	IsRegistered() (bool, error)
 	GetUser(username string) (models.User, error)
 	DeleteUser(username string) (bool, error)
 	ChangePassword(username string, oldPass string, newPass string) (bool, error)

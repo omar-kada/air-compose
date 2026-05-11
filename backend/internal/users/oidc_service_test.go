@@ -63,10 +63,11 @@ func TestOidcService_LoginOidc(t *testing.T) {
 
 	// Test
 	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
-		"email": testutil.Email,
+		"email":        testutil.Email,
+		"redirect-uri": "callback-url",
 	})
 
-	token, err := oidcService.LoginOidc(code, testutil.Nonce)
+	token, err := oidcService.LoginOidc(code, testutil.Nonce, "callback-url")
 
 	// Assert
 	assert.NoError(t, err)
@@ -99,11 +100,12 @@ func TestOidcService_LoginOidc_NonceMismatch(t *testing.T) {
 
 	// Test
 	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
-		"email": testutil.Email,
+		"email":        testutil.Email,
+		"redirect-uri": "callback-url",
 	})
 
 	// Use a different nonce than what was expected
-	token, err := oidcService.LoginOidc(code, "wrong-nonce")
+	token, err := oidcService.LoginOidc(code, "wrong-nonce", "")
 
 	// Assert
 

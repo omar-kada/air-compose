@@ -27,9 +27,9 @@ type UserType string
 
 const (
 	// UserTypeLocal represents a locally authenticated user
-	UserTypeLocal UserType = "local"
+	UserTypeLocal UserType = "LOCAL"
 	// UserTypeOIDC represents an OpenID Connect authenticated user
-	UserTypeOIDC UserType = "oidc"
+	UserTypeOIDC UserType = "OIDC"
 )
 
 // User represents a user with credentials and authentication details

@@ -188,6 +188,11 @@ export interface PageInfo {
   endCursor: string;
 }
 
+export interface RegistrationInfo {
+  registered: boolean;
+  oidc: boolean;
+}
+
 export interface Settings {
   repo: string;
   branch?: string;
@@ -214,7 +219,17 @@ export interface State {
 
 export interface User {
   username: string;
+  type: UserType;
 }
+
+export type UserType = typeof UserType[keyof typeof UserType];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const UserType = {
+  LOCAL: 'LOCAL',
+  OIDC: 'OIDC',
+} as const;
 
 export type Versions = typeof Versions[keyof typeof Versions];
 
@@ -223,10 +238,6 @@ export type Versions = typeof Versions[keyof typeof Versions];
 export const Versions = {
   '10': '1.0',
 } as const;
-
-export type AuthAPIRegistered200 = {
-  registered: boolean;
-};
 
 export type DeployementAPIListParams = {
 limit: number;
@@ -426,7 +437,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     
 export const authAPIRegistered = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AuthAPIRegistered200>> => {
+ ): Promise<AxiosResponse<RegistrationInfo>> => {
     
     
     return axios.default.get(

@@ -4,6 +4,7 @@ package users
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 
@@ -21,7 +22,7 @@ var (
 // OidcService abstracts oidc operations
 type OidcService interface {
 	GetAuthURL(redirectURL string, state string, nonce string) (string, error)
-	LoginOidc(oauthToken string, nonce string) (models.Token, error)
+	LoginOidc(oauthToken string, nonce string, callbackURL string) (models.Token, error)
 	OnConfigChanged(newConfig models.OidcConfig)
 }
 
@@ -65,14 +66,14 @@ func (s *oidcService) getConfig(provider *oidc.Provider, redirectURL string) oau
 	}
 }
 
-func (s *oidcService) extractUsername(code, nonce string) (string, error) {
+func (s *oidcService) extractUsername(code, nonce, redirectURL string) (string, error) {
 	provider, err := oidc.NewProvider(context.Background(), s.config.IssuerURL)
 	if err != nil {
 		return "", err
 	}
 
 	// Configure an OpenID Connect aware OAuth2 client.
-	oauth2Config := s.getConfig(provider, "")
+	oauth2Config := s.getConfig(provider, redirectURL)
 
 	var verifier = provider.Verifier(&oidc.Config{ClientID: s.config.ClientID})
 
@@ -108,10 +109,11 @@ func (s *oidcService) extractUsername(code, nonce string) (string, error) {
 }
 
 // LoginOidc authenticates a user and returns their oidc token.
-func (s *oidcService) LoginOidc(oauthToken, nonce string) (models.Token, error) {
+func (s *oidcService) LoginOidc(oauthToken, nonce, callbackURL string) (models.Token, error) {
 	// verify token, and then upsert user info + new session
-	username, err := s.extractUsername(oauthToken, nonce)
+	username, err := s.extractUsername(oauthToken, nonce, callbackURL)
 	if err != nil {
+		slog.Error("error while authenticating using oidc", "err", err, "oauthToken", oauthToken, "nonce", nonce)
 		return models.Token{}, err
 	}
 
