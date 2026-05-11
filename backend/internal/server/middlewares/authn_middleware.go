@@ -79,8 +79,6 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService, secureTok
 		}
 		r = r.WithContext(ContextWithUsername(r.Context(), username))
 
-		setOriginURLInCookies(w, r.Referer(), secureToken)
-
 		next.ServeHTTP(w, r)
 	})
 }
@@ -131,7 +129,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
 	})
-	return
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {

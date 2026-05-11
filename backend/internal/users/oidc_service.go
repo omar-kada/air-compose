@@ -22,7 +22,7 @@ var (
 // OidcService abstracts oidc operations
 type OidcService interface {
 	GetAuthURL(redirectURL string, state string, nonce string) (string, error)
-	LoginOidc(oauthToken string, nonce string, callbackUrl string) (models.Token, error)
+	LoginOidc(oauthToken string, nonce string, callbackURL string) (models.Token, error)
 	OnConfigChanged(newConfig models.OidcConfig)
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/users"
@@ -23,15 +24,20 @@ const (
 // @return http.Handler - the authentication middleware
 func OidcMiddleware(next http.Handler, oidcService users.OidcService, secureToken bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/api/oidc/login":
-			oidcLoginRedirectHandler(w, r, oidcService, secureToken)
-			return
-		case "/api/oidc/callback":
-			oidcCallbackHandler(w, r, oidcService, secureToken)
+		oidcOperation, ok := strings.CutPrefix(r.URL.Path, "/api/oidc/")
+		if ok {
+			switch oidcOperation {
+			case "login":
+				oidcLoginRedirectHandler(w, r, oidcService, secureToken)
+			case "callback":
+				oidcCallbackHandler(w, r, oidcService, secureToken)
+			default:
+				sendError(w, api.ErrorCodeINVALIDREQUEST)
+			}
 			return
 		}
 
+		setOriginURLInCookies(w, r.Referer(), secureToken)
 		next.ServeHTTP(w, r)
 	})
 }

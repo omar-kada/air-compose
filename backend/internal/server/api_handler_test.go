@@ -723,6 +723,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 	switch r := resp.(type) {
 	case api.UserAPIGet200JSONResponse:
 		assert.Equal(t, "testuser", r.Username)
+		assert.Equal(t, api.UserTypeLOCAL, r.Type)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}

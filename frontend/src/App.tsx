@@ -13,11 +13,11 @@ import {
   StatusPage,
   Topbar,
 } from './components';
-import { getStateQueryOptions, useRegistration, useUser } from './hooks';
+import { getStateQueryOptions, useRegisteration, useUser } from './hooks';
 import { cn, ROUTES } from './lib';
 
 function RouteBasedTopBar({ children }: { children: ReactNode }) {
-  const { data: registration, isPending, error } = useRegistration();
+  const { data: registration, isPending, error } = useRegisteration();
   const { data: user, isPending: userPending, error: userError } = useUser();
   const { data: state, isPending: statePending } = useQuery(
     getStateQueryOptions({

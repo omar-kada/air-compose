@@ -1,4 +1,4 @@
-import { useLogin, useRegistration } from '@/hooks';
+import { useLogin, useRegisteration } from '@/hooks';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,7 @@ export function LoginPage() {
   const { t } = useTranslation();
 
   const { login, isPending } = useLogin();
-  const { data: registration, isPending: registrationPending } = useRegistration();
+  const { data: registration, isPending: registrationPending } = useRegisteration();
   const serverUrl = import.meta.env.VITE_SERVER_URL;
 
   const navigate = useNavigate();

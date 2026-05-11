@@ -54,8 +54,8 @@ func TestAuthnMiddleware_Register(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAreNot(t, rr, "", "")
-	checkCookiesAreSecure(t, rr)
+	assertTokenCookiesAreNot(t, rr, "", "")
+	testutil.AssertCookiesAreSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
 func TestAuthnMiddleware_RegisterGet(t *testing.T) {
@@ -63,7 +63,7 @@ func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 
 	// The GET /api/auth/register should pass through to the next handler
 	called := false
-	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		called = true
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"ok":true}`))
@@ -77,8 +77,8 @@ func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 	assert.True(t, called, "next handler should be called for GET /api/auth/register")
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.JSONEq(t, `{"ok":true}`, rr.Body.String())
-	checkCookiesAre(t, rr, "", "")
-	checkCookiesAreSecure(t, rr)
+	assertTokenCookiesNotExisting(t, rr)
+	testutil.AssertCookiesAreSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
 func TestAuthnMiddleware_Login(t *testing.T) {
@@ -97,9 +97,9 @@ func TestAuthnMiddleware_Login(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
-	checkCookiesAreNot(t, rr, "", "")
-	checkCookiesAreSecure(t, rr)
+	assertTokenCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
+	assertTokenCookiesAreNot(t, rr, "", "")
+	testutil.AssertCookiesAreSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
 func TestAuthnMiddleware_Logout(t *testing.T) {
@@ -126,8 +126,8 @@ func TestAuthnMiddleware_Logout(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAre(t, rr, "", "")
-	checkCookiesAreSecure(t, rr)
+	assertTokenCookiesAre(t, rr, "", "")
+	testutil.AssertCookiesAreSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
 func TestAuthnMiddleware_AuthorizedAccess(t *testing.T) {
@@ -170,10 +170,7 @@ func TestAuthnMiddleware_WhitelistedAccess(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAre(t, rr, "", "")
-
-	cookiesMap := cookiesToMap(rr.Result().Cookies())
-	assert.Equal(t, req.Referer(), cookiesMap[_originURL].Value)
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_RegisterInvalidRequestBody(t *testing.T) {
@@ -191,7 +188,7 @@ func TestAuthnMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_RegisterMissingCredentials(t *testing.T) {
@@ -209,7 +206,7 @@ func TestAuthnMiddleware_RegisterMissingCredentials(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_RegisterFailure(t *testing.T) {
@@ -229,7 +226,7 @@ func TestAuthnMiddleware_RegisterFailure(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LoginInvalidMethod(t *testing.T) {
@@ -245,7 +242,7 @@ func TestAuthnMiddleware_LoginInvalidMethod(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LoginInvalidRequestBody(t *testing.T) {
@@ -263,7 +260,7 @@ func TestAuthnMiddleware_LoginInvalidRequestBody(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LoginMissingCredentials(t *testing.T) {
@@ -281,7 +278,7 @@ func TestAuthnMiddleware_LoginMissingCredentials(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LoginFailure(t *testing.T) {
@@ -299,7 +296,7 @@ func TestAuthnMiddleware_LoginFailure(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LogoutInvalidMethod(t *testing.T) {
@@ -315,7 +312,7 @@ func TestAuthnMiddleware_LogoutInvalidMethod(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LogoutMissingToken(t *testing.T) {
@@ -331,7 +328,7 @@ func TestAuthnMiddleware_LogoutMissingToken(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_LogoutFailure(t *testing.T) {
@@ -380,9 +377,9 @@ func TestAuthnMiddleware_Refresh(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
-	checkCookiesAreNot(t, rr, "", "")
-	checkCookiesAreSecure(t, rr)
+	assertTokenCookiesAreNot(t, rr, string(token.Value), string(token.RefreshToken))
+	assertTokenCookiesAreNot(t, rr, "", "")
+	testutil.AssertCookiesAreSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
 func TestAuthnMiddleware_RefreshInvalidMethod(t *testing.T) {
@@ -398,7 +395,7 @@ func TestAuthnMiddleware_RefreshInvalidMethod(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_RefreshMissingToken(t *testing.T) {
@@ -414,7 +411,7 @@ func TestAuthnMiddleware_RefreshMissingToken(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 
 func TestAuthnMiddleware_RefreshFailure(t *testing.T) {
@@ -439,7 +436,7 @@ func TestAuthnMiddleware_RefreshFailure(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-	checkCookiesAre(t, rr, "", "")
+	assertTokenCookiesNotExisting(t, rr)
 }
 func TestAuthnMiddleware_InsecureCookies(t *testing.T) {
 	userService := newUsersService(t)
@@ -457,81 +454,33 @@ func TestAuthnMiddleware_InsecureCookies(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
-	checkCookiesAreNot(t, rr, "", "")
-	checkCookiesAreNotSecure(t, rr)
+	cookieMap := testutil.CookiesToMap(rr.Result().Cookies())
+	assert.NotEqual(t, "", cookieMap[_tokenKey].Value)
+	assert.NotEqual(t, "", cookieMap[_refreshTokenKey].Value)
+	assertTokenCookiesAreNot(t, rr, "", "")
+	testutil.AssertCookiesAreNotSecure(t, rr, _tokenKey, _refreshTokenKey)
 }
 
-func checkCookiesAreNot(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
-	cookies := rr.Result().Cookies()
-	var tokenCookie, refreshTokenCookie http.Cookie
-
-	for _, cookie := range cookies {
-		if cookie.Name == _tokenKey {
-			tokenCookie = *cookie
-		}
-		if cookie.Name == _refreshTokenKey {
-			refreshTokenCookie = *cookie
-		}
-	}
-
-	assert.NotNil(t, tokenCookie, "Token cookie should be set")
-	assert.NotEqual(t, expectedToken, tokenCookie.Value, "Token cookie value should match")
-
-	assert.NotNil(t, refreshTokenCookie, "Refresh token cookie should be set")
-	assert.NotEqual(t, expectedRefreshToken, refreshTokenCookie.Value, "Refresh token cookie value should match")
+func assertTokenCookiesAreNot(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
+	cookieMap := testutil.CookiesToMap(rr.Result().Cookies())
+	assert.Contains(t, cookieMap, _tokenKey, "Token cookie should be set")
+	assert.NotEqual(t, expectedToken, cookieMap[_tokenKey].Value)
+	assert.Contains(t, cookieMap, _refreshTokenKey, "Token cookie should be set")
+	assert.NotEqual(t, expectedRefreshToken, cookieMap[_refreshTokenKey].Value)
 }
 
-func checkCookiesAre(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
-	cookies := rr.Result().Cookies()
-	var tokenCookie, refreshTokenCookie http.Cookie
+func assertTokenCookiesAre(t *testing.T, rr *httptest.ResponseRecorder, expectedToken, expectedRefreshToken string) {
 
-	for _, cookie := range cookies {
-		if cookie.Name == _tokenKey {
-			tokenCookie = *cookie
-		}
-		if cookie.Name == _refreshTokenKey {
-			refreshTokenCookie = *cookie
-		}
-	}
-
-	assert.NotNil(t, tokenCookie, "Token cookie should be set")
-	assert.Equal(t, expectedToken, tokenCookie.Value, "Token cookie value should match")
-
-	assert.NotNil(t, refreshTokenCookie, "Refresh token cookie should be set")
-	assert.Equal(t, expectedRefreshToken, refreshTokenCookie.Value, "Refresh token cookie value should match")
-
+	cookieMap := testutil.CookiesToMap(rr.Result().Cookies())
+	assert.Contains(t, cookieMap, _tokenKey, "Token cookie should be set")
+	assert.Equal(t, expectedToken, cookieMap[_tokenKey].Value)
+	assert.Contains(t, cookieMap, _refreshTokenKey, "Token cookie should be set")
+	assert.Equal(t, expectedRefreshToken, cookieMap[_refreshTokenKey].Value)
 }
 
-func cookiesToMap(cookies []*http.Cookie) map[string]*http.Cookie {
-	cookiesMap := make(map[string]*http.Cookie)
-	for _, cookie := range cookies {
-		cookiesMap[cookie.Name] = cookie
-	}
-	return cookiesMap
-}
+func assertTokenCookiesNotExisting(t *testing.T, rr *httptest.ResponseRecorder) {
 
-func checkCookiesAreSecure(t *testing.T, rr *httptest.ResponseRecorder) {
-	cookies := rr.Result().Cookies()
-
-	for _, cookie := range cookies {
-		if cookie.Name == _tokenKey {
-			assert.True(t, cookie.Secure, "Token cookie should be secure")
-		}
-		if cookie.Name == _refreshTokenKey {
-			assert.True(t, cookie.Secure, "Token cookie should be secure")
-		}
-	}
-}
-
-func checkCookiesAreNotSecure(t *testing.T, rr *httptest.ResponseRecorder) {
-	cookies := rr.Result().Cookies()
-
-	for _, cookie := range cookies {
-		if cookie.Name == _tokenKey {
-			assert.False(t, cookie.Secure, "Token cookie should not be secure")
-		}
-		if cookie.Name == _refreshTokenKey {
-			assert.False(t, cookie.Secure, "Token cookie should not be secure")
-		}
-	}
+	cookieMap := testutil.CookiesToMap(rr.Result().Cookies())
+	assert.NotContains(t, cookieMap, _tokenKey, "Token cookie should be set")
+	assert.NotContains(t, cookieMap, _refreshTokenKey, "Token cookie should be set")
 }
