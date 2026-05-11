@@ -135,8 +135,8 @@ func (run *runCommand) doRun() error {
 		newYamlCfg, _ := configStore.ToYaml(cfg)
 		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated,
 			files.DiffText(string(oldYamlCfg), string(newYamlCfg)))
-		if oldCfg.Settings.Cron != cfg.Settings.Cron {
-			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Cron, "newCron", cfg.Settings.Cron)
+		if oldCfg.Settings.Schedule.Cron != cfg.Settings.Schedule.Cron {
+			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Schedule.Cron, "newCron", cfg.Settings.Schedule.Cron)
 			scheduler.ReSchedule()
 		}
 		oidcService.OnConfigChanged(cfg.Settings.Oidc)

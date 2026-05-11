@@ -67,8 +67,12 @@ func TestUpdateConfig(t *testing.T) {
 
 		input := models.Config{
 			Settings: models.Settings{
-				Branch:            models.DefaultBranch,
-				NotificationTypes: []models.EventType{},
+				Git: models.GitConfig{
+					Branch: models.DefaultBranch,
+				},
+				Notifications: models.NotificationConfig{
+					NotificationTypes: []models.EventType{},
+				},
 			},
 			Environment: models.Environment{
 				"AIR_COMPOSE_HOST": "localhost",
@@ -110,7 +114,9 @@ func TestUpdateConfig(t *testing.T) {
 			},
 			Services: map[string]models.ServiceConfig{},
 			Settings: models.Settings{
-				NotificationTypes: []models.EventType{},
+				Notifications: models.NotificationConfig{
+					NotificationTypes: []models.EventType{},
+				},
 			},
 		}
 		err := store.Update(initialCfg)
@@ -131,7 +137,9 @@ func TestUpdateConfig(t *testing.T) {
 				"AIR_COMPOSE_HOST": "new-host",
 			},
 			Settings: models.Settings{
-				NotificationTypes: []models.EventType{},
+				Notifications: models.NotificationConfig{
+					NotificationTypes: []models.EventType{},
+				},
 			},
 		}
 		err = store.Update(updatedCfg)
@@ -162,7 +170,9 @@ func TestUpdateConfig(t *testing.T) {
 				"AIR_COMPOSE_HOST": "localhost",
 			},
 			Settings: models.Settings{
-				NotificationTypes: []models.EventType{},
+				Notifications: models.NotificationConfig{
+					NotificationTypes: []models.EventType{},
+				},
 			},
 		}
 
@@ -178,8 +188,14 @@ func TestUpdateConfig(t *testing.T) {
 
 		input := models.Config{
 			Settings: models.Settings{
-				Token:           "my-secret-token-12345",
-				NotificationURL: "https://example.com/webhook?token=12345",
+				Git: models.GitConfig{
+
+					Token: "my-secret-token-12345",
+				},
+				Notifications: models.NotificationConfig{
+
+					NotificationURL: "https://example.com/webhook?token=12345",
+				},
 				Oidc: models.OidcConfig{
 					ClientSecret: "my-secret-client-secret-12345",
 				},
@@ -195,18 +211,22 @@ func TestUpdateConfig(t *testing.T) {
 		storedCfg, err := store.Get()
 		assert.NoError(t, err)
 
-		storedToken := storedCfg.Settings.Token
+		storedToken := storedCfg.Settings.Git.Token
 		assert.Equal(t, "my-secret-token-12345", storedToken)
 
-		storedURL := storedCfg.Settings.NotificationURL
+		storedURL := storedCfg.Settings.Notifications.NotificationURL
 		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
 		clientSecret := storedCfg.Settings.Oidc.ClientSecret
 		assert.Equal(t, "my-secret-client-secret-12345", clientSecret)
 
 		input2 := models.Config{
 			Settings: models.Settings{
-				Token:           "my-secret-********************",
-				NotificationURL: "https://ex********************",
+				Git: models.GitConfig{
+					Token: "my-secret-********************",
+				},
+				Notifications: models.NotificationConfig{
+					NotificationURL: "https://ex********************",
+				},
 				Oidc: models.OidcConfig{
 					ClientSecret: "my-secret-********************",
 				},
@@ -222,10 +242,10 @@ func TestUpdateConfig(t *testing.T) {
 		storedCfg, err = store.Get()
 		assert.NoError(t, err)
 
-		storedToken = storedCfg.Settings.Token
+		storedToken = storedCfg.Settings.Git.Token
 		assert.Equal(t, "my-secret-token-12345", storedToken)
 
-		storedURL = storedCfg.Settings.NotificationURL
+		storedURL = storedCfg.Settings.Notifications.NotificationURL
 		assert.Equal(t, "https://example.com/webhook?token=12345", storedURL)
 
 		clientSecret = storedCfg.Settings.Oidc.ClientSecret

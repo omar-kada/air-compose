@@ -21,9 +21,13 @@ func TestConfigMapper_Map(t *testing.T) {
 			name: "basic",
 			in: models.Config{
 				Settings: models.Settings{
-					Repo:   "https://github.com/example/repo",
-					Branch: "main",
-					Cron:   "0 0 * * *",
+					Git: models.GitConfig{
+						Repo:   "https://github.com/example/repo",
+						Branch: "main",
+					},
+					Schedule: models.ScheduleConfig{
+						Cron: "0 0 * * *",
+					},
 				},
 				Environment: models.Environment{
 					"key1": "value1",

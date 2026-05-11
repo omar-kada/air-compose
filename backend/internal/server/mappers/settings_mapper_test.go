@@ -36,14 +36,20 @@ func TestSettingsMapper_Map(t *testing.T) {
 		{
 			name: "basic",
 			in: models.Settings{
-				Repo:              "https://github.com/example/repo",
-				Branch:            main,
-				Cron:              cron,
-				Username:          username,
-				Token:             token,
-				NotificationURL:   notificationURL,
-				NotificationTypes: []models.EventType{},
-				Oidc:              oidc,
+				Git: models.GitConfig{
+					Repo:     "https://github.com/example/repo",
+					Branch:   main,
+					Username: username,
+					Token:    token,
+				},
+				Schedule: models.ScheduleConfig{
+					Cron: cron,
+				},
+				Notifications: models.NotificationConfig{
+					NotificationURL:   notificationURL,
+					NotificationTypes: []models.EventType{},
+				},
+				Oidc: oidc,
 			},
 			want: api.Settings{
 				Repo:              "https://github.com/example/repo",
@@ -59,9 +65,13 @@ func TestSettingsMapper_Map(t *testing.T) {
 		{
 			name: "empty",
 			in: models.Settings{
-				Repo:              "",
-				NotificationTypes: []models.EventType{},
-				Oidc:              models.OidcConfig{},
+				Git: models.GitConfig{
+					Repo: "",
+				},
+				Notifications: models.NotificationConfig{
+					NotificationTypes: []models.EventType{},
+				},
+				Oidc: models.OidcConfig{},
 			},
 			want: api.Settings{
 				Repo:              "",
@@ -121,14 +131,20 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Oidc:              &oidc,
 			},
 			want: models.Settings{
-				Repo:              repo,
-				Branch:            branch,
-				Cron:              cron,
-				Username:          username,
-				Token:             token,
-				NotificationURL:   notificationURL,
-				NotificationTypes: []models.EventType{},
-				Oidc:              oidcModel,
+				Git: models.GitConfig{
+					Repo:     repo,
+					Branch:   branch,
+					Username: username,
+					Token:    token,
+				},
+				Schedule: models.ScheduleConfig{
+					Cron: cron,
+				},
+				Notifications: models.NotificationConfig{
+					NotificationURL:   notificationURL,
+					NotificationTypes: []models.EventType{},
+				},
+				Oidc: oidcModel,
 			},
 		},
 		{
@@ -144,14 +160,20 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Oidc:              &api.OidcSettings{},
 			},
 			want: models.Settings{
-				Repo:              "",
-				Branch:            "",
-				Cron:              "",
-				Username:          "",
-				Token:             "",
-				NotificationURL:   "",
-				NotificationTypes: []models.EventType{},
-				Oidc:              models.OidcConfig{},
+				Git: models.GitConfig{
+					Repo:     "",
+					Branch:   "",
+					Username: "",
+					Token:    "",
+				},
+				Schedule: models.ScheduleConfig{
+					Cron: "",
+				},
+				Notifications: models.NotificationConfig{
+					NotificationURL:   "",
+					NotificationTypes: []models.EventType{},
+				},
+				Oidc: models.OidcConfig{},
 			},
 		},
 	}

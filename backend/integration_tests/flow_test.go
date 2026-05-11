@@ -45,8 +45,10 @@ func TestFileGeneration(t *testing.T) {
 	err = os.WriteFile(filepath.Join(dataDir, "config.yaml"),
 		[]byte(strings.Join([]string{
 			"settings:",
-			"  repo: \"https://github.com/omar-kada/air-compose-config\"",
-			"  cron: \"* * * * *\"",
+			"  git:",
+			"    repo: \"https://github.com/omar-kada/air-compose-config\"",
+			"  schedule:",
+			"    cron: \"* * * * *\"",
 			"environment:",
 			"  AIR_COMPOSE_HOST: test",
 			"  SERVICES_PATH: " + servicesDir,

@@ -95,9 +95,13 @@ func (m *Mocker) TestGitConnection(repo, branch, username, token string) (bool, 
 var (
 	mockConfigOld = models.Config{
 		Settings: models.Settings{
-			Repo:              "https://example.com/repo.git",
-			Branch:            "main",
-			NotificationTypes: []models.EventType{},
+			Git: models.GitConfig{
+				Repo:   "https://example.com/repo.git",
+				Branch: "main",
+			},
+			Notifications: models.NotificationConfig{
+				NotificationTypes: []models.EventType{},
+			},
 		},
 		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{
@@ -110,9 +114,13 @@ var (
 	}
 	mockConfigNew = models.Config{
 		Settings: models.Settings{
-			Repo:              "https://example.com/repo.git",
-			Branch:            "main",
-			NotificationTypes: []models.EventType{},
+			Git: models.GitConfig{
+				Repo:   "https://example.com/repo.git",
+				Branch: "main",
+			},
+			Notifications: models.NotificationConfig{
+				NotificationTypes: []models.EventType{},
+			},
 		},
 		Environment: models.Environment{},
 		Services: map[string]models.ServiceConfig{

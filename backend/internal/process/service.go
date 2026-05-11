@@ -81,12 +81,12 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	defer s.mu.Unlock()
 
 	cfg, err := s.configStore.Get()
-	if err != nil || cfg.Settings.Repo == "" {
-		return models.Deployment{}, fmt.Errorf("error getting repo: %v, %w", cfg.Settings.Repo, err)
+	if err != nil || cfg.Settings.Git.Repo == "" {
+		return models.Deployment{}, fmt.Errorf("error getting repo: %v, %w", cfg.Settings.Git.Repo, err)
 	}
 	oldCfg := s.currentCfg
 	s.currentCfg = cfg
-	slog.Info("deploying from " + cfg.Settings.Repo + "/" + cfg.GetBranch())
+	slog.Info("deploying from " + cfg.Settings.Git.Repo + "/" + cfg.GetBranch())
 
 	patch, syncErr := s.fetcher.DiffWithRemote()
 
@@ -210,7 +210,7 @@ func (s *service) GetCurrentState() (models.State, error) {
 		LastStatus:  dep.Status,
 		NextDeploy:  s.scheduler.GetNext(),
 		Health:      stackstate.GetGlobalHealth(),
-		Initialized: cfg.Settings.Repo != "",
+		Initialized: cfg.Settings.Git.Repo != "",
 	}, nil
 }
 

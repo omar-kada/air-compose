@@ -69,8 +69,8 @@ func (f *fetcher) setConfig() error {
 	}
 	f._cfg = cfg
 	f._auth = &http.BasicAuth{
-		Username: cfg.Settings.Username,
-		Password: cfg.Settings.Token,
+		Username: cfg.Settings.Git.Username,
+		Password: cfg.Settings.Git.Token,
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (f *fetcher) PullBranch(branch string, commitHash string) error {
 func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	if !repoExists(f.repoDir) {
 		repo, err = git.PlainClone(f.repoDir, &git.CloneOptions{
-			URL:           f._cfg.Settings.Repo,
+			URL:           f._cfg.Settings.Git.Repo,
 			ReferenceName: plumbing.NewBranchReferenceName(f._cfg.GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelInfo),

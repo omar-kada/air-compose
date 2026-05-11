@@ -30,7 +30,9 @@ func TestSchedule(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{Cron: "@every 1s"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
+	}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -93,7 +95,9 @@ func TestScheduleWhileRunning(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{Cron: "@every 1s"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
+	}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -142,7 +146,9 @@ func TestScheduleImmediateExecution(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config with "1" cron period
-	testConfig := models.Config{Settings: models.Settings{Cron: "1"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "1"}},
+	}
 
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
@@ -183,7 +189,9 @@ func TestGetNext_AfterScheduling(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{Cron: "@every 10s"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "@every 10s"}},
+	}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -207,7 +215,9 @@ func TestGetNext_MultipleSchedules(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{Cron: "@every 1m"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "@every 1m"}},
+	}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -242,7 +252,9 @@ func TestGetNext_ImmediateExecution(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config with immediate execution
-	testConfig := models.Config{Settings: models.Settings{Cron: "1"}}
+	testConfig := models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "1"}},
+	}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -261,7 +273,7 @@ func TestReSchedule(t *testing.T) {
 	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
 
 	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{Cron: ""}}
+	testConfig := models.Config{Settings: models.Settings{}}
 	err := configStore.Update(testConfig)
 	assert.NoError(t, err)
 
@@ -276,7 +288,9 @@ func TestReSchedule(t *testing.T) {
 	assert.Nil(t, c, "nothing should be scheduled")
 
 	// Update the config
-	testConfig = models.Config{Settings: models.Settings{Cron: "@every 1s"}}
+	testConfig = models.Config{Settings: models.Settings{
+		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
+	}
 	err = configStore.Update(testConfig)
 	assert.NoError(t, err)
 
