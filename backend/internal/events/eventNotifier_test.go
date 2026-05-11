@@ -61,8 +61,10 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 	t.Run("should send notification when config is valid and event is enabled", func(t *testing.T) {
 		cfg := models.Config{
 			Settings: models.Settings{
-				NotificationURL:   "http://example.com",
-				NotificationTypes: []models.EventType{models.EventMisc},
+				Notifications: models.NotificationConfig{
+					NotificationURL:   "http://example.com",
+					NotificationTypes: []models.EventType{models.EventMisc},
+				},
 			},
 		}
 		event := models.Event{
@@ -75,7 +77,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 		mockConfigStore.On("Get").Return(cfg, nil)
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
-		mockSend.On("Send", cfg.Settings.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
+		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
 
@@ -102,8 +104,10 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 	t.Run("should not send notification when event is not enabled", func(t *testing.T) {
 		cfg := models.Config{
 			Settings: models.Settings{
-				NotificationURL:   "http://example.com",
-				NotificationTypes: []models.EventType{},
+				Notifications: models.NotificationConfig{
+					NotificationURL:   "http://example.com",
+					NotificationTypes: []models.EventType{},
+				},
 			},
 		}
 		event := models.Event{
@@ -160,8 +164,10 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 
 	cfg := models.Config{
 		Settings: models.Settings{
-			NotificationURL:   "http://example.com",
-			NotificationTypes: []models.EventType{models.EventMisc},
+			Notifications: models.NotificationConfig{
+				NotificationURL:   "http://example.com",
+				NotificationTypes: []models.EventType{models.EventMisc},
+			},
 		},
 	}
 	event := models.Event{
@@ -175,7 +181,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
 		return e.ObjectID == 1 && e.IsNotification == true
 	})).Return(nil)
-	mockSend.On("Send", cfg.Settings.NotificationURL, mock.Anything).Return(nil)
+	mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, mock.Anything).Return(nil)
 
 	handler.HandleEvent(context.Background(), event)
 
@@ -191,8 +197,10 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testi
 	handler.Send = mockSend.Send
 	cfg := models.Config{
 		Settings: models.Settings{
-			NotificationURL:   "http://example.com",
-			NotificationTypes: []models.EventType{},
+			Notifications: models.NotificationConfig{
+				NotificationURL:   "http://example.com",
+				NotificationTypes: []models.EventType{},
+			},
 		},
 	}
 	event := models.Event{

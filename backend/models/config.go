@@ -12,16 +12,23 @@ import (
 // DefaultBranch is the default branch name used when no branch is specified in the configuration.
 const DefaultBranch = "main"
 
-// Settings represents configuration of air-compose.
-type Settings struct {
-	Repo              string      `mapstructure:"repo"`
-	Branch            string      `mapstructure:"branch"`
-	Username          string      `mapstructure:"username"`
-	Token             string      `mapstructure:"token"`
-	Cron              string      `mapstructure:"cron"`
+// GitConfig represents the configuration for Git-related settings.
+type GitConfig struct {
+	Repo     string `mapstructure:"repo"`
+	Branch   string `mapstructure:"branch"`
+	Username string `mapstructure:"username"`
+	Token    string `mapstructure:"token"`
+}
+
+// ScheduleConfig represents the configuration for schedule-related settings.
+type ScheduleConfig struct {
+	Cron string `mapstructure:"cron"`
+}
+
+// NotificationConfig represents the configuration for notification-related settings.
+type NotificationConfig struct {
 	NotificationURL   string      `mapstructure:"notificationURL"`
 	NotificationTypes []EventType `mapstructure:"notificationTypes"`
-	Oidc              OidcConfig  `mapstructure:"oidc"`
 }
 
 // OidcConfig represents the configuration for OpenID Connect authentication.
@@ -29,6 +36,14 @@ type OidcConfig struct {
 	IssuerURL    string
 	ClientID     string
 	ClientSecret string
+}
+
+// Settings represents configuration of air-compose.
+type Settings struct {
+	Git           GitConfig          `mapstructure:"git"`
+	Schedule      ScheduleConfig     `mapstructure:"schedule"`
+	Notifications NotificationConfig `mapstructure:"notifications"`
+	Oidc          OidcConfig         `mapstructure:"oidc"`
 }
 
 // Environment represents global environment variables.
@@ -67,25 +82,25 @@ func (cfg Config) GetEnabledServices() []string {
 // GetBranch returns the branch name from the configuration. If no branch is specified,
 // it defaults to "main".
 func (cfg Config) GetBranch() string {
-	if cfg.Settings.Branch != "" {
-		return cfg.Settings.Branch
+	if cfg.Settings.Git.Branch != "" {
+		return cfg.Settings.Git.Branch
 	}
 	return DefaultBranch
 }
 
 // IsEventNotificationEnabled checks if the specified event type is enabled for notifications.
 func (cfg Config) IsEventNotificationEnabled(eventType EventType) bool {
-	return slices.Contains(cfg.Settings.NotificationTypes, eventType)
+	return slices.Contains(cfg.Settings.Notifications.NotificationTypes, eventType)
 }
 
 // GetObfuscatedToken returns an obfuscated token
 func (settings Settings) GetObfuscatedToken() string {
-	return Obfuscate(settings.Token)
+	return Obfuscate(settings.Git.Token)
 }
 
 // GetObfuscatedNotificationURL returns an obfuscated notification URL
 func (settings Settings) GetObfuscatedNotificationURL() string {
-	return Obfuscate(settings.NotificationURL)
+	return Obfuscate(settings.Notifications.NotificationURL)
 }
 
 // GetObfuscatedClientSecret returns an obfuscated client secret

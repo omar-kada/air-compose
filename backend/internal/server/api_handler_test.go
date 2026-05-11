@@ -444,12 +444,19 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	h := NewHandler(store, m, m)
 
 	settings := models.Settings{
-		Repo:            "test-repo",
-		Branch:          "main",
-		Cron:            "0 0 * * *",
-		Username:        "user",
-		Token:           "123456789123456789123456789",
-		NotificationURL: "gotify://123456789123456789",
+		Git: models.GitConfig{
+
+			Repo:     "test-repo",
+			Branch:   "main",
+			Username: "user",
+			Token:    "123456789123456789123456789",
+		},
+		Schedule: models.ScheduleConfig{
+			Cron: "0 0 * * *",
+		},
+		Notifications: models.NotificationConfig{
+			NotificationURL: "gotify://123456789123456789",
+		},
 	}
 	store.On("Get").Return(models.Config{Settings: settings}, nil)
 
@@ -499,12 +506,19 @@ func TestSettingsAPISet_Success(t *testing.T) {
 			"service1": {"key1": "value1"},
 		},
 		Settings: models.Settings{
-			Repo:            "old-repo",
-			Branch:          "old-branch",
-			Cron:            "old-cron",
-			Token:           "123456789",
-			NotificationURL: "http://example.com/notification?token=123456",
-			Username:        "old-user",
+			Git: models.GitConfig{
+
+				Repo:     "old-repo",
+				Branch:   "old-branch",
+				Token:    "123456789",
+				Username: "old-user",
+			},
+			Schedule: models.ScheduleConfig{
+				Cron: "old-cron",
+			},
+			Notifications: models.NotificationConfig{
+				NotificationURL: "http://example.com/notification?token=123456",
+			},
 		},
 	}
 	newSettings := api.Settings{
@@ -522,12 +536,20 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
 		assert.Equal(t, oldConfig.Services, newCfg.Services)
 		assert.Equal(t, models.Settings{
-			Repo:            newSettings.Repo,
-			Branch:          *newSettings.Branch,
-			Cron:            *newSettings.Cron,
-			Username:        *newSettings.Username,
-			Token:           "******************************",
-			NotificationURL: "http://ex*********************",
+			Git: models.GitConfig{
+
+				Repo:     newSettings.Repo,
+				Branch:   *newSettings.Branch,
+				Username: *newSettings.Username,
+				Token:    "******************************",
+			},
+			Schedule: models.ScheduleConfig{
+
+				Cron: *newSettings.Cron,
+			},
+			Notifications: models.NotificationConfig{
+				NotificationURL: "http://ex*********************",
+			},
 		}, newCfg.Settings)
 		return true
 	})).Return(nil)
@@ -560,9 +582,12 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 		Environment: models.Environment{},
 		Services:    map[string]models.ServiceConfig{},
 		Settings: models.Settings{
-			Repo:     "old-repo",
-			Token:    "123456789",
-			Username: "old-user",
+			Git: models.GitConfig{
+
+				Repo:     "old-repo",
+				Token:    "123456789",
+				Username: "old-user",
+			},
 		},
 	}
 	newSettings := api.Settings{
@@ -577,9 +602,12 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
 		assert.Equal(t, oldConfig.Services, newCfg.Services)
 		assert.Equal(t, models.Settings{
-			Repo:     newSettings.Repo,
-			Username: *newSettings.Username,
-			Token:    *newSettings.Token,
+			Git: models.GitConfig{
+
+				Repo:     newSettings.Repo,
+				Username: *newSettings.Username,
+				Token:    *newSettings.Token,
+			},
 		}, newCfg.Settings)
 		return true
 	})).Return(nil)
@@ -641,11 +669,16 @@ func TestConfigAPISet_Success(t *testing.T) {
 			"service1": {"key1": "value1"},
 		},
 		Settings: models.Settings{
-			Repo:     "old-repo",
-			Branch:   "old-branch",
-			Cron:     "old-cron",
-			Token:    "123456789",
-			Username: "old-user",
+			Git: models.GitConfig{
+
+				Repo:     "old-repo",
+				Branch:   "old-branch",
+				Username: "old-user",
+				Token:    "123456789",
+			},
+			Schedule: models.ScheduleConfig{
+				Cron: "old-cron",
+			},
 		},
 	}
 	newConfig := api.Config{

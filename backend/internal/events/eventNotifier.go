@@ -43,8 +43,7 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 	if !cfg.IsEventNotificationEnabled(event.Type) {
 		return false
 	}
-	event.IsNotification = true
-	if cfg.Settings.NotificationURL != "" {
+	if cfg.Settings.Notifications.NotificationURL != "" {
 		message := event.Type.ToEmoji() + " " + event.Type.ToText()
 		if event.ObjectID != 0 {
 			message += fmt.Sprintf(" - [%v] %v", event.ObjectID, event.ObjectName)
@@ -53,7 +52,7 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 			message += fmt.Sprintf(" :\n %v", event.Msg)
 		}
 
-		err := h.Send(cfg.Settings.NotificationURL, message)
+		err := h.Send(cfg.Settings.Notifications.NotificationURL, message)
 		if err != nil {
 			slog.Error("can't send notification", "error", err)
 		}

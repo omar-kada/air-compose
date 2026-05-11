@@ -40,11 +40,11 @@ func (s *configStore) Update(cfg models.Config) (err error) {
 		return err
 	}
 
-	if models.IsObfuscated(cfg.Settings.Token) {
-		cfg.Settings.Token = oldCfg.Settings.Token // keep old token when obfuscated
+	if models.IsObfuscated(cfg.Settings.Git.Token) {
+		cfg.Settings.Git.Token = oldCfg.Settings.Git.Token // keep old token when obfuscated
 	}
-	if models.IsObfuscated(cfg.Settings.NotificationURL) {
-		cfg.Settings.NotificationURL = oldCfg.Settings.NotificationURL // keep old url when obfuscated
+	if models.IsObfuscated(cfg.Settings.Notifications.NotificationURL) {
+		cfg.Settings.Notifications.NotificationURL = oldCfg.Settings.Notifications.NotificationURL // keep old url when obfuscated
 	}
 	if models.IsObfuscated(cfg.Settings.Oidc.ClientSecret) {
 		cfg.Settings.Oidc.ClientSecret = oldCfg.Settings.Oidc.ClientSecret // keep old client secret when obfuscated
