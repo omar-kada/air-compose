@@ -7,7 +7,6 @@ import (
 
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
-	"omar-kada/air-compose/internal/files"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server"
@@ -131,10 +130,7 @@ func (run *runCommand) doRun() error {
 	}()
 
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
-		oldYamlCfg, _ := configStore.ToYaml(oldCfg)
-		newYamlCfg, _ := configStore.ToYaml(cfg)
-		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated,
-			files.DiffText(string(oldYamlCfg), string(newYamlCfg)))
+		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated, "")
 		if oldCfg.Settings.Schedule.Cron != cfg.Settings.Schedule.Cron {
 			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Schedule.Cron, "newCron", cfg.Settings.Schedule.Cron)
 			scheduler.ReSchedule()

@@ -37,6 +37,9 @@ model Deployment {
 model DeploymentWithDetails is Deployment {
   files: FileDiff[];
   events: Event[];
+  commit: string;
+  repo: string;
+  branch: string;
 }
 
 model FileDiff {

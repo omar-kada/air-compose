@@ -28,6 +28,9 @@ func TestDeploymentDetailsMapper_Map(t *testing.T) {
 		Title:   "testTitle",
 		Events:  []models.Event{{Type: models.EventMisc, Msg: "testEvent", Time: time.Now()}},
 		Files:   []models.FileDiff{{ID: 1, Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
+		Commit:  "commit",
+		Repo:    "repo",
+		Branch:  "branch",
 	}
 
 	// Expected result
@@ -41,6 +44,9 @@ func TestDeploymentDetailsMapper_Map(t *testing.T) {
 		Title:   "testTitle",
 		Events:  []api.Event{{Type: api.EventTypeMISC, Msg: "testEvent", Time: deployment.Events[0].Time}},
 		Files:   []api.FileDiff{{Diff: "testDiff", NewFile: "testNewFile", OldFile: "testOldFile"}},
+		Commit:  "commit",
+		Repo:    "repo",
+		Branch:  "branch",
 	}
 
 	// Execute

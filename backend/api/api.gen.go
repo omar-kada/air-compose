@@ -134,11 +134,14 @@ type DeploymentStatus string
 // DeploymentWithDetails defines model for DeploymentWithDetails.
 type DeploymentWithDetails struct {
 	Author  string           `json:"author"`
+	Branch  string           `json:"branch"`
+	Commit  string           `json:"commit"`
 	Diff    string           `json:"diff"`
 	EndTime time.Time        `json:"endTime"`
 	Events  []Event          `json:"events"`
 	Files   []FileDiff       `json:"files"`
 	Id      string           `json:"id"`
+	Repo    string           `json:"repo"`
 	Status  DeploymentStatus `json:"status"`
 	Time    time.Time        `json:"time"`
 	Title   string           `json:"title"`

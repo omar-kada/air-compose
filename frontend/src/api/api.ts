@@ -112,6 +112,9 @@ export interface DeploymentWithDetails {
   status: DeploymentStatus;
   files: FileDiff[];
   events: Event[];
+  commit: string;
+  repo: string;
+  branch: string;
 }
 
 export interface Error {
