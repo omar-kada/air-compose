@@ -33,7 +33,12 @@ func TestDeploymentStorage_Migrates(t *testing.T) {
 func TestInitAndGetDeployment(t *testing.T) {
 	s, _ := setupDeploymentStorage(t)
 	files := []models.FileDiff{{Diff: "d1", NewFile: "n1", OldFile: "o1"}}
-	dep, err := s.InitDeployment("title1", "author1", "diff1", files)
+	dep, err := s.InitDeployment("title1", models.Patch{
+		Author: "author1", Diff: "diff1", Files: files},
+		models.GitConfig{
+			Repo:   "repo",
+			Branch: "branch",
+		})
 	assert.NoError(t, err)
 	assert.NotZero(t, dep.ID)
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
@@ -44,6 +49,11 @@ func TestInitAndGetDeployment(t *testing.T) {
 	assert.Equal(t, files[0].Diff, got.Files[0].Diff)
 	assert.Equal(t, files[0].NewFile, got.Files[0].NewFile)
 	assert.Equal(t, files[0].OldFile, got.Files[0].OldFile)
+	assert.Equal(t, "title1", got.Title)
+	assert.Equal(t, "author1", got.Author)
+	assert.Equal(t, "diff1", got.Diff)
+	assert.Equal(t, "repo", got.Repo)
+	assert.Equal(t, "branch", got.Branch)
 	assert.Empty(t, got.Events)
 }
 
@@ -59,14 +69,14 @@ func TestGetDeployment_NoNExisting(t *testing.T) {
 
 func TestGetLastAndGetDeploymentsOrdering(t *testing.T) {
 	s, _ := setupDeploymentStorage(t)
-	_, err := s.InitDeployment("title1", "author1", "diff1", nil)
+	_, err := s.InitDeployment("title1", models.Patch{}, models.GitConfig{})
 	assert.NoError(t, err)
 
 	// small sleep to ensure time difference
 	time.Sleep(2 * time.Millisecond)
-	dep2, _ := s.InitDeployment("title2", "author2", "diff2", nil)
+	dep2, _ := s.InitDeployment("title2", models.Patch{}, models.GitConfig{})
 	time.Sleep(2 * time.Millisecond)
-	dep3, _ := s.InitDeployment("title3", "author3", "diff3", nil)
+	dep3, _ := s.InitDeployment("title3", models.Patch{}, models.GitConfig{})
 
 	last, err := s.GetLastDeployment()
 	assert.NoError(t, err)
@@ -81,7 +91,7 @@ func TestGetLastAndGetDeploymentsOrdering(t *testing.T) {
 
 func TestEndDeploymentAndErrorCases(t *testing.T) {
 	s, _ := setupDeploymentStorage(t)
-	dep, err := s.InitDeployment("title1", "author1", "diff1", nil)
+	dep, err := s.InitDeployment("title1", models.Patch{}, models.GitConfig{})
 	assert.NoError(t, err)
 
 	assert.NoError(t, s.EndDeployment(dep.ID, models.DeploymentStatusSuccess))
@@ -110,7 +120,7 @@ func TestGetDeployments_Pagination(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			s, _ := setupDeploymentStorage(t)
 			for i := 1; i <= c.seed; i++ {
-				_, err := s.InitDeployment(fmt.Sprintf("t%d", i), "author", "diff", nil)
+				_, err := s.InitDeployment(fmt.Sprintf("t%d", i), models.Patch{}, models.GitConfig{})
 				assert.NoError(t, err)
 			}
 

@@ -22,21 +22,12 @@ import (
 // NoErrAlreadyUpToDate is returned when the repository is already up to date.
 var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 
-// Patch represent the difference between two commits
-type Patch struct {
-	Diff       string
-	Title      string
-	Files      []models.FileDiff
-	Author     string
-	CommitHash string
-}
-
 // Fetcher is responsible for syncing files from repo
 type Fetcher interface {
 	ClearRepo() error
 	CheckoutBranch(branch string) error
 	PullBranch(branch string, commitSHA string) error
-	DiffWithRemote() (Patch, error)
+	DiffWithRemote() (models.Patch, error)
 	TestGitConnection(repo, branch, username, token string) (bool, error)
 }
 
@@ -157,14 +148,14 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	return repo, nil
 }
 
-func (f *fetcher) DiffWithRemote() (Patch, error) {
+func (f *fetcher) DiffWithRemote() (models.Patch, error) {
 	err := f.setConfig()
 	if err != nil {
-		return Patch{}, err
+		return models.Patch{}, err
 	}
 	repo, err := f.openRepo(f._cfg.GetBranch())
 	if err != nil {
-		return Patch{}, err
+		return models.Patch{}, err
 	}
 
 	return f.getPatch(repo)
@@ -240,39 +231,39 @@ func branchExists(repo *git.Repository, branch string) bool {
 	return branchErr == nil
 }
 
-func (f *fetcher) getPatch(repo *git.Repository) (Patch, error) {
+func (f *fetcher) getPatch(repo *git.Repository) (models.Patch, error) {
 	// Get local HEAD commit
 	localCommit, err := getLocalHeadCommit(repo)
 	if err != nil {
-		return Patch{}, err
+		return models.Patch{}, err
 	}
 
 	// Get remote HEAD commit (example: origin/main)
 	remoteCommit, err := f.getRemoteCommit(repo)
 	if err != nil {
-		return Patch{}, err
+		return models.Patch{}, err
 	}
 
 	if remoteCommit.Hash.Equal(localCommit.Hash) {
 		// return early when commits are the same
-		return Patch{}, nil
+		return models.Patch{}, nil
 	}
 
 	// Extract trees for diff
 	localTree, err := localCommit.Tree()
 	if err != nil {
-		return Patch{}, fmt.Errorf("error while getting local tree: %w", err)
+		return models.Patch{}, fmt.Errorf("error while getting local tree: %w", err)
 	}
 
 	remoteTree, err := remoteCommit.Tree()
 	if err != nil {
-		return Patch{}, fmt.Errorf("error while getting remote tree: %w", err)
+		return models.Patch{}, fmt.Errorf("error while getting remote tree: %w", err)
 	}
 
 	// Compute patch (the diff)
 	patch, err := localTree.Patch(remoteTree)
 	if err != nil {
-		return Patch{}, fmt.Errorf("error while getting patch: %w", err)
+		return models.Patch{}, fmt.Errorf("error while getting patch: %w", err)
 	}
 
 	return f.parser.Parse(patch.String(), remoteCommit)

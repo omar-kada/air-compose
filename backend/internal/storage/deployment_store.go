@@ -18,7 +18,7 @@ type gormDeploymentStorage struct {
 type DeploymentStorage interface {
 	GetDeployments(c Cursor[uint64]) ([]models.Deployment, error)
 	GetDeployment(id uint64) (models.Deployment, error)
-	InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error)
+	InitDeployment(title string, patch models.Patch, config models.GitConfig) (models.Deployment, error)
 	EndDeployment(deploymentID uint64, status models.DeploymentStatus) error
 	GetLastDeployment() (models.Deployment, error)
 }
@@ -55,15 +55,18 @@ func (s *gormDeploymentStorage) GetDeployment(id uint64) (models.Deployment, err
 }
 
 // InitDeployment creates a new deployment with the given parameters
-func (s *gormDeploymentStorage) InitDeployment(title string, author string, diff string, files []models.FileDiff) (models.Deployment, error) {
+func (s *gormDeploymentStorage) InitDeployment(title string, patch models.Patch, config models.GitConfig) (models.Deployment, error) {
 	dep := models.Deployment{
 		Title:  title,
-		Author: author,
-		Diff:   diff,
+		Author: patch.Author,
+		Diff:   patch.Diff,
 		Status: models.DeploymentStatusRunning,
 		Time:   time.Now(),
-		Files:  files,
+		Files:  patch.Files,
 		Events: []models.Event{},
+		Commit: patch.CommitHash,
+		Repo:   config.Repo,
+		Branch: config.Branch,
 	}
 	if err := s.db.Create(&dep).Error; err != nil {
 		return models.Deployment{}, err

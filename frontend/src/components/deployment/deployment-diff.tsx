@@ -2,25 +2,33 @@ import type { FileDiff } from '@/api/api';
 import { GitCompare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FileDiffView } from '.';
+import { Badge } from '../ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 
 export function DeploymentDiff({
   fileDiffs,
   autoOpen,
+  children,
 }: {
   fileDiffs: FileDiff[];
   autoOpen?: boolean;
+  children?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex">
-          <GitCompare className="size-5 mx-1" />
-          {t('DIFF.UPDATED_FILES')}
+        <CardTitle className="flex justify-between">
+          <span className="flex flex-nowrap items-center-safe">
+            <GitCompare className="size-5 mx-1" />
+            {t('DIFF.UPDATED_FILES')}
+            <Badge className="size-5 mx-1" variant="outline">
+              {fileDiffs.length}
+            </Badge>
+          </span>
         </CardTitle>
-        <CardDescription>{t('DIFF.X_UPDATED_FILES', { count: fileDiffs.length })}</CardDescription>
+        {children && <CardDescription className="font-light">{children}</CardDescription>}
       </CardHeader>
       <CardContent>
         {fileDiffs.map((fileDiff) => (

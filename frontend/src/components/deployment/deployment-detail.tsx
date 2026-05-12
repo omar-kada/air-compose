@@ -1,13 +1,11 @@
 import { DeploymentStatus } from '@/api/api';
 import { getDeploymentOptions, getDeploymentsQueryOptions, useFilteredQuery } from '@/hooks';
-import { cn, formatElapsed, ROUTES } from '@/lib';
+import { cn, ROUTES } from '@/lib';
 import { useQueryClient } from '@tanstack/react-query';
-import { Timer, User } from 'lucide-react';
-import { useEffect, type ReactElement } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { DeploymentDiff, DeploymentEventLog, DeploymentStatusBadge } from '.';
-import { Item, ItemContent, ItemMedia, ItemTitle } from '../ui/item';
 import { ScrollArea } from '../ui/scroll-area';
 import { Skeleton } from '../ui/skeleton';
 import { Spinner } from '../ui/spinner';
@@ -53,23 +51,24 @@ export function DeploymentDetail({ id, className }: { id: string; className?: st
                 status={deployment.status}
                 className="mx-3"
               ></DeploymentStatusBadge>
-              <HumanTime className="text-sm" time={deployment.time}></HumanTime>
             </div>
             {isFetching && <Spinner className="size-6" />}
           </div>
           <ScrollArea className="gap-4 h-1 flex-1">
-            <div className="flex flex-col gap-4 m-4">
-              <div className="grid grid-cols-2 gap-4 self-start">
+            <div className="flex flex-col gap-4 mx-4">
+              <div className="flex flex-wrap gap-2 text-muted-foreground text-sm">
                 <InfoItem
-                  icon={<User className="size-5" />}
-                  label={deployment.author !== '' ? deployment.author : t('AUTOMATIC')}
+                  label={t('DEPLOYMENTS.AUTHOR')}
+                  value={deployment.author !== '' ? deployment.author : t('DEPLOYMENTS.AUTOMATIC')}
                 />
-                <InfoItem
-                  icon={<Timer className="size-5" />}
-                  label={formatElapsed(deployment.time, deployment.endTime)}
-                />
+                -<HumanTime time={deployment.time}></HumanTime>
               </div>
-              <DeploymentDiff fileDiffs={deployment.files ?? []} />
+              <DeploymentDiff fileDiffs={deployment.files ?? []}>
+                <InfoItem
+                  label={t('DEPLOYMENTS.REPO')}
+                  value={`${deployment.repo} ${deployment.branch ? `(${deployment.branch})` : ''}`}
+                />
+              </DeploymentDiff>
               <DeploymentEventLog events={deployment.events ?? []} />
             </div>
           </ScrollArea>
@@ -79,14 +78,19 @@ export function DeploymentDetail({ id, className }: { id: string; className?: st
   );
 }
 
-function InfoItem({ icon, label }: { icon: ReactElement; label: string }) {
+function InfoItem({
+  label,
+  value,
+  className,
+}: {
+  label?: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <Item variant="muted" className="border-accent" size="sm">
-      <ItemMedia>{icon}</ItemMedia>
-      <ItemContent>
-        <ItemTitle>{label}</ItemTitle>
-      </ItemContent>
-    </Item>
+    <span className={cn('text-sm font-light', className)}>
+      {label} {value}
+    </span>
   );
 }
 

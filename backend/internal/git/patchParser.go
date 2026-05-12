@@ -11,7 +11,7 @@ import (
 
 // PatchParser is an interface for parsing git patches into structured data.
 type PatchParser interface {
-	Parse(patch string, commit *gitObject.Commit) (Patch, error)
+	Parse(patch string, commit *gitObject.Commit) (models.Patch, error)
 }
 
 type parser struct{}
@@ -24,7 +24,7 @@ func NewPatchParser() PatchParser {
 // Parse converts a git patch and commit into a structured Patch object.
 // It extracts file-level diffs from the patch, associates them with the commit metadata,
 // and returns a Patch containing all this information.
-func (parser) Parse(diff string, commit *gitObject.Commit) (Patch, error) {
+func (parser) Parse(diff string, commit *gitObject.Commit) (models.Patch, error) {
 	// Split the diff string into separate file diffs based on "diff --git" markers
 	diffsByFile := strings.Split(diff, "diff --git")
 
@@ -37,11 +37,11 @@ func (parser) Parse(diff string, commit *gitObject.Commit) (Patch, error) {
 	for _, diffStr := range diffsByFile {
 		fileDiff, err := toFileDiff("diff --git" + diffStr)
 		if err != nil {
-			return Patch{}, err
+			return models.Patch{}, err
 		}
 		fileDiffs = append(fileDiffs, fileDiff)
 	}
-	return Patch{
+	return models.Patch{
 		Title:      commit.Message,
 		Diff:       diff,
 		Files:      fileDiffs,

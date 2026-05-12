@@ -26,6 +26,9 @@ type Deployment struct {
 	Title   string
 	Files   []FileDiff `gorm:"foreignKey:DeploymentID;constraint:OnDelete:CASCADE;"`
 	Events  []Event    `gorm:"foreignKey:ObjectID;constraint:OnDelete:CASCADE;"`
+	Commit  string
+	Repo    string
+	Branch  string
 }
 
 // Compare compares two deployments by their ID.
@@ -45,4 +48,13 @@ type FileDiff struct {
 	NewFile      string
 	OldFile      string
 	DeploymentID uint64 `gorm:"index"`
+}
+
+// Patch represent the difference between two commits
+type Patch struct {
+	Diff       string
+	Title      string
+	Files      []FileDiff
+	Author     string
+	CommitHash string
 }

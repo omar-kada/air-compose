@@ -42,7 +42,7 @@ func newDeployerWithMocks(t *testing.T, mocker *Mocker) *deployer {
 	t.Helper()
 	db := testutil.NewMemoryStorage(t)
 	depStore, _ := storage.NewDeploymentStorage(db)
-	dep, _ := depStore.InitDeployment("test commit", "Test", "", []models.FileDiff{})
+	dep, _ := depStore.InitDeployment("test commit", models.Patch{}, models.GitConfig{})
 	ctx := events.GetDeploymentContext(context.Background(), dep)
 
 	return &deployer{

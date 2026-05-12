@@ -113,7 +113,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		}
 	}
 
-	deployment, err := s.store.InitDeployment(title, patch.Author, patch.Diff, patch.Files)
+	deployment, err := s.store.InitDeployment(title, patch, cfg.Settings.Git)
 	ctx := events.GetDeploymentContext(context.Background(), deployment)
 	s.dispatcher.Dispatch(ctx, models.EventDeploymentStarted, "")
 	if err != nil {
