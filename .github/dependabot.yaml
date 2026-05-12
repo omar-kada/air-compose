@@ -1,0 +1,67 @@
+version: 2
+updates:
+
+  # Go Backend
+  - package-ecosystem: "gomod"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      backend-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
+  # React Frontend (npm)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      frontend-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
+  # Typespec (npm)
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    groups:
+      frontend-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
+
+  # Github actions CI
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 7
