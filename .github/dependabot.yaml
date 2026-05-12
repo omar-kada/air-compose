@@ -65,3 +65,4 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+      
