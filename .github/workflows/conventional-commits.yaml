@@ -12,13 +12,13 @@ jobs:
       pull-requests: write # Needed to post status checks
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Fetch all history so the action can check all commits in the PR
           fetch-depth: 0 [citation:4]
 
       - name: Validate commit messages
-        uses: oliversalzburg/action-commit-validator@v0.0.4 # Use the latest version
+        uses: oliversalzburg/action-commit-validator@v3.0.0 # Use the latest version
         with:
           accepted_types: |
             feat
