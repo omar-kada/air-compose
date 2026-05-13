@@ -35,7 +35,7 @@ type inspector struct {
 
 // NewInspector creates new inspector given a docker client
 func NewInspector() (Inspector, error) {
-	client, err := client.New(client.FromEnv, client.WithAPIVersionNegotiation())
+	client, err := client.New(client.FromEnv)
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
 		return nil, err

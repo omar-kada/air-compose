@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 	"github.com/testcontainers/testcontainers-go"
 )
 
@@ -27,14 +28,14 @@ func findComposeStack(ctx context.Context, workingDir string) ([]*container.Summ
 	}
 
 	// List all running containers
-	containers, err := provider.Client().ContainerList(ctx, container.ListOptions{All: true})
+	containers, err := provider.Client().ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, err
 	}
 	workDirLabel := "com.docker.compose.project.working_dir"
 	stackContainers := make([]*container.Summary, 0)
 	// Look for Git server containers
-	for _, container := range containers {
+	for _, container := range containers.Items {
 		if container.Labels[workDirLabel] == workingDir {
 			stackContainers = append(stackContainers, &container)
 		}
