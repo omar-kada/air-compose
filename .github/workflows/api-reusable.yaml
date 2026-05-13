@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           # prefer the input ref if provided, otherwise use the caller's SHA
           ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: 'npm'
@@ -35,7 +35,7 @@ jobs:
         run: make tsp-gen
 
       - name: Upload open API
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: open-api
           path: ./api/tsp-output
