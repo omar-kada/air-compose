@@ -20,7 +20,7 @@ jobs:
       - name: Validate commit messages
         uses: oliversalzburg/action-commit-validator@v3.0.0 # Use the latest version
         with:
-          accepted_types: |
+          accepted-types: |
             feat
             fix
             docs
@@ -32,4 +32,4 @@ jobs:
             ci
             build
             revert
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
