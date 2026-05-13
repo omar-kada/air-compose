@@ -1,5 +1,5 @@
 # ----------- Builder Stage -----------
-FROM golang:1.25.1-bookworm AS builder
+FROM golang:1.25.5-bookworm AS builder
 
 RUN mkdir /air-compose
 WORKDIR /air-compose
