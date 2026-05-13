@@ -15,6 +15,8 @@ import (
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/client"
+
 	gitObject "github.com/go-git/go-git/v6/plumbing/object"
 	"github.com/go-git/go-git/v6/plumbing/transport/http"
 )
@@ -122,7 +124,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 			ReferenceName: plumbing.NewBranchReferenceName(f._cfg.GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelInfo),
-			Auth:          f._auth,
+			ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
 		})
 	} else {
 		repo, err = git.PlainOpen(f.repoDir)
@@ -131,7 +133,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 		return repo, fmt.Errorf("error while opening repo : %w, %v", err, *f)
 	}
 	err = repo.Fetch(&git.FetchOptions{
-		Auth: f._auth,
+		ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
 	})
 
 	if err != nil && err != NoErrAlreadyUpToDate {
@@ -318,7 +320,7 @@ func (*fetcher) TestGitConnection(repo, branch, username, token string) (bool, e
 
 	res, err := git.PlainClone(tempDir, &git.CloneOptions{
 		URL:           repo,
-		Auth:          auth,
+		ClientOptions: []client.Option{client.WithHTTPAuth(auth)},
 		ReferenceName: refName,
 	})
 	slog.Debug("Testing git connection", "res", res, "err", err)
