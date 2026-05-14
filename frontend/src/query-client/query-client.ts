@@ -2,7 +2,7 @@ import { authAPIRefresh } from '@/api/api';
 import { isInvalidToken, ROUTES } from '@/lib';
 import { QueryCache, QueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { debounce } from 'lodash';
+import debounce from 'lodash.debounce';
 
 const debouncedRefreshToken = debounce(refreshToken, 5000, { leading: true }); // 5 seconds debounce
 
