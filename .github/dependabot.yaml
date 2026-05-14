@@ -26,6 +26,10 @@ updates:
           - "*"
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "eslint"
+        # Ignore versions 10.x.x and above because of plugin incompatibility, should be remove later
+        versions: [">=10.0.0"] 
 
   # Typespec (npm)
   - package-ecosystem: "npm"
