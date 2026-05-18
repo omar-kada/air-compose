@@ -523,11 +523,11 @@ func TestSettingsAPISet_Success(t *testing.T) {
 	}
 	newSettings := api.Settings{
 		Repo:            "new-repo",
-		Branch:          ptr("new-branch"),
-		Cron:            ptr("new-cron"),
-		Username:        ptr("new-user"),
-		Token:           ptr("******************************"),
-		NotificationURL: ptr("http://ex*********************"),
+		Branch:          new("new-branch"),
+		Cron:            new("new-cron"),
+		Username:        new("new-user"),
+		Token:           new("******************************"),
+		NotificationURL: new("http://ex*********************"),
 	}
 
 	store.On("Get").Return(oldConfig, nil)
@@ -592,8 +592,8 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	}
 	newSettings := api.Settings{
 		Repo:     "new-repo",
-		Username: ptr("new-user"),
-		Token:    ptr("123456789123456789123456789"),
+		Username: new("new-user"),
+		Token:    new("123456789123456789123456789"),
 	}
 
 	store.On("Get").Return(oldConfig, nil)
@@ -635,10 +635,10 @@ func TestSettingsAPISet_Error(t *testing.T) {
 
 	settings := api.Settings{
 		Repo:     "test-repo",
-		Branch:   ptr("main"),
-		Cron:     ptr("0 0 * * *"),
-		Token:    ptr(""),
-		Username: ptr("user"),
+		Branch:   new("main"),
+		Cron:     new("0 0 * * *"),
+		Token:    new(""),
+		Username: new("user"),
 	}
 
 	errSettings := errors.New("settings error")
@@ -650,10 +650,6 @@ func TestSettingsAPISet_Error(t *testing.T) {
 	assert.Equal(t, errSettings, err)
 
 	store.AssertExpectations(t)
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
 
 func TestConfigAPISet_Success(t *testing.T) {
@@ -1012,9 +1008,9 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 	req := api.SettingsAPITestGitConnectionRequestObject{
 		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{
 			Repo:     "test-repo",
-			Branch:   ptr("main"),
-			Username: ptr("user"),
-			Token:    ptr("token"),
+			Branch:   new("main"),
+			Username: new("user"),
+			Token:    new("token"),
 		},
 	}
 
@@ -1042,9 +1038,9 @@ func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	req := api.SettingsAPITestGitConnectionRequestObject{
 		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{
 			Repo:     "test-repo",
-			Branch:   ptr("main"),
-			Username: ptr("user"),
-			Token:    ptr("token"),
+			Branch:   new("main"),
+			Username: new("user"),
+			Token:    new("token"),
 		},
 	}
 

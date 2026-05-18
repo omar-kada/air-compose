@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"maps"
 	"net/http/httptest"
 	"testing"
 
@@ -58,7 +59,7 @@ func NewOidcTestServerWithToken(t *testing.T) *MockOIDCServer {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
-		resp := map[string]interface{}{
+		resp := map[string]any{
 			"access_token": "test-access-token",
 			"token_type":   "Bearer",
 			"expires_in":   3600,
@@ -137,18 +138,16 @@ func StartMockOIDCServer(t *testing.T) *MockOIDCServer {
 }
 
 // SignIDToken signs an ID token for the given user and audiences.
-func (m *MockOIDCServer) SignIDToken(clientID, userID string, customClaims map[string]interface{}) string {
+func (m *MockOIDCServer) SignIDToken(clientID, userID string, customClaims map[string]any) string {
 	// Build the required minimal claims per OIDC spec
-	claims := map[string]interface{}{
+	claims := map[string]any{
 		"iss": m.IssuerURL,
 		"aud": clientID,
 		"sub": userID,
 		"exp": 360000000000,
 		// Add other claims like exp, iat, etc. if needed
 	}
-	for k, v := range customClaims {
-		claims[k] = v
-	}
+	maps.Copy(claims, customClaims)
 
 	// The library expects a JSON string
 	claimsJSON, err := json.Marshal(claims)
