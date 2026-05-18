@@ -61,8 +61,8 @@ func (s *HTTPServer) Serve(params models.ServerParams) error {
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
 	h = middlewares.AuthorizationMiddleware(h)
-	h = middlewares.AuthnMiddleware(h, s.userSvc, params.IsServerSecure())
-	h = middlewares.OidcMiddleware(h, s.oidcSvc, params.IsServerSecure())
+	h = middlewares.AuthnMiddleware(h, s.userSvc)
+	h = middlewares.OidcMiddleware(h, s.oidcSvc)
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},

@@ -37,7 +37,7 @@ func TestOidcMiddleware_LoginRedirect(t *testing.T) {
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/oidc/login", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -68,7 +68,7 @@ func TestOidcMiddleware_LoginWrongConfig(t *testing.T) {
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/oidc/login", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -89,7 +89,7 @@ func TestOidcMiddleware_LoginInvalidMethod(t *testing.T) {
 	_, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("POST", "/api/oidc/login", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -103,7 +103,7 @@ func TestOidcMiddleware_Callback(t *testing.T) {
 	server, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	code := server.SignIDToken(testutil.ClientID, "user", map[string]any{
 		"email": "test@example.com",
@@ -144,7 +144,7 @@ func TestOidcMiddleware_InvalidMethod(t *testing.T) {
 	_, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("POST", "/api/oidc/callback", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -158,7 +158,7 @@ func TestOidcMiddleware_MissingCode(t *testing.T) {
 	_, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/oidc/callback?state=teststate", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -172,7 +172,7 @@ func TestOidcMiddleware_InvalidState(t *testing.T) {
 	_, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/oidc/callback?code=testcode&state=invalidstate", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -186,7 +186,7 @@ func TestOidcMiddleware_OidcLoginFailure(t *testing.T) {
 	_, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/oidc/callback?code=invalidcode&state=teststate", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -200,13 +200,14 @@ func TestOidcMiddleware_InsecureCookies(t *testing.T) {
 	server, oidcService := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), oidcService, false)
+	}), oidcService)
 
 	code := server.SignIDToken(testutil.ClientID, "user", map[string]any{
 		"email": "test@example.com",
 	})
 
 	req := httptest.NewRequest("GET", "/api/oidc/callback?code="+code+"&state=teststate", http.NoBody)
+	req.TLS = nil
 	rr := httptest.NewRecorder()
 
 	req.AddCookie(&http.Cookie{
@@ -243,7 +244,7 @@ func TestOidcMiddleware_NextHandlerCalled(t *testing.T) {
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		called = true
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/some-other-endpoint", http.NoBody)
 	rr := httptest.NewRecorder()
@@ -259,7 +260,7 @@ func TestOidcMiddleware_OriginURLSet(t *testing.T) {
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		called = true
-	}), oidcService, true)
+	}), oidcService)
 
 	req := httptest.NewRequest("GET", "/api/some-other-endpoint", http.NoBody)
 	req.Header.Set("Referer", "http://example.com")

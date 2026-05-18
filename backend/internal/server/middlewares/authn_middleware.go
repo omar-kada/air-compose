@@ -42,7 +42,7 @@ func UsernameFromContext(ctx context.Context) (string, bool) {
 // @param next http.Handler - the next handler in the chain
 // @param authService user.AuthService - the authentication service
 // @return http.Handler - the authentication middleware
-func AuthnMiddleware(next http.Handler, authService users.AuthService, secureToken bool) http.Handler {
+func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint, ok := strings.CutPrefix(r.URL.Path, "/api/")
 		if !ok {
@@ -54,17 +54,17 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService, secureTok
 			if r.Method == http.MethodGet {
 				next.ServeHTTP(w, r)
 			} else {
-				registerHandler(w, r, authService, secureToken)
+				registerHandler(w, r, authService)
 			}
 			return
 		case "auth/login":
-			loginHandler(w, r, authService, secureToken)
+			loginHandler(w, r, authService)
 			return
 		case "auth/logout":
-			logoutHandler(w, r, authService, secureToken)
+			logoutHandler(w, r, authService)
 			return
 		case "auth/refresh":
-			refreshHandler(w, r, authService, secureToken)
+			refreshHandler(w, r, authService)
 			return
 		}
 		inWhiteList := isWhitelisted(endpoint, r.Method)
@@ -94,7 +94,7 @@ func isWhitelisted(url, method string) bool {
 	return false
 }
 
-func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
+func registerHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -123,7 +123,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 		return
 	}
 
-	setTokenInCookies(w, token, secureToken)
+	setTokenInCookies(w, token, isTLS(r))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -131,7 +131,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request, authService users.A
 	})
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
+func loginHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -160,14 +160,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request, authService users.Auth
 		return
 	}
 
-	setTokenInCookies(w, auth, secureToken)
+	setTokenInCookies(w, auth, isTLS(r))
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
 		Success: true,
 	})
 }
 
-func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
+func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -188,7 +188,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.Au
 		return
 	}
 
-	setTokenInCookies(w, newToken, secureToken)
+	setTokenInCookies(w, newToken, isTLS(r))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{
@@ -196,7 +196,7 @@ func refreshHandler(w http.ResponseWriter, r *http.Request, authService users.Au
 	})
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService, secureToken bool) {
+func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.AuthService) {
 	if r.Method != http.MethodPost {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -221,7 +221,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, authService users.Aut
 		Expires:        time.Unix(0, 0),
 		RefreshToken:   "",
 		RefreshExpires: time.Unix(0, 0),
-	}, secureToken)
+	}, isTLS(r))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(api.BooleanResponse{

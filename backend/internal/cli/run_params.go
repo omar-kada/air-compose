@@ -11,7 +11,6 @@ const (
 	_servicesDir  defaults.VarKey = "services-dir"
 	_addWritePerm defaults.VarKey = "add-write-perm"
 	_port         defaults.VarKey = "port"
-	_httpMode     defaults.VarKey = "http-mode"
 )
 
 var varInfoMap = defaults.VariableInfoMap{
@@ -20,7 +19,6 @@ var varInfoMap = defaults.VariableInfoMap{
 	_servicesDir:  {EnvKey: "AIR_COMPOSE_SERVICES_DIR", DefaultValue: "."},
 	_addWritePerm: {EnvKey: "AIR_COMPOSE_ADD_WRITE_PERM", DefaultValue: "false"},
 	_port:         {EnvKey: "AIR_COMPOSE_PORT", DefaultValue: 5005},
-	_httpMode:     {EnvKey: "AIR_COMPOSE_HTTP_MODE", DefaultValue: "false"},
 }
 
 // RunParams contain parameters of the run command
@@ -39,8 +37,7 @@ func getParamsWithDefaults(p RunParams) RunParams {
 			AddWritePerm: varInfoMap.EnvOrDefault(p.AddWritePerm, _addWritePerm),
 		},
 		ServerParams: models.ServerParams{
-			Port:     varInfoMap.EnvOrDefaultInt(p.Port, _port),
-			HTTPMode: varInfoMap.EnvOrDefault(p.HTTPMode, _httpMode),
+			Port: varInfoMap.EnvOrDefaultInt(p.Port, _port),
 		},
 	}
 }
