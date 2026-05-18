@@ -1,6 +1,8 @@
 module omar-kada/air-compose
 
-go 1.25.5
+go 1.26
+
+toolchain go1.26.3
 
 require (
 	github.com/containrrr/shoutrrr v0.8.0

@@ -54,7 +54,7 @@ func TestTokenHolderConcurrency(t *testing.T) {
 	// Concurrently insert and remove tokens
 	done := make(chan bool)
 	go func() {
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			th.InsertToken(token, username, expiryTime)
 			time.Sleep(1 * time.Millisecond)
 		}
@@ -62,7 +62,7 @@ func TestTokenHolderConcurrency(t *testing.T) {
 	}()
 
 	go func() {
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			th.RemoveToken(token)
 			time.Sleep(1 * time.Millisecond)
 		}
@@ -70,7 +70,7 @@ func TestTokenHolderConcurrency(t *testing.T) {
 	}()
 
 	go func() {
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			assert.Equal(t, username, th.GetUsernameFromToken(token2))
 			time.Sleep(1 * time.Millisecond)
 		}

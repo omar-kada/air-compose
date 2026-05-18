@@ -105,7 +105,7 @@ func TestOidcMiddleware_Callback(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), oidcService, true)
 
-	code := server.SignIDToken(testutil.ClientID, "user", map[string]interface{}{
+	code := server.SignIDToken(testutil.ClientID, "user", map[string]any{
 		"email": "test@example.com",
 	})
 
@@ -202,7 +202,7 @@ func TestOidcMiddleware_InsecureCookies(t *testing.T) {
 		t.Fail() // shouldn't be called
 	}), oidcService, false)
 
-	code := server.SignIDToken(testutil.ClientID, "user", map[string]interface{}{
+	code := server.SignIDToken(testutil.ClientID, "user", map[string]any{
 		"email": "test@example.com",
 	})
 

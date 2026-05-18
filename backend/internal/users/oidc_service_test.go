@@ -62,7 +62,7 @@ func TestOidcService_LoginOidc(t *testing.T) {
 	oidcService := NewOidcService(oidcConfig, authStore)
 
 	// Test
-	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
+	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]any{
 		"email":        testutil.Email,
 		"redirect-uri": "callback-url",
 	})
@@ -99,7 +99,7 @@ func TestOidcService_LoginOidc_NonceMismatch(t *testing.T) {
 	oidcService := NewOidcService(oidcConfig, authStore)
 
 	// Test
-	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]interface{}{
+	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]any{
 		"email":        testutil.Email,
 		"redirect-uri": "callback-url",
 	})

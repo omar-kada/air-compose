@@ -2,6 +2,7 @@ package files
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -11,14 +12,14 @@ import (
 func DiffText(oldStr, newStr string) string {
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffCleanupSemantic(dmp.DiffMain(oldStr, newStr, true))
-	res := ""
+	var res strings.Builder
 	for _, diff := range diffs {
 		switch diff.Type {
 		case diffmatchpatch.DiffDelete:
-			res += fmt.Sprintf("- %s\n", diff.Text)
+			fmt.Fprintf(&res, "- %s\n", diff.Text)
 		case diffmatchpatch.DiffInsert:
-			res += fmt.Sprintf("+ %s\n", diff.Text)
+			fmt.Fprintf(&res, "+ %s\n", diff.Text)
 		}
 	}
-	return res
+	return res.String()
 }
