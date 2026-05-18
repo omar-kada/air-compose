@@ -45,6 +45,13 @@ func getTokenFromCookies(r *http.Request) models.Token {
 	}
 }
 
+func isTLS(r *http.Request) bool {
+	if r.Header.Get("X-Forwarded-Proto") == "https" {
+		return true
+	}
+	return r.TLS != nil
+}
+
 func setTokenInCookies(w http.ResponseWriter, token models.Token, secureToken bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     _tokenKey,

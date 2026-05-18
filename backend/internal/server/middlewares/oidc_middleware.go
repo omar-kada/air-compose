@@ -22,27 +22,27 @@ const (
 // @param next http.Handler - the next handler in the chain
 // @param oidcService user.OidcService - the oidc service
 // @return http.Handler - the authentication middleware
-func OidcMiddleware(next http.Handler, oidcService users.OidcService, secureToken bool) http.Handler {
+func OidcMiddleware(next http.Handler, oidcService users.OidcService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		oidcOperation, ok := strings.CutPrefix(r.URL.Path, "/api/oidc/")
 		if ok {
 			switch oidcOperation {
 			case "login":
-				oidcLoginRedirectHandler(w, r, oidcService, secureToken)
+				oidcLoginRedirectHandler(w, r, oidcService)
 			case "callback":
-				oidcCallbackHandler(w, r, oidcService, secureToken)
+				oidcCallbackHandler(w, r, oidcService)
 			default:
 				sendError(w, api.ErrorCodeINVALIDREQUEST)
 			}
 			return
 		}
 
-		setOriginURLInCookies(w, r.Referer(), secureToken)
+		setOriginURLInCookies(w, r.Referer(), isTLS(r))
 		next.ServeHTTP(w, r)
 	})
 }
 
-func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService, secureToken bool) {
+func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService) {
 	if r.Method != http.MethodGet {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -71,13 +71,13 @@ func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService use
 	if originURL == "" {
 		originURL = getBaseURL(r)
 	}
-	setTokenInCookies(w, token, secureToken)
-	setStateInCookies(w, "", "", secureToken)
+	setTokenInCookies(w, token, isTLS(r))
+	setStateInCookies(w, "", "", isTLS(r))
 
 	http.Redirect(w, r, originURL, http.StatusFound)
 }
 
-func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService, secureToken bool) {
+func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService) {
 	if r.Method != http.MethodGet {
 		sendError(w, api.ErrorCodeNOTALLOWED)
 		return
@@ -101,7 +101,7 @@ func oidcLoginRedirectHandler(w http.ResponseWriter, r *http.Request, oidcServic
 		sendErrorMessage(w, api.ErrorCodeSERVERERROR, "error while getting auth URL")
 		return
 	}
-	setStateInCookies(w, state, nonce, secureToken)
+	setStateInCookies(w, state, nonce, isTLS(r))
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 
@@ -118,6 +118,7 @@ func getBaseURL(r *http.Request) string {
 	}
 	return scheme + "://" + r.Host
 }
+
 func getCallbackURL(r *http.Request) string {
 	return getBaseURL(r) + callbackEndpoint
 }

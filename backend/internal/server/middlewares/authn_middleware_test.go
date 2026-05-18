@@ -44,10 +44,10 @@ func TestAuthnMiddleware_Register(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
-	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -67,9 +67,9 @@ func TestAuthnMiddleware_RegisterGet(t *testing.T) {
 		called = true
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"ok":true}`))
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/auth/register", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/auth/register", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -87,10 +87,10 @@ func TestAuthnMiddleware_Login(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"username","password":"password"}`
-	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -108,9 +108,9 @@ func TestAuthnMiddleware_Logout(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:    _tokenKey,
 		Value:   string(token.Value),
@@ -139,9 +139,9 @@ func TestAuthnMiddleware_AuthorizedAccess(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, "username", username)
 		w.WriteHeader(http.StatusOK)
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/auth/protected", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/auth/protected", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _tokenKey,
 		Value: string(token.Value),
@@ -162,9 +162,9 @@ func TestAuthnMiddleware_WhitelistedAccess(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/user", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/user", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -178,10 +178,10 @@ func TestAuthnMiddleware_RegisterInvalidRequestBody(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
-	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -196,10 +196,10 @@ func TestAuthnMiddleware_RegisterMissingCredentials(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
-	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -216,10 +216,10 @@ func TestAuthnMiddleware_RegisterFailure(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
-	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/register", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -234,9 +234,9 @@ func TestAuthnMiddleware_LoginInvalidMethod(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/auth/login", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/auth/login", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -250,10 +250,10 @@ func TestAuthnMiddleware_LoginInvalidRequestBody(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"testuser"}` // missing password
-	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -268,10 +268,10 @@ func TestAuthnMiddleware_LoginMissingCredentials(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"","password":""}` // empty username and password
-	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -286,10 +286,10 @@ func TestAuthnMiddleware_LoginFailure(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
 	reqBody := `{"username":"wronguser","password":"wrongpass"}`
-	req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(reqBody))
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/login", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
@@ -304,9 +304,9 @@ func TestAuthnMiddleware_LogoutInvalidMethod(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/auth/logout", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/auth/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -320,9 +320,9 @@ func TestAuthnMiddleware_LogoutMissingToken(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/logout", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -341,9 +341,9 @@ func TestAuthnMiddleware_LogoutFailure(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/logout", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/logout", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _tokenKey,
 		Value: string(invalidToken.Value),
@@ -365,9 +365,9 @@ func TestAuthnMiddleware_Refresh(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/refresh", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _refreshTokenKey,
 		Value: string(token.RefreshToken),
@@ -387,9 +387,9 @@ func TestAuthnMiddleware_RefreshInvalidMethod(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("GET", "/api/auth/refresh", http.NoBody)
+	req := httptest.NewRequest("GET", "https://example.com/api/auth/refresh", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -403,9 +403,9 @@ func TestAuthnMiddleware_RefreshMissingToken(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/refresh", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -424,9 +424,9 @@ func TestAuthnMiddleware_RefreshFailure(t *testing.T) {
 
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
-	}), userService, true)
+	}), userService)
 
-	req := httptest.NewRequest("POST", "/api/auth/refresh", http.NoBody)
+	req := httptest.NewRequest("POST", "https://example.com/api/auth/refresh", http.NoBody)
 	req.AddCookie(&http.Cookie{
 		Name:  _refreshTokenKey,
 		Value: string(invalidToken.RefreshToken),
@@ -444,7 +444,7 @@ func TestAuthnMiddleware_InsecureCookies(t *testing.T) {
 	handler := AuthnMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		// Should not be called
 		t.Fail()
-	}), userService, false)
+	}), userService)
 
 	reqBody := `{"username":"testuser","password":"testpass"}`
 	req := httptest.NewRequest("POST", "/api/auth/register", strings.NewReader(reqBody))

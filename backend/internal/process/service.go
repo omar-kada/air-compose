@@ -98,8 +98,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 	configChanged := !reflect.DeepEqual(oldCfg, cfg)
 	healthyStacks := s.areStacksHealthy(cfg)
 	if patch.Diff == "" && !configChanged && healthyStacks {
-		slog.Info("Configuration and repository are up to date. No changes detected.",
-			"oldConfig", oldCfg, "newConfig", cfg, "diff", patch.Diff)
+		slog.Debug("Configuration and repository are up to date. No changes detected.")
 		return models.Deployment{}, nil
 	}
 	title := patch.Title
