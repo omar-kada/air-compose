@@ -28,14 +28,14 @@ type State struct {
 // StacksState represents the state of multiple services in a stack.
 type StacksState struct {
 	services     map[string]StackStatus
-	globalStatus StackStatus
+	GlobalStatus StackStatus
 }
 
 // NewStacksState creates a new StacksState with empty services map and unknown global status.
 func NewStacksState() StacksState {
 	return StacksState{
 		services:     make(map[string]StackStatus),
-		globalStatus: StackStatusUnknown,
+		GlobalStatus: StackStatusUnknown,
 	}
 }
 
@@ -51,7 +51,7 @@ func (ss *StacksState) ForService(serviceName string) StackStatus {
 // ProgressiveUpdateServiceStatus updates the status of a service and propagates the change to the global status.
 func (ss *StacksState) ProgressiveUpdateServiceStatus(serviceName string, newStatus StackStatus) {
 	ss.services[serviceName] = getCombinedStatus(ss.ForService(serviceName), newStatus)
-	ss.globalStatus = getCombinedStatus(ss.globalStatus, newStatus)
+	ss.GlobalStatus = getCombinedStatus(ss.GlobalStatus, newStatus)
 }
 
 // CombineContainerStatus updates the status of a service based on the container's health and state.
@@ -74,7 +74,7 @@ func (ss *StacksState) CombineContainerStatus(serviceName string, ctr ContainerS
 
 // GetGlobalHealth returns the current global status of the stack.
 func (ss *StacksState) GetGlobalHealth() StackStatus {
-	return ss.globalStatus
+	return ss.GlobalStatus
 }
 
 func getCombinedStatus(oldStatus, newStatus StackStatus) StackStatus {

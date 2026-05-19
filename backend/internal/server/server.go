@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server/middlewares"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
 	"omar-kada/air-compose/models"
 
@@ -20,33 +18,36 @@ import (
 
 // Server will listen to requests on a port
 type Server interface {
-	Serve(params models.ServerParams) error
+	Serve(
+		params models.ServerParams,
+		businessHandler api.StrictServerInterface,
+		userSvc users.Service,
+		oidcSvc users.OidcService,
+	) error
 	Shutdown(ctx context.Context)
 }
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	configStore      storage.ConfigStore
-	processSvc       process.Service
-	userSvc          users.Service
-	oidcSvc          users.OidcService
 	websocketHandler *WebsocketHandler
-	server           *http.Server
+
+	server *http.Server
 }
 
 // NewServer creates a new http server
-func NewServer(configStore storage.ConfigStore, service process.Service, userService users.Service, oidcService users.OidcService) Server {
+func NewServer() Server {
 	return &HTTPServer{
-		configStore:      configStore,
-		processSvc:       service,
-		userSvc:          userService,
-		oidcSvc:          oidcService,
 		websocketHandler: newWebsocketHandler(),
 	}
 }
 
 // Serve initializes routes from generated api and serves on the given port
-func (s *HTTPServer) Serve(params models.ServerParams) error {
+func (s *HTTPServer) Serve(
+	params models.ServerParams,
+	businessHandler api.StrictServerInterface,
+	userSvc users.Service,
+	oidcSvc users.OidcService,
+) error {
 	// Create a new serve mux
 	mux := http.NewServeMux()
 
@@ -55,14 +56,14 @@ func (s *HTTPServer) Serve(params models.ServerParams) error {
 	mux.HandleFunc("/", spaHandler)
 
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	myHandler := NewHandler(s.configStore, s.processSvc, s.userSvc)
-	strict := api.NewStrictHandler(myHandler, []api.StrictMiddlewareFunc{})
+	//myHandler := handlers.NewBusinessHandler(s.configStore, s.processSvc, s.userSvc)
+	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
 
 	// get an `http.Handler` that we can use
 	h := api.HandlerFromMux(strict, mux)
 	h = middlewares.AuthorizationMiddleware(h)
-	h = middlewares.AuthnMiddleware(h, s.userSvc)
-	h = middlewares.OidcMiddleware(h, s.oidcSvc)
+	h = middlewares.AuthnMiddleware(h, userSvc)
+	h = middlewares.OidcMiddleware(h, oidcSvc)
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},

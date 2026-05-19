@@ -38,11 +38,12 @@ func (m *MockExec) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func newInspectorWithMock(client Client, mockExec shell.Executor) *inspector {
+func newInspectorWithMock(client Client, mockExec shell.Executor, servicesDir string) *inspector {
 	return &inspector{
 		log:          slog.Default(),
 		dockerClient: client,
 		executor:     mockExec,
+		servicesDir:  servicesDir,
 	}
 }
 
@@ -102,8 +103,8 @@ func TestGetManagedStacks(t *testing.T) {
 	}, errors.New("failed to inspect container"))
 
 	servicesDir := "/services"
-	inspector := newInspectorWithMock(mockClient, mockExec)
-	result, err := inspector.GetManagedStacks(servicesDir)
+	inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+	result, err := inspector.GetManagedStacks()
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -113,7 +114,7 @@ func TestGetManagedStacks(t *testing.T) {
 	// Test error case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
 
-	_, err = inspector.GetManagedStacks(servicesDir)
+	_, err = inspector.GetManagedStacks()
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to list containers")
@@ -166,8 +167,8 @@ func TestGetServiceContainers(t *testing.T) {
 
 	servicesDir := "/services"
 	serviceName := "service1"
-	inspector := newInspectorWithMock(mockClient, mockExec)
-	result, err := inspector.GetServiceContainers(serviceName, servicesDir)
+	inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+	result, err := inspector.getServiceContainers(serviceName)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -177,7 +178,7 @@ func TestGetServiceContainers(t *testing.T) {
 	// Test error case
 	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service2", "config", "--services"}).Once().Return([]byte{}, errors.New("failed to get services"))
 
-	_, err = inspector.GetServiceContainers("service2", servicesDir)
+	_, err = inspector.getServiceContainers("service2")
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to get services")
