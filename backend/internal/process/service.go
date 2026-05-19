@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"slices"
 	"sync"
 
 	"omar-kada/air-compose/internal/docker"
@@ -24,13 +23,7 @@ const (
 // Service abstracts service deployment operations
 type Service interface {
 	SyncDeployment() (models.Deployment, error)
-	TestGitConnection(repo, branch, username, token string) (bool, error)
 	GetCurrentState() (models.State, error)
-	GetDiff() ([]models.FileDiff, error)
-	GetManagedStacks() (map[string][]models.ContainerSummary, error)
-	GetDeployments(limit int, offset uint64) ([]models.Deployment, error)
-	GetDeployment(id uint64) (models.Deployment, error)
-	GetNotifications(limit int, offset uint64) ([]models.Event, error)
 }
 
 // NewService creates a new process Service instance
@@ -40,7 +33,6 @@ func NewService(
 	containersInspector docker.Inspector,
 	fetcher git.Fetcher,
 	store storage.DeploymentStorage,
-	eventStore storage.EventStorage,
 	configStore storage.ConfigStore,
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
@@ -51,7 +43,6 @@ func NewService(
 		containersInspector: containersInspector,
 		fetcher:             fetcher,
 		store:               store,
-		eventStore:          eventStore,
 		configStore:         configStore,
 		dispatcher:          dispatcher,
 		params:              deployParams,
@@ -66,7 +57,6 @@ type service struct {
 	containersInspector docker.Inspector
 	fetcher             git.Fetcher
 	store               storage.DeploymentStorage
-	eventStore          storage.EventStorage
 	configStore         storage.ConfigStore
 	dispatcher          events.Dispatcher
 	scheduler           ConfigScheduler
@@ -140,48 +130,11 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 }
 
 func (s *service) areStacksHealthy(cfg models.Config) bool {
-	state, err := s.getStacksState(cfg)
+	state, err := s.containersInspector.GetStacksState(cfg)
 	if err != nil {
 		return false
 	}
 	return state.GetGlobalHealth() == models.StackStatusHealthy || state.GetGlobalHealth() == models.StackStatusStarting
-}
-
-func (s *service) getStacksState(cfg models.Config) (models.StacksState, error) {
-	state := models.NewStacksState()
-	runningStacks, err := s.containersInspector.GetManagedStacks(s.params.ServicesDir)
-	if err != nil {
-		return state, err
-	}
-	enabledServices := cfg.GetEnabledServices()
-
-enabledServiceLoop:
-	for _, service := range enabledServices {
-
-		expectedContainers, err := s.containersInspector.GetServiceContainers(service, s.params.ServicesDir)
-		slog.Debug("expectedServices ", "service", service, "expectedServices", expectedContainers, "err", err)
-		if err != nil {
-			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-			continue
-		}
-		serviceContainers := runningStacks[service]
-		slog.Debug("running containers ", "service", service, "serviceContainers", serviceContainers)
-
-		if len(serviceContainers) != len(expectedContainers) {
-			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-			continue
-		}
-		for _, ctr := range serviceContainers {
-
-			if !slices.Contains(expectedContainers, ctr.Name) {
-				state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-				continue enabledServiceLoop
-			}
-			state.CombineContainerStatus(service, ctr)
-		}
-	}
-	slog.Debug(fmt.Sprintf("all services are %+v", state))
-	return state, nil
 }
 
 func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
@@ -194,15 +147,10 @@ func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.
 	}
 }
 
-// GetManagedStacks returns a map of all containers managed by the tool
-func (s *service) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
-	return s.containersInspector.GetManagedStacks(s.params.ServicesDir)
-}
-
 // GetCurrentState returns the statistics of deployments for the last N days
 func (s *service) GetCurrentState() (models.State, error) {
 	dep, _ := s.store.GetLastDeployment()
-	stackstate, _ := s.getStacksState(s.currentCfg)
+	stackstate, _ := s.containersInspector.GetStacksState(s.currentCfg)
 	cfg, _ := s.configStore.Get()
 
 	return models.State{
@@ -211,32 +159,4 @@ func (s *service) GetCurrentState() (models.State, error) {
 		Health:      stackstate.GetGlobalHealth(),
 		Initialized: cfg.Settings.Git.Repo != "",
 	}, nil
-}
-
-// GetDiff returns the changed files between what's deployed and the repo
-func (s *service) GetDiff() ([]models.FileDiff, error) {
-	patch, err := s.fetcher.DiffWithRemote()
-	if err != nil {
-		return []models.FileDiff{}, err
-	}
-	return patch.Files, nil
-}
-
-// GetDeployments returns a paginated list of deployments.
-func (s *service) GetDeployments(limit int, offset uint64) ([]models.Deployment, error) {
-	return s.store.GetDeployments(storage.NewIDCursor(limit, offset))
-}
-
-// GetNotifications returns a paginated list of notifications.
-func (s *service) GetNotifications(limit int, offset uint64) ([]models.Event, error) {
-	return s.eventStore.GetNotifications(storage.NewIDCursor(limit, offset))
-}
-
-// GetDeployment returns a deployment.
-func (s *service) GetDeployment(id uint64) (models.Deployment, error) {
-	return s.store.GetDeployment(id)
-}
-
-func (s *service) TestGitConnection(repo, branch, username, token string) (bool, error) {
-	return s.fetcher.TestGitConnection(repo, branch, username, token)
 }

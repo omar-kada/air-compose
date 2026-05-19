@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/models"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -38,11 +39,12 @@ func (m *MockExec) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func newInspectorWithMock(client Client, mockExec shell.Executor) *inspector {
+func newInspectorWithMock(client Client, mockExec shell.Executor, servicesDir string) *inspector {
 	return &inspector{
 		log:          slog.Default(),
 		dockerClient: client,
 		executor:     mockExec,
+		servicesDir:  servicesDir,
 	}
 }
 
@@ -102,8 +104,8 @@ func TestGetManagedStacks(t *testing.T) {
 	}, errors.New("failed to inspect container"))
 
 	servicesDir := "/services"
-	inspector := newInspectorWithMock(mockClient, mockExec)
-	result, err := inspector.GetManagedStacks(servicesDir)
+	inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+	result, err := inspector.GetManagedStacks()
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -113,7 +115,7 @@ func TestGetManagedStacks(t *testing.T) {
 	// Test error case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{}, errors.New("failed to list containers"))
 
-	_, err = inspector.GetManagedStacks(servicesDir)
+	_, err = inspector.GetManagedStacks()
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to list containers")
@@ -166,8 +168,8 @@ func TestGetServiceContainers(t *testing.T) {
 
 	servicesDir := "/services"
 	serviceName := "service1"
-	inspector := newInspectorWithMock(mockClient, mockExec)
-	result, err := inspector.GetServiceContainers(serviceName, servicesDir)
+	inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+	result, err := inspector.getServiceContainers(serviceName)
 
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -177,8 +179,115 @@ func TestGetServiceContainers(t *testing.T) {
 	// Test error case
 	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service2", "config", "--services"}).Once().Return([]byte{}, errors.New("failed to get services"))
 
-	_, err = inspector.GetServiceContainers("service2", servicesDir)
+	_, err = inspector.getServiceContainers("service2")
 
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "failed to get services")
+}
+
+func TestGetStacksState(t *testing.T) {
+	t.Run("successful case with healthy stack", func(t *testing.T) {
+		mockClient := new(MockClient)
+		mockExec := new(MockExec)
+		servicesDir := "/services"
+		inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+
+		mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
+			Items: []container.Summary{
+				{
+					ID:     "container1",
+					Names:  []string{"/container1"},
+					Image:  "image1",
+					State:  "running",
+					Status: "Up 1 hour",
+					Labels: map[string]string{
+						"com.docker.compose.service": "service1",
+					},
+				},
+			},
+		}, nil)
+
+		mockClient.On("ContainerInspect", mock.Anything, "container1", mock.Anything).Return(client.ContainerInspectResult{
+			Container: container.InspectResponse{
+				Config: &container.Config{
+					Labels: map[string]string{
+						"com.docker.compose.project.working_dir": "/services/service1",
+						"com.docker.compose.service":             "service1",
+					},
+				},
+				State: &container.State{
+					Health: &container.Health{
+						Status: container.Healthy,
+					},
+					StartedAt: "2006-01-02T15:04:05.999999999Z",
+				},
+			},
+		}, nil)
+
+		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).Once().Return([]byte("service1"), nil)
+
+		cfg := models.Config{
+			Services: map[string]models.ServiceConfig{
+				"service1": {
+					"Enabled": "true",
+				},
+			},
+		}
+
+		result, err := inspector.GetStacksState(cfg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, models.StackStatusHealthy, result.ForService("service1"))
+	})
+
+	t.Run("case with unhealthy stack (missing container)", func(t *testing.T) {
+		mockClient := new(MockClient)
+		mockExec := new(MockExec)
+		servicesDir := "/services"
+		inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+
+		mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
+			Items: []container.Summary{},
+		}, nil)
+
+		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service2", "config", "--services"}).Once().Return([]byte("service2"), nil)
+
+		cfg := models.Config{
+			Services: map[string]models.ServiceConfig{
+				"service2": {
+					"Enabled": "true",
+				},
+			},
+		}
+
+		result, err := inspector.GetStacksState(cfg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, models.StackStatusUnhealthy, result.ForService("service2"))
+	})
+
+	t.Run("case with error getting service containers", func(t *testing.T) {
+		mockClient := new(MockClient)
+		mockExec := new(MockExec)
+		servicesDir := "/services"
+		inspector := newInspectorWithMock(mockClient, mockExec, servicesDir)
+		mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
+			Items: []container.Summary{},
+		}, nil)
+		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service3", "config", "--services"}).Once().Return([]byte{}, errors.New("failed to get services"))
+
+		cfg := models.Config{
+			Services: map[string]models.ServiceConfig{
+				"service3": {
+					"Enabled": "true",
+				},
+			},
+		}
+
+		result, err := inspector.GetStacksState(cfg)
+
+		assert.NoError(t, err)
+		assert.Equal(t, models.StackStatusUnhealthy, result.ForService("service3"))
+	})
+
 }

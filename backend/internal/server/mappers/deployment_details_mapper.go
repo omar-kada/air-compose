@@ -9,25 +9,21 @@ import (
 )
 
 // DeploymentDetailsMapper maps between models.Deployment and api.DeploymentWithDetails types.
-type DeploymentDetailsMapper interface {
-	Mapper[models.Deployment, api.DeploymentWithDetails]
-}
-
-type depDetailsMapper struct {
+type DeploymentDetailsMapper struct {
 	diffMapper  Mapper[models.FileDiff, api.FileDiff]
 	eventMapper Mapper[models.Event, api.Event]
 }
 
 // NewDeploymentDetailsMapper creates a new DeploymentMapper with the given DiffMapper and EventMapper.
 func NewDeploymentDetailsMapper(diffMapper Mapper[models.FileDiff, api.FileDiff], eventMapper Mapper[models.Event, api.Event]) DeploymentDetailsMapper {
-	return depDetailsMapper{
+	return DeploymentDetailsMapper{
 		diffMapper:  diffMapper,
 		eventMapper: eventMapper,
 	}
 }
 
 // Map maps a models.Deployment to an api.DeploymentWithDetails.
-func (m depDetailsMapper) Map(dep models.Deployment) api.DeploymentWithDetails {
+func (m DeploymentDetailsMapper) Map(dep models.Deployment) api.DeploymentWithDetails {
 	return api.DeploymentWithDetails{
 		Author:  dep.Author,
 		Diff:    dep.Diff,
