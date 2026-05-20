@@ -10,6 +10,7 @@ import (
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server"
+	"omar-kada/air-compose/internal/server/handlers"
 	"omar-kada/air-compose/internal/shell"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
@@ -101,17 +102,17 @@ func (run *runCommand) doRun() error {
 	})
 	scheduler := process.NewConfigScheduler(configStore)
 
-	inspector, err := docker.NewInspector()
+	inspector, err := docker.NewInspector(params.ServicesDir)
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)
 	}
+	fetcher := git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore)
 	processService := process.NewService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
-		git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore),
+		fetcher,
 		deploymentStore,
-		eventStore,
 		configStore,
 		dispatcher,
 		scheduler)
@@ -137,6 +138,8 @@ func (run *runCommand) doRun() error {
 		}
 		oidcService.OnConfigChanged(cfg.Settings.Oidc)
 	})
-	server := server.NewServer(configStore, processService, userService, oidcService)
-	return server.Serve(params.ServerParams)
+
+	businessHandler := handlers.NewBusinessHandler(configStore, processService, userService, fetcher, inspector, eventStore, deploymentStore)
+	server := server.NewServer()
+	return server.Serve(params.ServerParams, businessHandler, userService, oidcService)
 }

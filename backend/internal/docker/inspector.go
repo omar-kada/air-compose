@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,8 +17,8 @@ import (
 
 // Inspector defined operations for info retreival on containers
 type Inspector interface {
-	GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error)
-	GetServiceContainers(serviceName string, servicesDir string) ([]string, error)
+	GetManagedStacks() (map[string][]models.ContainerSummary, error)
+	GetStacksState(cfg models.Config) (models.StacksState, error)
 }
 
 // Client defines the methods from the Docker client that are used by the Inspector
@@ -31,10 +32,11 @@ type inspector struct {
 	log          *slog.Logger
 	executor     shell.Executor
 	dockerClient Client
+	servicesDir  string
 }
 
 // NewInspector creates new inspector given a docker client
-func NewInspector() (Inspector, error) {
+func NewInspector(servicesDir string) (Inspector, error) {
 	client, err := client.New(client.FromEnv)
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
@@ -44,12 +46,13 @@ func NewInspector() (Inspector, error) {
 		log:          slog.Default(),
 		executor:     shell.NewExecutor(),
 		dockerClient: client,
+		servicesDir:  servicesDir,
 	}, nil
 }
 
 // GetManagedStacks returns the list of containers (as returned by ContainerList)
 // that are managed by AirCompose
-func (i *inspector) GetManagedStacks(servicesDir string) (map[string][]models.ContainerSummary, error) {
+func (i *inspector) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
 	ctx := context.Background()
 	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
@@ -65,7 +68,7 @@ func (i *inspector) GetManagedStacks(servicesDir string) (map[string][]models.Co
 				"containerId", c.ID, "names", c.Names, "error", err)
 			continue
 		}
-		serviceName := getServiceNameFromLabel(inspect, servicesDir)
+		serviceName := getServiceNameFromLabel(inspect, i.servicesDir)
 		if serviceName != "" {
 			startedAt, err := time.Parse(time.RFC3339Nano, inspect.Container.State.StartedAt)
 			if err != nil {
@@ -96,7 +99,44 @@ func getServiceNameFromLabel(inspect client.ContainerInspectResult, servicesDir 
 	return ""
 }
 
-func (i *inspector) GetServiceContainers(serviceName string, servicesDir string) ([]string, error) {
-	result, err := i.executor.Exec("docker", "compose", "--project-directory", filepath.Join(servicesDir, serviceName), "config", "--services")
+func (i *inspector) getServiceContainers(serviceName string) ([]string, error) {
+	result, err := i.executor.Exec("docker", "compose", "--project-directory", filepath.Join(i.servicesDir, serviceName), "config", "--services")
 	return strings.Fields(string(result)), err
+}
+
+func (i *inspector) GetStacksState(cfg models.Config) (models.StacksState, error) {
+	state := models.NewStacksState()
+	runningStacks, err := i.GetManagedStacks()
+	if err != nil {
+		return state, err
+	}
+	enabledServices := cfg.GetEnabledServices()
+
+enabledServiceLoop:
+	for _, service := range enabledServices {
+
+		expectedContainers, err := i.getServiceContainers(service)
+		slog.Debug("expectedServices ", "service", service, "expectedServices", expectedContainers, "err", err)
+		if err != nil {
+			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+			continue
+		}
+		serviceContainers := runningStacks[service]
+		slog.Debug("running containers ", "service", service, "serviceContainers", serviceContainers)
+
+		if len(serviceContainers) != len(expectedContainers) {
+			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+			continue
+		}
+		for _, ctr := range serviceContainers {
+
+			if !slices.Contains(expectedContainers, ctr.Name) {
+				state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
+				continue enabledServiceLoop
+			}
+			state.CombineContainerStatus(service, ctr)
+		}
+	}
+	slog.Debug(fmt.Sprintf("all services are %+v", state))
+	return state, nil
 }

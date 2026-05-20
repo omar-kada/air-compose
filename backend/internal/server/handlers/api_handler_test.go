@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"context"
@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/server/middlewares"
+	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 
 	"github.com/moby/moby/api/types/container"
@@ -17,6 +19,9 @@ import (
 
 type MockProcess struct {
 	mock.Mock
+	git.Fetcher
+	storage.EventStorage
+	storage.DeploymentStorage
 }
 
 func (m *MockProcess) SyncDeployment() (models.Deployment, error) {
@@ -29,18 +34,17 @@ func (m *MockProcess) GetCurrentState() (models.State, error) {
 	return args.Get(0).(models.State), args.Error(1)
 }
 
-func (m *MockProcess) GetDiff() ([]models.FileDiff, error) {
-	args := m.Called()
-	return args.Get(0).([]models.FileDiff), args.Error(1)
-}
-
 func (m *MockProcess) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
 	args := m.Called()
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
 }
+func (m *MockProcess) GetStacksState(cfg models.Config) (models.StacksState, error) {
+	args := m.Called(cfg)
+	return args.Get(0).(models.StacksState), args.Error(1)
+}
 
-func (m *MockProcess) GetDeployments(limit int, offset uint64) ([]models.Deployment, error) {
-	args := m.Called(limit, offset)
+func (m *MockProcess) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
+	args := m.Called(c)
 	return args.Get(0).([]models.Deployment), args.Error(1)
 }
 
@@ -49,8 +53,8 @@ func (m *MockProcess) GetDeployment(id uint64) (models.Deployment, error) {
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func (m *MockProcess) GetNotifications(limit int, offset uint64) ([]models.Event, error) {
-	args := m.Called(limit, offset)
+func (m *MockProcess) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
+	args := m.Called(c)
 	return args.Get(0).([]models.Event), args.Error(1)
 }
 
@@ -79,6 +83,11 @@ func (m *MockProcess) TestGitConnection(repo, branch, username, token string) (b
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockProcess) DiffWithRemote() (models.Patch, error) {
+	args := m.Called()
+	return args.Get(0).(models.Patch), args.Error(1)
+}
+
 type MockStore struct {
 	mock.Mock
 }
@@ -105,13 +114,13 @@ func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	deps := []models.Deployment{
 		{ID: 1, Title: "first", Author: "alice", Diff: "d1", Status: models.DeploymentStatusSuccess},
 		{ID: 2, Title: "second", Author: "bob", Diff: "d2", Status: models.DeploymentStatusRunning},
 	}
-	m.On("GetDeployments", 2, uint64(0)).Return(deps, nil)
+	m.On("GetDeployments", storage.NewIDCursor(2, uint64(0))).Return(deps, nil)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 2}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -131,7 +140,7 @@ func TestDeployementAPIList_Success(t *testing.T) {
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	off := "notuint"
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 1, Offset: &off}}
@@ -143,7 +152,7 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 func TestDeployementAPIRead_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 10, Title: "Manual Deploy", Author: "ci", Diff: "diff"}
 	m.On("GetDeployment", uint64(10)).Return(dep, nil)
@@ -166,7 +175,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.DeployementAPIReadRequestObject{Id: "abc"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -177,7 +186,7 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 99, Title: "Manual Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
 	m.On("SyncDeployment").Return(dep, nil)
@@ -207,7 +216,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 func TestStatusAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	stacks := map[string][]models.ContainerSummary{
 		"stack1": {{ID: "c1", Name: "c1", Image: "img1", State: container.StateRunning, Health: container.Healthy}},
@@ -231,7 +240,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 func TestStateAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	next := time.Now().Add(1 * time.Hour)
 	state := models.State{LastStatus: models.DeploymentStatusError, NextDeploy: next}
@@ -254,10 +263,12 @@ func TestStateAPIGet_Success(t *testing.T) {
 func TestDiffAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	fileDiffs := []models.FileDiff{{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "d1"}}
-	m.On("GetDiff").Return(fileDiffs, nil)
+	m.On("DiffWithRemote").Return(models.Patch{
+		Files: fileDiffs,
+	}, nil)
 
 	resp, err := h.DiffAPIGet(context.Background(), api.DiffAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -276,10 +287,10 @@ func TestDiffAPIGet_Success(t *testing.T) {
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errList := errors.New("db error")
-	m.On("GetDeployments", 2, uint64(0)).Return([]models.Deployment{}, errList)
+	m.On("GetDeployments", storage.NewIDCursor(2, uint64(0))).Return([]models.Deployment{}, errList)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 2}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -299,7 +310,7 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 0}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -310,7 +321,7 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errGet := errors.New("not found")
 	m.On("GetDeployment", uint64(10)).Return(models.Deployment{}, errGet)
@@ -327,7 +338,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 func TestStatusAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errStacks := errors.New("failed to get stacks")
 	m.On("GetManagedStacks").Return(map[string][]models.ContainerSummary{}, errStacks)
@@ -342,7 +353,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 func TestStateAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errState := errors.New("state error")
 	m.On("GetCurrentState").Return(models.State{}, errState)
@@ -358,10 +369,12 @@ func TestStateAPIGet_Error(t *testing.T) {
 func TestDiffAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errDiff := errors.New("diff error")
-	m.On("GetDiff").Return([]models.FileDiff{}, errDiff)
+	m.On("DiffWithRemote").Return(models.Patch{
+		Files: []models.FileDiff{},
+	}, errDiff)
 
 	resp, err := h.DiffAPIGet(context.Background(), api.DiffAPIGetRequestObject{})
 	assert.Nil(t, resp)
@@ -374,7 +387,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
 
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	config := models.Config{
 		Environment: models.Environment{
@@ -399,7 +412,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 func TestConfigAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errConfig := errors.New("config error")
 	store.On("Get").Return(models.Config{}, errConfig)
@@ -419,7 +432,7 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 	t.Setenv("AIR_COMPOSE_EDIT_CONFIG", "true")
 	t.Setenv("AIR_COMPOSE_EDIT_SETTINGS", "true")
 
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.FeaturesAPIGet(context.Background(), api.FeaturesAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -441,7 +454,7 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 func TestSettingsAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	settings := models.Settings{
 		Git: models.GitConfig{
@@ -481,7 +494,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 func TestSettingsAPIGet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errSettings := errors.New("settings error")
 	store.On("Get").Return(models.Config{}, errSettings)
@@ -496,7 +509,7 @@ func TestSettingsAPIGet_Error(t *testing.T) {
 func TestSettingsAPISet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -576,7 +589,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{},
@@ -631,7 +644,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 func TestSettingsAPISet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	settings := api.Settings{
 		Repo:     "test-repo",
@@ -655,7 +668,7 @@ func TestSettingsAPISet_Error(t *testing.T) {
 func TestConfigAPISet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -715,7 +728,7 @@ func TestConfigAPISet_Success(t *testing.T) {
 func TestConfigAPISet_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	config := api.Config{
 		GlobalVariables: map[string]string{
@@ -740,7 +753,7 @@ func TestConfigAPISet_Error(t *testing.T) {
 func TestUserAPIGet_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser", Type: models.UserTypeLocal}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -761,7 +774,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 func TestUserAPIGet_NoUser(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIGet(context.Background(), api.UserAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -771,7 +784,7 @@ func TestUserAPIGet_NoUser(t *testing.T) {
 func TestUserAPIDelete_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -793,7 +806,7 @@ func TestUserAPIDelete_Success(t *testing.T) {
 func TestUserAPIDelete_NoUser(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIDelete(context.Background(), api.UserAPIDeleteRequestObject{})
 	assert.Error(t, err)
@@ -810,7 +823,7 @@ func TestUserAPIDelete_NoUser(t *testing.T) {
 func TestUserAPIDelete_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -834,7 +847,7 @@ func TestUserAPIDelete_Error(t *testing.T) {
 func TestAuthAPIRegistered(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	// Mock IsRegistered and Get
 	m.On("IsRegistered").Return(true, nil)
@@ -864,7 +877,7 @@ func TestAuthAPIRegistered(t *testing.T) {
 func TestAuthAPILogout(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogout(context.Background(), api.AuthAPILogoutRequestObject{})
 	assert.Error(t, err)
@@ -881,7 +894,7 @@ func TestAuthAPILogout(t *testing.T) {
 func TestAuthAPILogin(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogin(context.Background(), api.AuthAPILoginRequestObject{})
 	assert.Error(t, err)
@@ -898,7 +911,7 @@ func TestAuthAPILogin(t *testing.T) {
 func TestAuthAPIRegister(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPIRegister(context.Background(), api.AuthAPIRegisterRequestObject{})
 	assert.Error(t, err)
@@ -915,7 +928,7 @@ func TestAuthAPIRegister(t *testing.T) {
 func TestUserAPIChangePassword_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -945,7 +958,7 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 func TestUserAPIChangePassword_NoUser(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.UserAPIChangePasswordRequestObject{
 		Body: &api.UserAPIChangePasswordJSONRequestBody{
@@ -969,7 +982,7 @@ func TestUserAPIChangePassword_NoUser(t *testing.T) {
 func TestUserAPIChangePassword_Error(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -1001,7 +1014,7 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(true, nil)
 
@@ -1030,7 +1043,7 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	m := &MockProcess{}
 	store := &MockStore{}
-	h := NewHandler(store, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errTest := errors.New("connection failed")
 	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(false, errTest)

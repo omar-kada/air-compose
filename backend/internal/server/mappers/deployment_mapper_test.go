@@ -12,7 +12,7 @@ import (
 
 func TestDeploymentMapper_Map(t *testing.T) {
 	// Setup
-	deploymentMapper := NewDeploymentMapper()
+	deploymentMapper := DeploymentMapper{}
 
 	// Test data
 	deployment := models.Deployment{
@@ -47,7 +47,7 @@ func TestDeploymentMapper_Map(t *testing.T) {
 
 func TestDeploymentMapper_MapToPageInfo(t *testing.T) {
 	// Setup
-	deploymentMapper := NewDeploymentMapper()
+	deploymentMapper := DeploymentMapper{}
 
 	// Test data
 	deployments := []models.Deployment{
