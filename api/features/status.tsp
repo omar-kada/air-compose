@@ -7,14 +7,10 @@ namespace AirComposeService;
 @route("/status")
 @tag("Status")
 interface StatusAPI {
-  @get get(): StackStatus[] | Error;
+  @get get(): StackStatus | Error;
 }
 
-model StackStatus {
-  stackId: string;
-  name: string;
-  services: Array<ContainerStatus>;
-}
+model StackStatus is Record<Array<ContainerStatus>>;
 
 model ContainerStatus {
   containerId: string;

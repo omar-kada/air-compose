@@ -95,15 +95,7 @@ func (h *DeploymentHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRe
 		models.ListMapper(h.statusMapper.Map),
 	)(stacks)
 
-	var response []api.StackStatus
-	for stackName, containers := range result {
-		response = append(response, api.StackStatus{
-			StackId:  stackName,
-			Name:     stackName,
-			Services: containers,
-		})
-	}
-	return api.StatusAPIGet200JSONResponse(response), nil
+	return api.StatusAPIGet200JSONResponse(result), nil
 }
 
 // StateAPIGet retrieves the state of AirCompose

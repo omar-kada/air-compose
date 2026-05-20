@@ -106,7 +106,7 @@ func TestFileGeneration(t *testing.T) {
 		"AIR_COMPOSE_HOST=test",
 		"DATA_PATH=" + dataDir,
 		"SERVICES_PATH=" + servicesDir,
-		"PORT=12345",
+		"port=12345",
 	}
 
 	content, err := os.ReadFile(targetFile)
