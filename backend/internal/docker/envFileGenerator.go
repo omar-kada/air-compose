@@ -76,7 +76,7 @@ func parseEnvFile(path string) (*orderedmap.OrderedMap[string, string], error) {
 		}
 		splitLine := strings.Split(line, "=")
 		if len(splitLine) > 1 {
-			envMap.Set(strings.ToUpper(splitLine[0]), rawLine)
+			envMap.Set(splitLine[0], rawLine)
 		} else {
 			envMap.Set(fmt.Sprint(index), rawLine)
 		}

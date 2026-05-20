@@ -1,7 +1,6 @@
 import { useLogin, useRegisteration } from '@/hooks';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { LoginForm } from './login';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -12,12 +11,10 @@ export function LoginPage() {
 
   const { login, isPending } = useLogin();
   const { data: registration, isPending: registrationPending } = useRegisteration();
-  const serverUrl = import.meta.env.VITE_SERVER_URL;
-
-  const navigate = useNavigate();
+  const serverUrl: string = import.meta.env.VITE_SERVER_URL;
 
   const loginWithOidc = useCallback(() => {
-    navigate(`${serverUrl}/api/oidc/login`);
+    window.location.href = `${serverUrl}/api/oidc/login`;
   }, []);
 
   return (

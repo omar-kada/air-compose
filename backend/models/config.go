@@ -64,11 +64,11 @@ func (cfg Config) PerService(service string) *orderedmap.OrderedMap[string, stri
 	serviceConfig := orderedmap.NewOrderedMap[string, string]()
 
 	for key, value := range cfg.Environment {
-		serviceConfig.Set(strings.ToUpper(key), fmt.Sprint(value))
+		serviceConfig.Set(key, fmt.Sprint(value))
 	}
 	if svcVars, ok := cfg.Services[service]; ok {
 		for key, value := range svcVars {
-			serviceConfig.Set(strings.ToUpper(key), fmt.Sprint(value))
+			serviceConfig.Set(key, fmt.Sprint(value))
 		}
 	}
 	return serviceConfig

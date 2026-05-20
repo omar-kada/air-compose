@@ -224,11 +224,7 @@ type Settings struct {
 }
 
 // StackStatus defines model for StackStatus.
-type StackStatus struct {
-	Name     string            `json:"name"`
-	Services []ContainerStatus `json:"services"`
-	StackId  string            `json:"stackId"`
-}
+type StackStatus map[string][]ContainerStatus
 
 // State defines model for State.
 type State struct {
@@ -2168,7 +2164,7 @@ func (r StateAPIGetResponse) StatusCode() int {
 type StatusAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]StackStatus
+	JSON200      *StackStatus
 	JSONDefault  *Error
 }
 
@@ -3146,7 +3142,7 @@ func ParseStatusAPIGetResponse(rsp *http.Response) (*StatusAPIGetResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []StackStatus
+		var dest StackStatus
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4584,7 +4580,7 @@ type StatusAPIGetResponseObject interface {
 	VisitStatusAPIGetResponse(w http.ResponseWriter) error
 }
 
-type StatusAPIGet200JSONResponse []StackStatus
+type StatusAPIGet200JSONResponse StackStatus
 
 func (response StatusAPIGet200JSONResponse) VisitStatusAPIGetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

@@ -202,11 +202,7 @@ export interface Settings {
   oidc?: OidcSettings;
 }
 
-export interface StackStatus {
-  stackId: string;
-  name: string;
-  services: ContainerStatus[];
-}
+export interface StackStatus {[key: string]: ContainerStatus[]}
 
 export interface State {
   nextDeploy: string;
@@ -1654,7 +1650,7 @@ export function useStateAPIGet<TData = Awaited<ReturnType<typeof stateAPIGet>>, 
 
 export const statusAPIGet = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<StackStatus[]>> => {
+ ): Promise<AxiosResponse<StackStatus>> => {
 
 
     return axios.default.get(

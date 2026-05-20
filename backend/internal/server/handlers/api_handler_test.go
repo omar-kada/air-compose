@@ -229,7 +229,8 @@ func TestStatusAPIGet_Success(t *testing.T) {
 	switch r := resp.(type) {
 	case api.StatusAPIGet200JSONResponse:
 		assert.Equal(t, 1, len(r))
-		assert.Equal(t, "stack1", r[0].StackId)
+		assert.Contains(t, r, "stack1")
+		assert.Len(t, r["stack1"], 1)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
