@@ -58,7 +58,7 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
     <div className={cn('flex flex-col h-dvh', showTopBar ? 'pb-12 md:pb-0' : '')}>
       {showTopBar && (
         <>
-          <Topbar>
+          <Topbar className="max-w-7xl mx-4">
             {/* Top navigation bar, on big screens */}
             <div className="flex">
               <NavBar className="hidden md:flex bg-sidebar items-center flex-1" />
@@ -70,7 +70,9 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
         </>
       )}
       <ErrorAlert title={mergedError?.message ?? null} />
-      {children}
+      <div className="w-full flex justify-around min-h-0 h-full">
+        <div className="max-w-7xl flex-1 mx-4 ">{children}</div>
+      </div>
     </div>
   );
 }

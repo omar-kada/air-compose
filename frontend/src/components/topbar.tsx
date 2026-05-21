@@ -1,6 +1,7 @@
 import type { User } from '@/api/api';
 import { useLogout, useUser } from '@/hooks';
 import { useTheme } from '@/hooks/theme-provider';
+import { cn } from '@/lib';
 import { Bell, LogOutIcon, Moon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,26 +21,28 @@ import {
 import { Field, FieldLabel } from './ui/field';
 import { Switch } from './ui/switch';
 
-export function Topbar({ children }: { children?: ReactNode }) {
+export function Topbar({ children, className }: { children?: ReactNode; className?: string }) {
   const { data: user } = useUser();
 
   return (
-    <header className="h-14 min-h-14 border-b w-full flex items-center justify-between px-4 bg-sidebar sticky top-0 z-50">
-      {/* Logo */}
-      <div className="text-xl font-semibold mr-5">AirCompose</div>
-      <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
-      <div className="flex flex-2 justify-between">{children}</div>
+    <header className="h-14 min-h-14 border-b w-full flex justify-around bg-sidebar sticky top-0 z-50">
+      <div className={cn('h-14 min-h-14 flex items-center justify-between flex-1', className)}>
+        {/* Logo */}
+        <div className="text-xl font-semibold mr-5">AirCompose</div>
+        <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
+        <div className="flex flex-2 justify-between">{children}</div>
 
-      {user && (
-        <div className="flex items-center gap-2">
-          <NotificationSheet>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Bell className="h-5 w-5" />
-            </Button>
-          </NotificationSheet>
-          <UserDropDown user={user} />
-        </div>
-      )}
+        {user && (
+          <div className="flex items-center gap-2">
+            <NotificationSheet>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Bell className="h-5 w-5" />
+              </Button>
+            </NotificationSheet>
+            <UserDropDown user={user} />
+          </div>
+        )}
+      </div>
     </header>
   );
 }
