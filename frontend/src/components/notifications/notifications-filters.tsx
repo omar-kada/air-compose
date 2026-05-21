@@ -11,7 +11,12 @@ const filterMap: Map<EventFilter, Array<EventType>> = new Map([
   ['ERROR', [EventType.DEPLOYMENT_ERROR, EventType.ERROR]],
   [
     'DEPLOYMENT',
-    [EventType.DEPLOYMENT_ERROR, EventType.DEPLOYMENT_STARTED, EventType.DEPLOYMENT_SUCCESS],
+    [
+      EventType.DEPLOYMENT_ERROR,
+      EventType.DEPLOYMENT_STARTED,
+      EventType.DEPLOYMENT_SUCCESS,
+      EventType.STACKS_UNHEALTHY,
+    ],
   ],
   [
     'SETTINGS',

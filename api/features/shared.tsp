@@ -33,6 +33,7 @@ enum EventType {
   DeploymentStarted: "DEPLOYMENT_STARTED",
   DeploymentSuccess: "DEPLOYMENT_SUCCESS",
   DeploymentError: "DEPLOYMENT_ERROR",
+  StacksUnhealthy: "STACKS_UNHEALTHY",
   ConfigurationUpdated: "CONFIGURATION_UPDATED",
   PasswordUpdated: "PASSWORD_UPDATED",
   SessionReused: "SESSION_REUSED",

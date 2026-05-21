@@ -17,73 +17,77 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockProcess struct {
+type Mock struct {
 	mock.Mock
 	git.Fetcher
 	storage.EventStorage
 	storage.DeploymentStorage
 }
 
-func (m *MockProcess) SyncDeployment() (models.Deployment, error) {
+func (m *Mock) SyncDeployment() (models.Deployment, error) {
 	args := m.Called()
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func (m *MockProcess) GetCurrentState() (models.State, error) {
+func (m *Mock) GetCurrentState() (models.State, error) {
 	args := m.Called()
 	return args.Get(0).(models.State), args.Error(1)
 }
 
-func (m *MockProcess) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
+func (m *Mock) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
 	args := m.Called()
 	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
 }
-func (m *MockProcess) GetStacksState(cfg models.Config) (models.StacksState, error) {
-	args := m.Called(cfg)
+func (m *Mock) GetStacksState() (models.StacksState, error) {
+	args := m.Called()
+	return args.Get(0).(models.StacksState), args.Error(1)
+}
+func (m *Mock) GetCurrentStacksState(services []string) (models.StacksState, error) {
+	args := m.Called(services)
 	return args.Get(0).(models.StacksState), args.Error(1)
 }
 
-func (m *MockProcess) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
+func (m *Mock) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
 	args := m.Called(c)
 	return args.Get(0).([]models.Deployment), args.Error(1)
 }
 
-func (m *MockProcess) GetDeployment(id uint64) (models.Deployment, error) {
+func (m *Mock) GetDeployment(id uint64) (models.Deployment, error) {
 	args := m.Called(id)
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func (m *MockProcess) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
+func (m *Mock) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
 	args := m.Called(c)
 	return args.Get(0).([]models.Event), args.Error(1)
 }
 
-func (m *MockProcess) GetUser(username string) (models.User, error) {
+func (m *Mock) GetUser(username string) (models.User, error) {
 	args := m.Called(username)
 	return args.Get(0).(models.User), args.Error(1)
 }
 
-func (m *MockProcess) DeleteUser(username string) (bool, error) {
+func (m *Mock) DeleteUser(username string) (bool, error) {
 	args := m.Called(username)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockProcess) ChangePassword(username string, oldPass, newPass string) (bool, error) {
+func (m *Mock) ChangePassword(username string, oldPass, newPass string) (bool, error) {
 	args := m.Called(username, oldPass, newPass)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockProcess) IsRegistered() (bool, error) {
+func (m *Mock) IsRegistered() (bool, error) {
 	args := m.Called()
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockProcess) TestGitConnection(repo, branch, username, token string) (bool, error) {
+func (m *Mock) TestGitConnection(repo, branch, username, token string) (bool, error) {
 	args := m.Called(repo, branch, username, token)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockProcess) DiffWithRemote() (models.Patch, error) {
+func (m *Mock) DiffWithRemote() (models.Patch, error) {
 	args := m.Called()
 	return args.Get(0).(models.Patch), args.Error(1)
 }
@@ -112,7 +116,7 @@ func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
 }
 
 func TestDeployementAPIList_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -138,7 +142,7 @@ func TestDeployementAPIList_Success(t *testing.T) {
 }
 
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -150,7 +154,7 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 }
 
 func TestDeployementAPIRead_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -173,7 +177,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 }
 
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -184,7 +188,7 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 }
 
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -214,7 +218,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 }
 
 func TestStatusAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -239,7 +243,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 }
 
 func TestStateAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -262,7 +266,7 @@ func TestStateAPIGet_Success(t *testing.T) {
 }
 
 func TestDiffAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -286,7 +290,7 @@ func TestDiffAPIGet_Success(t *testing.T) {
 }
 
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -309,7 +313,7 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 }
 
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -320,7 +324,7 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 }
 
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -337,7 +341,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 }
 
 func TestStatusAPIGet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -352,7 +356,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 }
 
 func TestStateAPIGet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -368,7 +372,7 @@ func TestStateAPIGet_Error(t *testing.T) {
 }
 
 func TestDiffAPIGet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -385,7 +389,7 @@ func TestDiffAPIGet_Error(t *testing.T) {
 }
 
 func TestConfigAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
@@ -411,7 +415,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 }
 
 func TestConfigAPIGet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -426,7 +430,7 @@ func TestConfigAPIGet_Error(t *testing.T) {
 }
 
 func TestFeaturesAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 
 	t.Setenv("AIR_COMPOSE_DISPLAY_CONFIG", "true")
@@ -453,7 +457,7 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 }
 
 func TestSettingsAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -493,7 +497,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 }
 
 func TestSettingsAPIGet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -508,7 +512,7 @@ func TestSettingsAPIGet_Error(t *testing.T) {
 }
 
 func TestSettingsAPISet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -588,7 +592,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 }
 
 func TestSettingsAPISet_UpdateToken(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -643,7 +647,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 }
 
 func TestSettingsAPISet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -667,7 +671,7 @@ func TestSettingsAPISet_Error(t *testing.T) {
 }
 
 func TestConfigAPISet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -727,7 +731,7 @@ func TestConfigAPISet_Success(t *testing.T) {
 }
 
 func TestConfigAPISet_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -752,7 +756,7 @@ func TestConfigAPISet_Error(t *testing.T) {
 }
 
 func TestUserAPIGet_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -773,7 +777,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 }
 
 func TestUserAPIGet_NoUser(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -783,7 +787,7 @@ func TestUserAPIGet_NoUser(t *testing.T) {
 }
 
 func TestUserAPIDelete_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -805,7 +809,7 @@ func TestUserAPIDelete_Success(t *testing.T) {
 }
 
 func TestUserAPIDelete_NoUser(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -822,7 +826,7 @@ func TestUserAPIDelete_NoUser(t *testing.T) {
 }
 
 func TestUserAPIDelete_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -846,7 +850,7 @@ func TestUserAPIDelete_Error(t *testing.T) {
 }
 
 func TestAuthAPIRegistered(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -876,7 +880,7 @@ func TestAuthAPIRegistered(t *testing.T) {
 }
 
 func TestAuthAPILogout(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -893,7 +897,7 @@ func TestAuthAPILogout(t *testing.T) {
 }
 
 func TestAuthAPILogin(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -910,7 +914,7 @@ func TestAuthAPILogin(t *testing.T) {
 }
 
 func TestAuthAPIRegister(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -927,7 +931,7 @@ func TestAuthAPIRegister(t *testing.T) {
 }
 
 func TestUserAPIChangePassword_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -957,7 +961,7 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 }
 
 func TestUserAPIChangePassword_NoUser(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -981,7 +985,7 @@ func TestUserAPIChangePassword_NoUser(t *testing.T) {
 }
 
 func TestUserAPIChangePassword_Error(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -1013,7 +1017,7 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 }
 
 func TestSettingsAPITestGitConnection_Success(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -1042,7 +1046,7 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 }
 
 func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
-	m := &MockProcess{}
+	m := &Mock{}
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 

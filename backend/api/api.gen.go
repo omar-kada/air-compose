@@ -72,6 +72,7 @@ const (
 	EventTypeMISC                 EventType = "MISC"
 	EventTypePASSWORDUPDATED      EventType = "PASSWORD_UPDATED"
 	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
+	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 )
 
 // Defines values for UserType.

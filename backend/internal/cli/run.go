@@ -102,7 +102,7 @@ func (run *runCommand) doRun() error {
 	})
 	scheduler := process.NewConfigScheduler(configStore)
 
-	inspector, err := docker.NewInspector(params.ServicesDir)
+	inspector, err := docker.NewInspector(params.ServicesDir, configStore, dispatcher)
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)
 	}
