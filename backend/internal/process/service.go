@@ -130,7 +130,7 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 }
 
 func (s *service) areStacksHealthy(cfg models.Config) bool {
-	state, err := s.containersInspector.GetStacksState(cfg)
+	state, err := s.containersInspector.GetCurrentStacksState(cfg.GetEnabledServices())
 	if err != nil {
 		return false
 	}
@@ -150,7 +150,7 @@ func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.
 // GetCurrentState returns the statistics of deployments for the last N days
 func (s *service) GetCurrentState() (models.State, error) {
 	dep, _ := s.store.GetLastDeployment()
-	stackstate, _ := s.containersInspector.GetStacksState(s.currentCfg)
+	stackstate, _ := s.containersInspector.GetCurrentStacksState(s.currentCfg.GetEnabledServices())
 	cfg, _ := s.configStore.Get()
 
 	return models.State{

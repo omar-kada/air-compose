@@ -16,6 +16,7 @@ function getNotificationColor(type: EventType): string {
   switch (type) {
     case EventType.ERROR:
     case EventType.DEPLOYMENT_ERROR:
+    case EventType.STACKS_UNHEALTHY:
       return 'bg-destructive';
     case EventType.MISC:
     case EventType.DEPLOYMENT_STARTED:

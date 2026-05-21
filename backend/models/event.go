@@ -21,6 +21,9 @@ const (
 	// EventDeploymentError indicates that a deployment has failed
 	EventDeploymentError EventType = "DEPLOYMENT_ERROR"
 
+	// EventStacksUnhealthy indicates that some stacks are unhealthy
+	EventStacksUnhealthy EventType = "STACKS_UNHEALTHY"
+
 	// EventConfigurationUpdated indicates that a configuration has been updated
 	EventConfigurationUpdated EventType = "CONFIGURATION_UPDATED"
 
@@ -44,6 +47,8 @@ func (e EventType) ToText() string {
 		return "Deployment succeeded"
 	case EventDeploymentError:
 		return "Deployment failed"
+	case EventStacksUnhealthy:
+		return "Some stacks are not healthy"
 	case EventConfigurationUpdated:
 		return "Configuration updated"
 	case EventPasswordUpdated:
@@ -68,6 +73,8 @@ func (e EventType) ToEmoji() string {
 		return "✅"
 	case EventDeploymentError:
 		return "🔴"
+	case EventStacksUnhealthy:
+		return "⚠️"
 	case EventConfigurationUpdated:
 		return "🔄"
 	case EventPasswordUpdated:

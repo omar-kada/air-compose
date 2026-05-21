@@ -72,6 +72,17 @@ func (ss *StacksState) CombineContainerStatus(serviceName string, ctr ContainerS
 	}
 }
 
+// GetUnhealthyContainers the list of containers that are unhealthy.
+func (ss *StacksState) GetUnhealthyContainers() []string {
+	var unhealthy []string
+	for service, status := range ss.services {
+		if status == StackStatusUnhealthy {
+			unhealthy = append(unhealthy, service)
+		}
+	}
+	return unhealthy
+}
+
 // GetGlobalHealth returns the current global status of the stack.
 func (ss *StacksState) GetGlobalHealth() StackStatus {
 	return ss.GlobalStatus

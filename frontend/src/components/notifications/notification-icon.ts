@@ -29,6 +29,7 @@ export function getNotificaitonIcon(type: EventType | EventGroup): LucideIcon {
     case EventType.DEPLOYMENT_SUCCESS:
       return Check;
     case EventType.DEPLOYMENT_ERROR:
+    case EventType.STACKS_UNHEALTHY:
       return X;
     case 'DEPLOYMENT':
       return Rocket;

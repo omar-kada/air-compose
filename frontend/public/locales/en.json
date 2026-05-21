@@ -209,6 +209,7 @@
     "DEPLOYMENT_ERROR": "Deployment error",
     "SETTINGS": "Settings",
     "PASSWORD_UPDATED": "Password updated",
+    "STACKS_UNHEALTHY": "Unhealthy stacks",
     "CONFIGURATION_UPDATED": "Configuration updated",
     "SESSION_REUSED": "Session reused"
   }
