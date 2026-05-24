@@ -1,0 +1,10 @@
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="628pt" height="568pt" viewBox="-20 -20 608 548">
+  <defs>
+    <clipPath id="c">
+      <path d="M5 300V0h565v300z"/>
+    </clipPath>
+  </defs>
+  <circle cx="284" cy="244" r="230" fill="#25b4ff" opacity=".25" stroke="#25b4ff" stroke-width="10" clip-path="url(#c)" fill-opacity=".25" stroke-opacity=".75"/>
+  <path d="M90 225v60h60v-60zm80-150v60h60V75zm0 75v60h60v-60zm0 75v60h60v-60zm80-75v60h60v-60zm0 75v60h60v-60zm80-75v60h60v-60zm0 75v60h60v-60zm80 0v60h60v-60z" fill="#25b4ff"/>
+  <path d="m5 300 86.5 50.6L569.3 300zm540 10L90.6 360.5l-15.2 94.1z" fill="#25b4ff" paint-order="stroke fill"/>
+</svg>

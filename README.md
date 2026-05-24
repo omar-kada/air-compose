@@ -1,4 +1,4 @@
-# AirCompose
+# <img src="./frontend/public/air-compose.svg" width="32" style="vertical-align: middle;" /> AirCompose
 
 AirCompose is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
 Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.
@@ -15,11 +15,11 @@ a Linux environement with `docker` installed
 
 ## Features
 
-1. Auto Load and deploy services from a Git repository
+1. Auto sync&deploy services from a Git repository
 2. No special syntax, compose stacks configuration are kept in their original form and are accessible to the user
 3. Modern UI to manage the tool remotely
-4. Get notifications about updates and changes
-5. Easy service customization through the UI or a simple configuration file
+4. Notifications on deployments and health (through [Shoutrrr](https://containrrr.dev/shoutrrr))
+5. Override stacks' environement variables (for keys and token that should be kept local)
 6. Works on any Docker-capable system
 
 ## Getting started
@@ -43,32 +43,18 @@ AIR_COMPOSE_SERVICES_DIR: where the stack configuration will be stored
 AIR_COMPOSE_DATA_PATH: path to the data directory, AirCompose will store config.yaml and DB files in this directory
 ```
 
-3. **Create a `config.yaml` file** inside the specified `AIR_COMPOSE_DATA_PATH` and define the services you want to deploy (here a simple example) :
-
-```yaml
-ENV_VAR: value # will be available in all services
-repo: 'https://github.com/omar-kada/air-compose-config'
-cron: '*/10 * * * *'
-
-services:
-  service1:
-    ENV_VAR: override value # will override global value for this service
-    SERVICE_SPECIFIC_VAR: another_value
-
-  service2:
-    disabled: true # if disabled, service will not be deployed
-```
-
-4. **Run the stack** using :
+3. **Run the stack** using :
 
 ```bash
 docker compose up -d
 ```
 
-Once the container starts, it will :
+4. **Register** a user and do the **initial configuration** through the UI (default port 5005)
 
-1. **Pull the stacks from the repo**
-2. **Deploy or remove services** based on the configuration
-3. **Schedule the next runs** based on `CRON_PERIOD`
+the configuration is stored in a file named `config.yaml`, it can be changed either through the UI or by changing the file directly (consider restarting the container in this case).
 
-When the stacks are updated in the repo, AirCompose will **redploy only the changed stacks** in the next scheduled run
+5. Go to the configuration page to add custom environement variables for each service (optional)
+
+6. Click on **Sync** to launch the first deployment (if not configured to run automatically)
+
+The Sync will pull the stacks from the repo and deploy them. When the stacks are updated in the repo, AirCompose will **redploy only the changed stacks** in the next scheduled run (or if run manually)

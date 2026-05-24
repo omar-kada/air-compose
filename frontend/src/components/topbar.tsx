@@ -21,6 +21,8 @@ import {
 import { Field, FieldLabel } from './ui/field';
 import { Switch } from './ui/switch';
 
+const gotoHome = () => (window.location.href = '/');
+
 export function Topbar({ children, className }: { children?: ReactNode; className?: string }) {
   const { data: user } = useUser();
 
@@ -28,7 +30,10 @@ export function Topbar({ children, className }: { children?: ReactNode; classNam
     <header className="h-14 min-h-14 border-b w-full flex justify-around bg-sidebar sticky top-0 z-50">
       <div className={cn('h-14 min-h-14 flex items-center justify-between flex-1', className)}>
         {/* Logo */}
-        <div className="text-xl font-semibold mr-5">AirCompose</div>
+        <div className="flex items-center gap-2 me-4 cursor-pointer" onClick={gotoHome}>
+          <img src="/air-compose.svg" alt="AirCompose Logo" className="h-12 w-12 flex-0" />
+          <div className="text-xl font-semibold mr-5 select-none">AirCompose</div>
+        </div>
         <div className="flex-1 w-1 max-w-10">{/*gap*/}</div>
         <div className="flex flex-2 justify-between">{children}</div>
 
