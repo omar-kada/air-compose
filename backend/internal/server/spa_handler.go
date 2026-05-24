@@ -17,11 +17,15 @@ func spaHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid path", http.StatusBadRequest)
 		return
 	}
-	_, err = os.Stat(absPath)
+	fileInfo, err := os.Stat(absPath)
+
 	if os.IsNotExist(err) {
 		http.ServeFile(w, r, filepath.Join(frontDir, "index.html"))
-		return
+	} else if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	} else if fileInfo.IsDir() {
+		http.ServeFile(w, r, filepath.Join(absPath, "index.html"))
+	} else {
+		http.ServeFile(w, r, absPath)
 	}
-
-	http.FileServer(http.Dir(frontDir)).ServeHTTP(w, r)
 }
