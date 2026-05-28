@@ -1,4 +1,4 @@
-# <img src="./frontend/public/air-compose.svg" width="32" style="vertical-align: middle;" /> AirCompose
+# <img src="./frontend/public/air-compose.svg" width="64" style="vertical-align: middle;" /> AirCompose
 
 AirCompose is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
 Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.

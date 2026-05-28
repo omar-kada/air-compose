@@ -50,7 +50,17 @@ enum ContainerHealth {
   healthy: "healthy",
   unhealthy: "unhealthy",
   starting: "starting",
-  _unknown: "unknown",
+  none: "none",
+}
+
+enum ContainerState {
+  created: "created",
+  running: "running",
+  paused: "paused",
+  restarting: "restarting",
+  removing: "removing",
+  exited: "exited",
+  dead: "dead",
 }
 
 model Page<T> {

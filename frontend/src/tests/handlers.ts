@@ -2,15 +2,15 @@ import { ContainerHealth, DeploymentStatus, type StackStatus, type State } from 
 import { http } from 'msw';
 
 const mockStatus: StackStatus = {
-  homepage: [
-    {
+  homepage: {
+    homepage: {
       containerId: '1',
       state: 'running',
       name: 'web-container',
       health: 'healthy',
       startedAt: `${new Date()}`,
     },
-  ],
+  },
 };
 
 const mockState: State = {
