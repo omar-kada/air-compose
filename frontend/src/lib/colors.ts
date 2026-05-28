@@ -1,4 +1,4 @@
-import { EventType, type ContainerHealth, type DeploymentStatus } from '@/api/api';
+import { ContainerState, EventType, type ContainerHealth, type DeploymentStatus } from '@/api/api';
 
 export function colorForStatus(status: ContainerHealth | DeploymentStatus): string {
   switch (status) {
@@ -18,35 +18,43 @@ export function colorForStatus(status: ContainerHealth | DeploymentStatus): stri
   }
 }
 
-export function borderForStatus(status?: ContainerHealth | DeploymentStatus): string {
+export function borderForStatus(status?: ContainerState | ContainerHealth): string {
   switch (status) {
-    case 'healthy':
-    case 'success':
-      return 'border-green-400';
-    case 'unhealthy':
-    case 'error':
-      return 'border-red-400';
-    case 'starting':
-    case 'planned':
-      return 'border-slate-400';
     case 'running':
+    case 'healthy':
+      return 'border-green-400';
+    case 'dead':
+    case 'removing':
+    case 'unhealthy':
+      return 'border-red-400';
+    case 'exited':
+    case 'paused':
+    case 'none':
+      return 'border-slate-400';
+    case 'created':
+    case 'restarting':
+    case 'starting':
       return 'border-blue-400';
     default:
       return '';
   }
 }
-export function textColorForStatus(status?: ContainerHealth | DeploymentStatus): string {
+export function textColorForStatus(status?: ContainerHealth | ContainerState): string {
   switch (status) {
-    case 'healthy':
-    case 'success':
-      return 'text-green-400';
-    case 'unhealthy':
-    case 'error':
-      return 'text-red-400';
-    case 'starting':
-    case 'planned':
-      return 'text-slate-400';
     case 'running':
+    case 'healthy':
+      return 'text-green-400';
+    case 'dead':
+    case 'removing':
+    case 'unhealthy':
+      return 'text-red-400';
+    case 'exited':
+    case 'paused':
+    case 'none':
+      return 'text-slate-400';
+    case 'created':
+    case 'restarting':
+    case 'starting':
       return 'text-blue-400';
     default:
       return '';

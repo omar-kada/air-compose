@@ -7,7 +7,6 @@ import (
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/models"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,14 +22,14 @@ func TestStatusMapper_Map(t *testing.T) {
 			in: models.ContainerSummary{
 				ID:        "cid1",
 				Name:      "c1",
-				State:     container.ContainerState("running"),
-				Health:    container.HealthStatus("healthy"),
+				State:     models.StateRunning,
+				Health:    models.ContainerHealthy,
 				StartedAt: now,
 			},
 			want: api.ContainerStatus{
 				ContainerId: "cid1",
 				Name:        "c1",
-				State:       api.ContainerStatusState("running"),
+				State:       api.ContainerState("running"),
 				Health:      api.ContainerHealth("healthy"),
 				StartedAt:   now,
 			},
@@ -40,14 +39,14 @@ func TestStatusMapper_Map(t *testing.T) {
 			in: models.ContainerSummary{
 				ID:        "cid2",
 				Name:      "c2",
-				State:     container.ContainerState("exited"),
-				Health:    container.HealthStatus("none"),
+				State:     models.StateExited,
+				Health:    models.ContainerNoHealth,
 				StartedAt: time.Time{},
 			},
 			want: api.ContainerStatus{
 				ContainerId: "cid2",
 				Name:        "c2",
-				State:       api.ContainerStatusState("exited"),
+				State:       api.ContainerState("exited"),
 				Health:      api.ContainerHealth("none"),
 				StartedAt:   time.Time{},
 			},

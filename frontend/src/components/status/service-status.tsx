@@ -1,8 +1,9 @@
 import type { ContainerStatus } from '@/api/api';
 import { ServiceLogo } from '@/lib';
+import { useMemo } from 'react';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '../ui/item';
 import { Skeleton } from '../ui/skeleton';
-import { HumanTime } from '../view/human-time';
+import { HumanTime } from '../view';
 import { ContainerStatusBadge } from './container-status-badge';
 
 export function ServiceStatus({
@@ -11,10 +12,19 @@ export function ServiceStatus({
   className,
 }: {
   serviceName: string;
-  serviceContainers: Array<ContainerStatus>;
+  serviceContainers: Record<string, ContainerStatus>;
   className?: string;
 }) {
-  const time = serviceContainers[0]?.startedAt;
+  const time = useMemo(() => {
+    return new Date(
+      Math.max(
+        ...Object.values(serviceContainers).map((container) =>
+          new Date(container.startedAt).getTime(),
+        ),
+      ),
+    );
+  }, [serviceContainers]);
+
   return (
     <Item variant="outline" className={className}>
       <ItemMedia>
@@ -27,9 +37,10 @@ export function ServiceStatus({
         </ItemDescription>
       </ItemContent>
       <ItemActions className="flex-wrap">
-        {serviceContainers.map((item) => (
+        {Object.entries(serviceContainers).map(([_, item]) => (
           <ContainerStatusBadge
-            status={item.health}
+            health={item.health}
+            state={item.state}
             label={item.name}
             className="mx-1"
             key={`${serviceName}-${item.name}`}

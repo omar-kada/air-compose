@@ -1,21 +1,25 @@
-import type { ContainerHealth } from '@/api/api';
+import type { ContainerHealth, ContainerState } from '@/api/api';
 import { Badge } from '@/components/ui/badge';
 import { borderForStatus, iconForHealth, textColorForStatus } from '@/lib';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 export function ContainerStatusBadge(props: {
-  status?: ContainerHealth;
+  health?: ContainerHealth;
+  state?: ContainerState;
   label?: string;
   className?: string;
   iconOnly?: boolean;
 }) {
   const { t } = useTranslation();
-  const Icon = iconForHealth(props.status);
+  const Icon = iconForHealth(props.health);
   return (
-    <Badge variant="outline" className={cn(borderForStatus(props.status), props.className)}>
-      <Icon className={textColorForStatus(props.status)} />
-      {!props.iconOnly && t(props.label ?? props.status ?? 'unknown')}
+    <Badge
+      variant="outline"
+      className={cn(borderForStatus(props.state ?? props.health), props.className)}
+    >
+      <Icon className={textColorForStatus(props.health)} />
+      {!props.iconOnly && t(props.label ?? props.health ?? 'unknown')}
     </Badge>
   );
 }

@@ -92,9 +92,8 @@ func (h *DeploymentHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRe
 	}
 
 	result := models.MapMapper[string](
-		models.ListMapper(h.statusMapper.Map),
-	)(stacks)
-
+		models.MapMapper[string](h.statusMapper.Map),
+	)(map[string]map[string]models.ContainerSummary(stacks))
 	return api.StatusAPIGet200JSONResponse(result), nil
 }
 

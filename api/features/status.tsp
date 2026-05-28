@@ -10,18 +10,11 @@ interface StatusAPI {
   @get get(): StackStatus | Error;
 }
 
-model StackStatus is Record<Array<ContainerStatus>>;
+model StackStatus is Record<Record<ContainerStatus>>;
 
 model ContainerStatus {
   containerId: string;
-  state:
-    | "created"
-    | "running"
-    | "paused"
-    | "restarting"
-    | "removing"
-    | "exited"
-    | "dead";
+  state: ContainerState;
   name: string;
   health: ContainerHealth;
   startedAt: utcDateTime;
