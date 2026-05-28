@@ -9,193 +9,137 @@ import (
 	"strings"
 	"time"
 
-	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/shell"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 
+	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 )
 
 // Inspector defined operations for info retreival on containers
 type Inspector interface {
-	GetManagedStacks() (map[string][]models.ContainerSummary, error)
-	GetStacksState() (models.StacksState, error)
-	GetCurrentStacksState(services []string) (models.StacksState, error)
+	GetManagedStacks() (models.StacksState, error)
+	GetCurrentStacks(services []string) (models.StacksState, error)
 }
 
 // Client defines the methods from the Docker client that are used by the Inspector
 type Client interface {
 	ContainerList(ctx context.Context, options client.ContainerListOptions) (client.ContainerListResult, error)
-	ContainerInspect(ctx context.Context, containerID string, options client.ContainerInspectOptions) (client.ContainerInspectResult, error)
 }
 
 // inspector implements information retrieval about docker stacks
 type inspector struct {
 	configStore  storage.ConfigStore
-	dispatcher   events.Dispatcher
 	executor     shell.Executor
 	dockerClient Client
 	servicesDir  string
-
-	currentStacksState models.StacksState
-	_refreshDuration   time.Duration
 }
 
 // NewInspector creates new inspector given a docker client
-func NewInspector(servicesDir string, configStore storage.ConfigStore, dispatcher events.Dispatcher) (Inspector, error) {
+func NewInspector(servicesDir string, configStore storage.ConfigStore) (Inspector, error) {
 	client, err := client.New(client.FromEnv)
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)
 		return nil, err
 	}
 	inspector := inspector{
-		configStore:      configStore,
-		dispatcher:       dispatcher,
-		executor:         shell.NewExecutor(),
-		dockerClient:     client,
-		servicesDir:      servicesDir,
-		_refreshDuration: 3 * time.Minute,
+		configStore:  configStore,
+		executor:     shell.NewExecutor(),
+		dockerClient: client,
+		servicesDir:  servicesDir,
 	}
-	go inspector.scheduleStateRefresh() // should be move somewhere else, and should provide stopping mechanism
 	return &inspector, nil
 }
 
 // GetManagedStacks returns the list of containers (as returned by ContainerList)
 // that are managed by AirCompose
-func (i *inspector) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
+func (i *inspector) GetManagedStacks() (models.StacksState, error) {
 	cfg, err := i.configStore.Get()
 	if err != nil {
 		return nil, err
 	}
-	return i.getRunningStacks(cfg.GetEnabledServices())
+	return i.GetCurrentStacks(cfg.GetEnabledServices())
 }
 
-func (i *inspector) getRunningStacks(services []string) (map[string][]models.ContainerSummary, error) {
+func (i *inspector) GetCurrentStacks(services []string) (models.StacksState, error) {
 	ctx := context.Background()
 	summaries, err := i.dockerClient.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
-	matches := make(map[string][]models.ContainerSummary)
+	matches := make(models.StacksState)
 	for _, service := range services {
-		matches[service] = []models.ContainerSummary{}
+		matches[service] = map[string]models.ContainerSummary{}
 	}
 	for _, c := range summaries.Items {
-
-		inspect, err := i.dockerClient.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
-		if err != nil {
-			slog.Error("Failed to inspect container",
-				"containerId", c.ID, "names", c.Names, "error", err)
-			continue
-		}
-		serviceName := getServiceNameFromLabel(inspect, i.servicesDir)
+		serviceName := getServiceNameFromLabel(c, i.servicesDir)
 		if !slices.Contains(services, serviceName) {
 			continue
 		}
 		if serviceName != "" {
-			startedAt, err := time.Parse(time.RFC3339Nano, inspect.Container.State.StartedAt)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse : %w", err)
-			}
-			matches[serviceName] = append(matches[serviceName], models.ContainerSummary{
+			ctrName := c.Labels["com.docker.compose.service"]
+			matches.SetContainerStatus(serviceName, models.ContainerSummary{
 				ID:        c.ID,
-				Name:      c.Labels["com.docker.compose.service"],
+				Name:      ctrName,
 				Image:     c.Image,
-				State:     c.State,
-				Health:    inspect.Container.State.Health.Status,
-				StartedAt: startedAt,
+				State:     models.ContainerState(c.State),
+				Health:    parseHealthStatus(c.Status, models.ContainerState(c.State)),
+				StartedAt: time.Unix(c.Created, 0),
 			})
+		}
+	}
+	for _, service := range services {
+
+		expectedContainers, err := i.getExpectedServiceContainers(service)
+		if err != nil {
+			slog.Debug("error getting expected containers ", "service", service, "expectedContainers", expectedContainers, "err", err)
+			continue
+		}
+
+		for _, ctrName := range expectedContainers {
+			_, found := matches[service][ctrName]
+			if !found {
+				matches.SetContainerStatus(service, models.ContainerSummary{
+					Name:   ctrName,
+					State:  models.StateDead,
+					Health: models.ContainerUnhealthy,
+				})
+			}
 		}
 	}
 	return matches, nil
 }
 
-func getServiceNameFromLabel(inspect client.ContainerInspectResult, servicesDir string) string {
-	for key, value := range inspect.Container.Config.Labels {
-		if strings.EqualFold(key, "com.docker.compose.project.working_dir") {
-			if after, found := strings.CutPrefix(value, servicesDir); found {
-				return strings.TrimPrefix(after, "/")
-			}
-			return ""
+func getServiceNameFromLabel(container container.Summary, servicesDir string) string {
+	if value, ok := container.Labels["com.docker.compose.project.working_dir"]; ok {
+		if after, found := strings.CutPrefix(value, servicesDir); found {
+			return strings.TrimPrefix(after, "/")
 		}
 	}
 	return ""
 }
 
-func (i *inspector) getServiceContainers(serviceName string) ([]string, error) {
+func parseHealthStatus(status string, state models.ContainerState) models.ContainerHealth {
+	switch {
+	case strings.Contains(status, "(healthy)"):
+		return models.ContainerHealthy
+	case strings.Contains(status, "(unhealthy)"):
+		return models.ContainerUnhealthy
+	case strings.Contains(status, "(health: starting)"):
+		return models.ContainerStarting
+	default:
+		switch state {
+		case models.StateDead, models.StateExited, models.StateRemoving, models.StatePaused:
+			return models.ContainerUnhealthy
+		default:
+			return models.ContainerNoHealth
+		}
+	}
+}
+
+func (i *inspector) getExpectedServiceContainers(serviceName string) ([]string, error) {
 	result, err := i.executor.Exec("docker", "compose", "--project-directory", filepath.Join(i.servicesDir, serviceName), "config", "--services")
 	return strings.Fields(string(result)), err
-}
-
-func (i *inspector) GetStacksState() (models.StacksState, error) {
-	return i.currentStacksState, nil
-}
-
-func (i *inspector) scheduleStateRefresh() {
-	ticker := time.NewTicker(i._refreshDuration)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		i.refreshState()
-	}
-}
-
-func (i *inspector) refreshState() {
-	cfg, err := i.configStore.Get()
-	if err != nil {
-		slog.Error("error while getting configuration in health refresh", "err", err)
-		return
-	}
-	state, err := i.GetCurrentStacksState(cfg.GetEnabledServices())
-	if err != nil {
-		slog.Error("error while getting stacks state", "err", err)
-		return
-	}
-	i.setCurrentState(state)
-}
-
-func (i *inspector) setCurrentState(newState models.StacksState) {
-	if i.currentStacksState.GlobalStatus != newState.GlobalStatus {
-		if newState.GlobalStatus == models.StackStatusUnhealthy {
-			i.dispatcher.Dispatch(context.Background(), models.EventStacksUnhealthy,
-
-				fmt.Sprintf("containers : %v", strings.Join(newState.GetUnhealthyContainers(), ", ")))
-		}
-	}
-	i.currentStacksState = newState
-}
-
-func (i *inspector) GetCurrentStacksState(services []string) (models.StacksState, error) {
-	state := models.NewStacksState()
-	runningStacks, err := i.getRunningStacks(services)
-	if err != nil {
-		return models.StacksState{}, err
-	}
-
-	for service, serviceContainers := range runningStacks {
-
-		expectedContainers, err := i.getServiceContainers(service)
-		slog.Debug("expectedServices ", "service", service, "expectedServices", expectedContainers, "err", err)
-		if err != nil {
-			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-			continue
-		}
-		slog.Debug("running containers ", "service", service, "serviceContainers", serviceContainers)
-
-		if len(serviceContainers) != len(expectedContainers) {
-			state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-			continue
-		}
-		for _, ctr := range serviceContainers {
-			if !slices.Contains(expectedContainers, ctr.Name) {
-				state.ProgressiveUpdateServiceStatus(service, models.StackStatusUnhealthy)
-				break
-			}
-			state.CombineContainerStatus(service, ctr)
-		}
-	}
-	slog.Debug(fmt.Sprintf("all services are %+v", state))
-	return state, nil
 }

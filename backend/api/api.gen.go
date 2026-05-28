@@ -27,20 +27,20 @@ const (
 // Defines values for ContainerHealth.
 const (
 	ContainerHealthHealthy   ContainerHealth = "healthy"
+	ContainerHealthNone      ContainerHealth = "none"
 	ContainerHealthStarting  ContainerHealth = "starting"
 	ContainerHealthUnhealthy ContainerHealth = "unhealthy"
-	ContainerHealthUnknown   ContainerHealth = "unknown"
 )
 
-// Defines values for ContainerStatusState.
+// Defines values for ContainerState.
 const (
-	ContainerStatusStateCreated    ContainerStatusState = "created"
-	ContainerStatusStateDead       ContainerStatusState = "dead"
-	ContainerStatusStateExited     ContainerStatusState = "exited"
-	ContainerStatusStatePaused     ContainerStatusState = "paused"
-	ContainerStatusStateRemoving   ContainerStatusState = "removing"
-	ContainerStatusStateRestarting ContainerStatusState = "restarting"
-	ContainerStatusStateRunning    ContainerStatusState = "running"
+	ContainerStateCreated    ContainerState = "created"
+	ContainerStateDead       ContainerState = "dead"
+	ContainerStateExited     ContainerState = "exited"
+	ContainerStatePaused     ContainerState = "paused"
+	ContainerStateRemoving   ContainerState = "removing"
+	ContainerStateRestarting ContainerState = "restarting"
+	ContainerStateRunning    ContainerState = "running"
 )
 
 // Defines values for DeploymentStatus.
@@ -100,17 +100,17 @@ type Config struct {
 // ContainerHealth defines model for ContainerHealth.
 type ContainerHealth string
 
+// ContainerState defines model for ContainerState.
+type ContainerState string
+
 // ContainerStatus defines model for ContainerStatus.
 type ContainerStatus struct {
-	ContainerId string               `json:"containerId"`
-	Health      ContainerHealth      `json:"health"`
-	Name        string               `json:"name"`
-	StartedAt   time.Time            `json:"startedAt"`
-	State       ContainerStatusState `json:"state"`
+	ContainerId string          `json:"containerId"`
+	Health      ContainerHealth `json:"health"`
+	Name        string          `json:"name"`
+	StartedAt   time.Time       `json:"startedAt"`
+	State       ContainerState  `json:"state"`
 }
-
-// ContainerStatusState defines model for ContainerStatus.State.
-type ContainerStatusState string
 
 // Credentials defines model for Credentials.
 type Credentials struct {
@@ -225,7 +225,7 @@ type Settings struct {
 }
 
 // StackStatus defines model for StackStatus.
-type StackStatus map[string][]ContainerStatus
+type StackStatus map[string]map[string]ContainerStatus
 
 // State defines model for State.
 type State struct {

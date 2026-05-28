@@ -24,7 +24,7 @@ func TestStateMapper_Map(t *testing.T) {
 			in: models.State{
 				NextDeploy: next,
 				LastStatus: models.DeploymentStatusRunning,
-				Health:     models.StackStatusHealthy,
+				Health:     models.ContainerHealthy,
 			},
 			want: api.State{
 				NextDeploy: next,
@@ -37,12 +37,12 @@ func TestStateMapper_Map(t *testing.T) {
 			in: models.State{
 				NextDeploy: time.Time{},
 				LastStatus: models.DeploymentStatusPlanned,
-				Health:     models.StackStatusUnknown,
+				Health:     models.ContainerNoHealth,
 			},
 			want: api.State{
 				NextDeploy: time.Time{},
 				Status:     api.DeploymentStatus(models.DeploymentStatusPlanned),
-				Health:     api.ContainerHealthUnknown,
+				Health:     api.ContainerHealthNone,
 			},
 		},
 		{
@@ -50,7 +50,7 @@ func TestStateMapper_Map(t *testing.T) {
 			in: models.State{
 				NextDeploy: time.Time{},
 				LastStatus: models.DeploymentStatusPlanned,
-				Health:     models.StackStatusStarting,
+				Health:     models.ContainerStarting,
 			},
 			want: api.State{
 				NextDeploy: time.Time{},
@@ -63,7 +63,7 @@ func TestStateMapper_Map(t *testing.T) {
 			in: models.State{
 				NextDeploy: time.Time{},
 				LastStatus: models.DeploymentStatusPlanned,
-				Health:     models.StackStatusUnhealthy,
+				Health:     models.ContainerUnhealthy,
 			},
 			want: api.State{
 				NextDeploy: time.Time{},

@@ -6,99 +6,113 @@ import (
 	"github.com/moby/moby/api/types/container"
 )
 
-// StackStatus defines model for Stack.Status.
-type StackStatus string
+// ContainerHealth defines the health of a container
+type ContainerHealth container.HealthStatus
 
-// Defines values for StackStatus.
+// Defines values for ContainerHealth.
 const (
-	StackStatusUnknown   StackStatus = "unknown"
-	StackStatusUnhealthy StackStatus = "unhealthy"
-	StackStatusStarting  StackStatus = "starting"
-	StackStatusHealthy   StackStatus = "healthy"
+	ContainerNoHealth  ContainerHealth = ContainerHealth(container.NoHealthcheck)
+	ContainerUnhealthy ContainerHealth = ContainerHealth(container.Unhealthy)
+	ContainerStarting  ContainerHealth = ContainerHealth(container.Starting)
+	ContainerHealthy   ContainerHealth = ContainerHealth(container.Healthy)
 )
+
+// ContainerState represents the state of a container.
+type ContainerState container.ContainerState
+
+// Defines values for ContainerState.
+const (
+	StateCreated    ContainerState = ContainerState(container.StateCreated)
+	StateRunning    ContainerState = ContainerState(container.StateRunning)
+	StateRestarting ContainerState = ContainerState(container.StateRestarting)
+	StatePaused     ContainerState = ContainerState(container.StatePaused)
+	StateRemoving   ContainerState = ContainerState(container.StateRemoving)
+	StateExited     ContainerState = ContainerState(container.StateExited)
+	StateDead       ContainerState = ContainerState(container.StateDead)
+)
+
+// ContainerStatus represents the health and state of a container.
+type ContainerStatus struct {
+	Health ContainerHealth
+	State  ContainerState
+}
 
 // State defines model for State of AirCompose.
 type State struct {
 	LastStatus  DeploymentStatus
 	NextDeploy  time.Time
-	Health      StackStatus
+	Health      ContainerHealth
 	Initialized bool
 }
 
 // StacksState represents the state of multiple services in a stack.
-type StacksState struct {
-	services     map[string]StackStatus
-	GlobalStatus StackStatus
-}
+type StacksState map[string]map[string]ContainerSummary
 
 // NewStacksState creates a new StacksState with empty services map and unknown global status.
 func NewStacksState() StacksState {
-	return StacksState{
-		services:     make(map[string]StackStatus),
-		GlobalStatus: StackStatusUnknown,
+	return make(StacksState)
+}
+
+// SetContainerStatus updates the status of a container
+func (ss StacksState) SetContainerStatus(serviceName string, ctr ContainerSummary) {
+	_, found := ss[serviceName]
+	if !found {
+		ss[serviceName] = make(map[string]ContainerSummary)
 	}
+	ss[serviceName][ctr.Name] = ctr
 }
 
-// ForService returns the current status of the specified service.
-// If the service is not found, it returns StackStatusUnknown.
-func (ss *StacksState) ForService(serviceName string) StackStatus {
-	if status, ok := ss.services[serviceName]; ok {
-		return status
-	}
-	return StackStatusUnknown
-}
-
-// ProgressiveUpdateServiceStatus updates the status of a service and propagates the change to the global status.
-func (ss *StacksState) ProgressiveUpdateServiceStatus(serviceName string, newStatus StackStatus) {
-	ss.services[serviceName] = getCombinedStatus(ss.ForService(serviceName), newStatus)
-	ss.GlobalStatus = getCombinedStatus(ss.GlobalStatus, newStatus)
-}
-
-// CombineContainerStatus updates the status of a service based on the container's health and state.
-func (ss *StacksState) CombineContainerStatus(serviceName string, ctr ContainerSummary) {
-	switch ctr.Health {
-	case container.Healthy:
-		ss.ProgressiveUpdateServiceStatus(serviceName, StackStatusHealthy)
-	case container.Unhealthy:
-		ss.ProgressiveUpdateServiceStatus(serviceName, StackStatusUnhealthy)
-	case container.Starting:
-		ss.ProgressiveUpdateServiceStatus(serviceName, StackStatusStarting)
-	case container.NoHealthcheck:
-		if ctr.State == container.StateRunning {
-			ss.ProgressiveUpdateServiceStatus(serviceName, StackStatusHealthy)
-		} else {
-			ss.ProgressiveUpdateServiceStatus(serviceName, StackStatusUnhealthy)
-		}
-	}
-}
-
-// GetUnhealthyContainers the list of containers that are unhealthy.
-func (ss *StacksState) GetUnhealthyContainers() []string {
+// GetUnhealthyServices the list of services that are unhealthy.
+func (ss StacksState) GetUnhealthyServices() []string {
 	var unhealthy []string
-	for service, status := range ss.services {
-		if status == StackStatusUnhealthy {
-			unhealthy = append(unhealthy, service)
+
+	for service, status := range ss {
+		for _, container := range status {
+			if container.Health == ContainerStarting || container.State == StateCreated || container.State == StateRestarting {
+				unhealthy = append(unhealthy, service)
+				break
+			}
 		}
+
 	}
 	return unhealthy
 }
 
-// GetGlobalHealth returns the current global status of the stack.
-func (ss *StacksState) GetGlobalHealth() StackStatus {
-	return ss.GlobalStatus
+// IsDeploying returns true if the stack is in a deploying state (starting, created, or restarting)
+func (ss StacksState) IsDeploying() bool {
+	for _, service := range ss {
+		for _, container := range service {
+			if container.Health == ContainerStarting || container.State == StateCreated || container.State == StateRestarting {
+				return true
+			}
+		}
+	}
+	return false
 }
 
-func getCombinedStatus(oldStatus, newStatus StackStatus) StackStatus {
-	switch oldStatus {
-	case StackStatusUnhealthy:
-		return oldStatus
-	case StackStatusStarting:
-		if newStatus != StackStatusUnhealthy {
-			return oldStatus
+// GetGlobalHealth returns the current global status of the stack.
+func (ss StacksState) GetGlobalHealth() ContainerHealth {
+	health := ContainerNoHealth
+	for _, service := range ss {
+		if len(service) == 0 {
+			health = getCombinedHealth(health, ContainerNoHealth)
 		}
-	case StackStatusHealthy:
-		if newStatus == StackStatusUnknown {
-			return oldStatus
+		for _, container := range service {
+			health = getCombinedHealth(health, container.Health)
+		}
+	}
+	return health
+}
+
+var healthOrder = []ContainerHealth{
+	ContainerUnhealthy, ContainerStarting, ContainerHealthy, ContainerNoHealth,
+}
+
+func getCombinedHealth(oldStatus, newStatus ContainerHealth) ContainerHealth {
+
+	for _, state := range healthOrder {
+		if oldStatus == state || newStatus == state {
+			return state
 		}
 	}
 	return newStatus

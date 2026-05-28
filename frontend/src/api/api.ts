@@ -50,13 +50,13 @@ export const ContainerHealth = {
   healthy: 'healthy',
   unhealthy: 'unhealthy',
   starting: 'starting',
-  unknown: 'unknown',
+  none: 'none',
 } as const;
 
-export type ContainerStatusState = typeof ContainerStatusState[keyof typeof ContainerStatusState];
+export type ContainerState = typeof ContainerState[keyof typeof ContainerState];
 
 
-export const ContainerStatusState = {
+export const ContainerState = {
   created: 'created',
   running: 'running',
   paused: 'paused',
@@ -68,7 +68,7 @@ export const ContainerStatusState = {
 
 export interface ContainerStatus {
   containerId: string;
-  state: ContainerStatusState;
+  state: ContainerState;
   name: string;
   health: ContainerHealth;
   startedAt: string;
@@ -203,7 +203,7 @@ export interface Settings {
   oidc?: OidcSettings;
 }
 
-export interface StackStatus {[key: string]: ContainerStatus[]}
+export interface StackStatus {[key: string]: {[key: string]: ContainerStatus}}
 
 export interface State {
   nextDeploy: string;

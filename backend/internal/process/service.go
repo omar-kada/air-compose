@@ -130,12 +130,20 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 }
 
 func (s *service) areStacksHealthy(cfg models.Config) bool {
-	state, err := s.containersInspector.GetCurrentStacksState(cfg.GetEnabledServices())
+	state, err := s.containersInspector.GetCurrentStacks(cfg.GetEnabledServices())
 	if err != nil {
 		return false
 	}
-	return state.GetGlobalHealth() == models.StackStatusHealthy || state.GetGlobalHealth() == models.StackStatusStarting
+	return state.GetGlobalHealth() == models.ContainerHealthy || state.GetGlobalHealth() == models.ContainerStarting
 }
+
+// func (s *service) isDeploymentEnded(cfg models.Config) bool {
+// 	state, err := s.containersInspector.GetCurrentStacks(cfg.GetEnabledServices())
+// 	if err != nil {
+// 		return false
+// 	}
+// 	return state.GetGlobalHealth() == models.ContainerHealthy || state.GetGlobalHealth() == models.ContainerUnhealthy
+// }
 
 func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
 	if err != nil {
@@ -150,7 +158,7 @@ func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.
 // GetCurrentState returns the statistics of deployments for the last N days
 func (s *service) GetCurrentState() (models.State, error) {
 	dep, _ := s.store.GetLastDeployment()
-	stackstate, _ := s.containersInspector.GetCurrentStacksState(s.currentCfg.GetEnabledServices())
+	stackstate, _ := s.containersInspector.GetCurrentStacks(s.currentCfg.GetEnabledServices())
 	cfg, _ := s.configStore.Get()
 
 	return models.State{

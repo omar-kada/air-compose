@@ -12,7 +12,6 @@ import (
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/models"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,15 +33,16 @@ func (m *Mock) GetCurrentState() (models.State, error) {
 	return args.Get(0).(models.State), args.Error(1)
 }
 
-func (m *Mock) GetManagedStacks() (map[string][]models.ContainerSummary, error) {
-	args := m.Called()
-	return args.Get(0).(map[string][]models.ContainerSummary), args.Error(1)
-}
 func (m *Mock) GetStacksState() (models.StacksState, error) {
 	args := m.Called()
 	return args.Get(0).(models.StacksState), args.Error(1)
 }
-func (m *Mock) GetCurrentStacksState(services []string) (models.StacksState, error) {
+func (m *Mock) GetManagedStacks() (models.StacksState, error) {
+	args := m.Called()
+	return args.Get(0).(models.StacksState), args.Error(1)
+}
+
+func (m *Mock) GetCurrentStacks(services []string) (models.StacksState, error) {
 	args := m.Called(services)
 	return args.Get(0).(models.StacksState), args.Error(1)
 }
@@ -222,9 +222,11 @@ func TestStatusAPIGet_Success(t *testing.T) {
 	store := &MockStore{}
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
-	stacks := map[string][]models.ContainerSummary{
-		"stack1": {{ID: "c1", Name: "c1", Image: "img1", State: container.StateRunning, Health: container.Healthy}},
-	}
+	stacks := models.NewStacksState()
+	stacks.SetContainerStatus("service1", models.ContainerSummary{
+		ID: "c1", Name: "container1", Image: "img1",
+		State: models.StateRunning, Health: models.ContainerHealthy,
+	})
 	m.On("GetManagedStacks").Return(stacks, nil)
 
 	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
@@ -233,8 +235,11 @@ func TestStatusAPIGet_Success(t *testing.T) {
 	switch r := resp.(type) {
 	case api.StatusAPIGet200JSONResponse:
 		assert.Equal(t, 1, len(r))
-		assert.Contains(t, r, "stack1")
-		assert.Len(t, r["stack1"], 1)
+		assert.Contains(t, r, "service1")
+		assert.Len(t, r["service1"], 1)
+		assert.Equal(t, "container1", r["service1"]["container1"].Name)
+		assert.Equal(t, api.ContainerHealthHealthy, r["service1"]["container1"].Health)
+		assert.Equal(t, api.ContainerStateRunning, r["service1"]["container1"].State)
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
@@ -346,7 +351,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errStacks := errors.New("failed to get stacks")
-	m.On("GetManagedStacks").Return(map[string][]models.ContainerSummary{}, errStacks)
+	m.On("GetManagedStacks").Return(models.StacksState{}, errStacks)
 
 	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
 	assert.Nil(t, resp)
