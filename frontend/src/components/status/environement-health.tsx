@@ -17,7 +17,7 @@ export function EnvironementHealth({ className }: { className?: string }) {
       to={ROUTES.STATUS}
       className={cn('flex flex-wrap items-center align-bottom gap-4 m-4 ', className)}
     >
-      <ContainerStatusBadge status={state?.health}></ContainerStatusBadge>
+      <ContainerStatusBadge health={state?.health}></ContainerStatusBadge>
     </Link>
   );
 }

@@ -34,6 +34,7 @@ enum EventType {
   DeploymentSuccess: "DEPLOYMENT_SUCCESS",
   DeploymentError: "DEPLOYMENT_ERROR",
   StacksUnhealthy: "STACKS_UNHEALTHY",
+  StacksHealthy: "STACKS_HEALTHY",
   ConfigurationUpdated: "CONFIGURATION_UPDATED",
   PasswordUpdated: "PASSWORD_UPDATED",
   SessionReused: "SESSION_REUSED",
@@ -50,7 +51,17 @@ enum ContainerHealth {
   healthy: "healthy",
   unhealthy: "unhealthy",
   starting: "starting",
-  _unknown: "unknown",
+  none: "none",
+}
+
+enum ContainerState {
+  created: "created",
+  running: "running",
+  paused: "paused",
+  restarting: "restarting",
+  removing: "removing",
+  exited: "exited",
+  dead: "dead",
 }
 
 model Page<T> {

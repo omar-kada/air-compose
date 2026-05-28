@@ -210,6 +210,7 @@
     "SETTINGS": "Settings",
     "PASSWORD_UPDATED": "Password updated",
     "STACKS_UNHEALTHY": "Unhealthy stacks",
+    "STACKS_HEALTHY": "Healthy stacks",
     "CONFIGURATION_UPDATED": "Configuration updated",
     "SESSION_REUSED": "Session reused"
   }
