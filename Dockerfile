@@ -11,7 +11,7 @@ COPY backend .
 RUN go build -o air-compose /air-compose/cmd/air-compose/main.go
 
 # ----------- Frontend Builder Stage -----------
-FROM node:22-alpine AS frontend-builder
+FROM node:26-alpine AS frontend-builder
 
 WORKDIR /app
 
