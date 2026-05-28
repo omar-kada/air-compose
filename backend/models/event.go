@@ -24,6 +24,9 @@ const (
 	// EventStacksUnhealthy indicates that some stacks are unhealthy
 	EventStacksUnhealthy EventType = "STACKS_UNHEALTHY"
 
+	// EventStacksHealthy indicates that all stacks are back to being healthy
+	EventStacksHealthy EventType = "STACKS_HEALTHY"
+
 	// EventConfigurationUpdated indicates that a configuration has been updated
 	EventConfigurationUpdated EventType = "CONFIGURATION_UPDATED"
 
@@ -49,6 +52,8 @@ func (e EventType) ToText() string {
 		return "Deployment failed"
 	case EventStacksUnhealthy:
 		return "Some stacks are not healthy"
+	case EventStacksHealthy:
+		return "All stacks are healthy"
 	case EventConfigurationUpdated:
 		return "Configuration updated"
 	case EventPasswordUpdated:
@@ -69,7 +74,7 @@ func (e EventType) ToEmoji() string {
 		return "❌"
 	case EventDeploymentStarted:
 		return "🚀"
-	case EventDeploymentSuccess:
+	case EventDeploymentSuccess, EventStacksHealthy:
 		return "✅"
 	case EventDeploymentError:
 		return "🔴"

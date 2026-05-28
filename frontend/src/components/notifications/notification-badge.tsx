@@ -22,6 +22,7 @@ function getNotificationColor(type: EventType): string {
     case EventType.DEPLOYMENT_STARTED:
       return 'bg-blue-500';
     case EventType.DEPLOYMENT_SUCCESS:
+    case EventType.STACKS_HEALTHY:
       return 'bg-green-500';
     case EventType.PASSWORD_UPDATED:
     case EventType.CONFIGURATION_UPDATED:

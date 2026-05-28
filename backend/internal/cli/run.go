@@ -102,10 +102,13 @@ func (run *runCommand) doRun() error {
 	})
 	scheduler := process.NewConfigScheduler(configStore)
 
-	inspector, err := docker.NewInspector(params.ServicesDir, configStore, dispatcher)
+	inspector, err := docker.NewInspector(params.ServicesDir, configStore)
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)
 	}
+	healthChecker := docker.NewHealthChecker(configStore, inspector, dispatcher)
+	go healthChecker.ScheduleStateRefresh(context.Background())
+
 	fetcher := git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore)
 	processService := process.NewService(
 		params.DeploymentParams,

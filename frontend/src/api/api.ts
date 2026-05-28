@@ -4,10 +4,6 @@
  * AirCompose API
  * OpenAPI spec version: 1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -22,13 +18,17 @@ import type {
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 
-import * as axios from 'axios';
 import type {
   AxiosError,
   AxiosRequestConfig,
   AxiosResponse
 } from 'axios';
+import * as axios from 'axios';
 
 export interface BooleanResponse {
   success: boolean;
@@ -50,13 +50,13 @@ export const ContainerHealth = {
   healthy: 'healthy',
   unhealthy: 'unhealthy',
   starting: 'starting',
-  unknown: 'unknown',
+  none: 'none',
 } as const;
 
-export type ContainerStatusState = typeof ContainerStatusState[keyof typeof ContainerStatusState];
+export type ContainerState = typeof ContainerState[keyof typeof ContainerState];
 
 
-export const ContainerStatusState = {
+export const ContainerState = {
   created: 'created',
   running: 'running',
   paused: 'paused',
@@ -68,7 +68,7 @@ export const ContainerStatusState = {
 
 export interface ContainerStatus {
   containerId: string;
-  state: ContainerStatusState;
+  state: ContainerState;
   name: string;
   health: ContainerHealth;
   startedAt: string;
@@ -115,6 +115,7 @@ export const EventType = {
   DEPLOYMENT_SUCCESS: 'DEPLOYMENT_SUCCESS',
   DEPLOYMENT_ERROR: 'DEPLOYMENT_ERROR',
   STACKS_UNHEALTHY: 'STACKS_UNHEALTHY',
+  STACKS_HEALTHY: 'STACKS_HEALTHY',
   CONFIGURATION_UPDATED: 'CONFIGURATION_UPDATED',
   PASSWORD_UPDATED: 'PASSWORD_UPDATED',
   SESSION_REUSED: 'SESSION_REUSED',
@@ -203,7 +204,7 @@ export interface Settings {
   oidc?: OidcSettings;
 }
 
-export interface StackStatus {[key: string]: ContainerStatus[]}
+export interface StackStatus {[key: string]: {[key: string]: ContainerStatus}}
 
 export interface State {
   nextDeploy: string;

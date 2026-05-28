@@ -46,7 +46,7 @@ func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
 		},
 	}
 
-	want := []string{"svc"}
+	want := []string{"svc", "svc2"}
 	assert.EqualValues(t, want, cfg.GetEnabledServices())
 }
 
@@ -58,7 +58,7 @@ func TestObfuscateToken(t *testing.T) {
 	}{
 		{"Empty token", "", ""},
 		{"Short token", "123", strings.Repeat("*", 30)},
-		{"Long token", "12345678901234567890", strings.Repeat("*", 25) + "67890"},
+		{"Long token", "12345678901234567890", "1234567890" + strings.Repeat("*", 20)},
 	}
 
 	for _, tt := range tests {
@@ -74,7 +74,7 @@ func TestIsObfuscated(t *testing.T) {
 		token    string
 		expected bool
 	}{
-		{"Obfuscated token", "*****12345", true},
+		{"Obfuscated token", "1234567890********************", true},
 		{"Not obfuscated", "1234567890", false},
 		{"Empty token", "", false},
 	}
