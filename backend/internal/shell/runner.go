@@ -3,8 +3,11 @@ package shell
 
 import (
 	"fmt"
+	"hash/maphash"
 	"log/slog"
 	"os/exec"
+	"strings"
+	"time"
 
 	"omar-kada/air-compose/internal/events"
 )
@@ -27,11 +30,15 @@ func (cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("executable not found: %w", err)
 	}
+	fullCmd := cmd + " " + strings.Join(args, " ")
+	hash := "#" + fmt.Sprintf("%06x", maphash.String(maphash.MakeSeed(), fullCmd+time.Now().GoString()))[:6]
+
+	slog.Debug("executing " + hash + ": " + fullCmd)
 	c := execCommand(path, args...)
-	c.Stderr = events.NewSlogWriter(slog.LevelError)
+	c.Stderr = events.NewSlogWriter(slog.LevelDebug, hash)
 
 	out, err := c.Output()
-	slog.Debug("command result", "cmd", cmd, "args", args, "out", out, "err", err)
+	slog.Debug("command result "+hash+":", "out", out, "err", err)
 	return out, err
 }
 

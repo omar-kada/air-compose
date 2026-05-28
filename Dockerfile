@@ -48,9 +48,7 @@ RUN apt update && apt install --yes --no-install-recommends \
 ARG UID=1000
 ARG GID=1000
 
-RUN mkdir /app
-RUN mkdir /data
-
+RUN mkdir /app && mkdir /data
 WORKDIR /app
 
 COPY --from=builder /air-compose/air-compose /app/
@@ -62,7 +60,8 @@ ENV AIR_COMPOSE_WORKING_DIR="/data"
 EXPOSE 5005
 
 # Start the application
-CMD ["sh", "-c", "/app/air-compose run"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["/app/air-compose", "run"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5005/ || exit 1

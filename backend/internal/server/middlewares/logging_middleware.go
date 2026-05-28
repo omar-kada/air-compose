@@ -16,7 +16,6 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			rec.status = http.StatusOK
 		}
 		dur := time.Since(start)
-		username, _ := UsernameFromContext(r.Context())
 		slog.Debug("[HTTP] request",
 			"method", r.Method,
 			"path", r.URL.Path,
@@ -24,7 +23,6 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			"remote", r.RemoteAddr,
 			"duration", dur,
 			"bytes", rec.bytes,
-			"user", username,
 		)
 	})
 }
