@@ -123,7 +123,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 			URL:           f._cfg.Settings.Git.Repo,
 			ReferenceName: plumbing.NewBranchReferenceName(f._cfg.GetBranch()),
 			SingleBranch:  true,
-			Progress:      events.NewSlogWriter(slog.LevelInfo),
+			Progress:      events.NewSlogWriter(slog.LevelDebug, "git clone "+branch),
 			ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
 		})
 	} else {

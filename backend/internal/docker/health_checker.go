@@ -66,6 +66,7 @@ func (hc *healthChecker) refreshState() {
 		slog.Error("error while getting stacks state", "err", err)
 		return
 	}
+	slog.Debug("health check result", "state", state.GetGlobalHealth())
 	hc.setCurrentState(state)
 }
 

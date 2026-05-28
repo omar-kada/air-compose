@@ -36,7 +36,7 @@ func (m *MockHandler) WithGroup(name string) slog.Handler {
 }
 
 func TestNewSlogWriter(t *testing.T) {
-	writer := NewSlogWriter(slog.LevelInfo)
+	writer := NewSlogWriter(slog.LevelInfo, "test")
 
 	assert.NotNil(t, writer, "Expected non-nil writer")
 	assert.Equal(t, slog.LevelInfo, writer.level, "Expected level Info")
@@ -64,7 +64,7 @@ func TestWrite(t *testing.T) {
 	}()
 
 	// Create a SlogWriter with Info level
-	writer := NewSlogWriter(slog.LevelInfo)
+	writer := NewSlogWriter(slog.LevelInfo, "test")
 
 	// Test message
 	testMsg := "test message"
@@ -115,7 +115,7 @@ func TestWriteWithDifferentLevels(t *testing.T) {
 			slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
 		}()
 		// Create a SlogWriter with the test level
-		writer := NewSlogWriter(tc.level)
+		writer := NewSlogWriter(tc.level, "test")
 
 		// Test message
 		testMsg := "test message"
