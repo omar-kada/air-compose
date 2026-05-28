@@ -2,7 +2,7 @@ package mappers
 
 import (
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 // DiffMapper is a mapper that converts models.FileDiff to api.FileDiff.

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"omar-kada/air-compose/internal/files"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"github.com/elliotchance/orderedmap/v3"
 )

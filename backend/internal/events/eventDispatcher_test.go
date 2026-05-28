@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

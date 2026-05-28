@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/assert"
 )

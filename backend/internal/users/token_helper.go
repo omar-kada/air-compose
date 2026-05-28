@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"golang.org/x/crypto/bcrypt"
 )

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 func TestLoggingEventHandler_HandleEvent(t *testing.T) {

@@ -2,7 +2,7 @@ package cli
 
 import (
 	"omar-kada/air-compose/internal/cli/defaults"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 const (

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/users"
-	"omar-kada/air-compose/models"
 
 	"github.com/rs/cors"
 )

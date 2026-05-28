@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 	"os"
 	"path/filepath"
 	"strings"
