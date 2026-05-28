@@ -4,9 +4,9 @@ import (
 	"context"
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/mappers"
 	"omar-kada/air-compose/internal/storage"
-	"omar-kada/air-compose/models"
 )
 
 // SettingsConfigHandler handles settings and configuration-related operations.

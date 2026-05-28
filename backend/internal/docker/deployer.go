@@ -10,8 +10,8 @@ import (
 
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/files"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/shell"
-	"omar-kada/air-compose/models"
 )
 
 // Deployer defines methods for managing containerized services.

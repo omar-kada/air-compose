@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
-	"omar-kada/air-compose/models"
 	"omar-kada/air-compose/testutil"
 
 	"github.com/stretchr/testify/assert"

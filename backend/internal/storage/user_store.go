@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"gorm.io/gorm"
 )

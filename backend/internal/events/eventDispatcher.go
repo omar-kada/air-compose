@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 // objectIDCtxKey represent a contextkey for objectID

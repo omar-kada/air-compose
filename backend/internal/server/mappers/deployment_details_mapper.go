@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 // DeploymentDetailsMapper maps between models.Deployment and api.DeploymentWithDetails types.

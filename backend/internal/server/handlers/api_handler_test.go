@@ -8,9 +8,9 @@ import (
 
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/storage"
-	"omar-kada/air-compose/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

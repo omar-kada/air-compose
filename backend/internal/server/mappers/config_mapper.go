@@ -2,7 +2,7 @@ package mappers
 
 import (
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 // ConfigMapper maps models.Config to api.Config

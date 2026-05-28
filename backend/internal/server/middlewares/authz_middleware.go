@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 )
 
 // AuthorizationMiddleware checks if the requested API endpoint is disabled based on feature flags.

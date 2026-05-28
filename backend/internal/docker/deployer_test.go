@@ -11,8 +11,8 @@ import (
 
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/files"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/storage"
-	"omar-kada/air-compose/models"
 	"omar-kada/air-compose/testutil"
 
 	"github.com/stretchr/testify/assert"

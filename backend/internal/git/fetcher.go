@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/storage"
-	"omar-kada/air-compose/models"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"

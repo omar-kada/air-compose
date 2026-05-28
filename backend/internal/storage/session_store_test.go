@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"

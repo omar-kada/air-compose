@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"omar-kada/air-compose/models"
+	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/assert"
 )
