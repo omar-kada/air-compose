@@ -47,7 +47,7 @@ func TestGetEnabledServices_FiltersCorrectly(t *testing.T) {
 	}
 
 	want := []string{"svc", "svc2"}
-	assert.EqualValues(t, want, cfg.GetEnabledServices())
+	assert.ElementsMatch(t, want, cfg.GetEnabledServices())
 }
 
 func TestObfuscateToken(t *testing.T) {

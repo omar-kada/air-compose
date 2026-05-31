@@ -43,7 +43,8 @@ func TestSettingsMapper_Map(t *testing.T) {
 					Token:    token,
 				},
 				Schedule: models.ScheduleConfig{
-					Cron: cron,
+					Cron:               cron,
+					RetriesOnUnhealthy: 3,
 				},
 				Notifications: models.NotificationConfig{
 					NotificationURL:   notificationURL,
@@ -52,14 +53,15 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Oidc: oidc,
 			},
 			want: api.Settings{
-				Repo:              "https://github.com/example/repo",
-				Branch:            &main,
-				Cron:              &cron,
-				Token:             &obfuscatedToken,
-				Username:          &username,
-				NotificationURL:   &obfuscatedURL,
-				NotificationTypes: []api.EventType{},
-				Oidc:              &oidcAPI,
+				Repo:               "https://github.com/example/repo",
+				Branch:             &main,
+				Cron:               &cron,
+				Token:              &obfuscatedToken,
+				Username:           &username,
+				NotificationURL:    &obfuscatedURL,
+				NotificationTypes:  []api.EventType{},
+				Oidc:               &oidcAPI,
+				RetriesOnUnhealthy: 3,
 			},
 		},
 		{
@@ -74,14 +76,15 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Oidc: models.OidcConfig{},
 			},
 			want: api.Settings{
-				Repo:              "",
-				Branch:            &empty,
-				Cron:              &empty,
-				Token:             &empty,
-				Username:          &empty,
-				NotificationURL:   &empty,
-				NotificationTypes: []api.EventType{},
-				Oidc:              &api.OidcSettings{},
+				Repo:               "",
+				Branch:             &empty,
+				Cron:               &empty,
+				Token:              &empty,
+				Username:           &empty,
+				NotificationURL:    &empty,
+				NotificationTypes:  []api.EventType{},
+				Oidc:               &api.OidcSettings{},
+				RetriesOnUnhealthy: 0,
 			},
 		},
 	}
@@ -121,14 +124,15 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 		{
 			name: "basic",
 			in: api.Settings{
-				Repo:              repo,
-				Branch:            &branch,
-				Cron:              &cron,
-				Username:          &username,
-				Token:             &token,
-				NotificationURL:   &notificationURL,
-				NotificationTypes: []api.EventType{},
-				Oidc:              &oidc,
+				Repo:               repo,
+				Branch:             &branch,
+				Cron:               &cron,
+				Username:           &username,
+				Token:              &token,
+				NotificationURL:    &notificationURL,
+				NotificationTypes:  []api.EventType{},
+				Oidc:               &oidc,
+				RetriesOnUnhealthy: 3,
 			},
 			want: models.Settings{
 				Git: models.GitConfig{
@@ -138,7 +142,8 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 					Token:    token,
 				},
 				Schedule: models.ScheduleConfig{
-					Cron: cron,
+					Cron:               cron,
+					RetriesOnUnhealthy: 3,
 				},
 				Notifications: models.NotificationConfig{
 					NotificationURL:   notificationURL,
@@ -150,14 +155,15 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 		{
 			name: "empty",
 			in: api.Settings{
-				Branch:            nil,
-				Cron:              nil,
-				Repo:              "",
-				Username:          nil,
-				Token:             nil,
-				NotificationURL:   nil,
-				NotificationTypes: []api.EventType{},
-				Oidc:              &api.OidcSettings{},
+				Branch:             nil,
+				Cron:               nil,
+				Repo:               "",
+				Username:           nil,
+				Token:              nil,
+				NotificationURL:    nil,
+				NotificationTypes:  []api.EventType{},
+				Oidc:               &api.OidcSettings{},
+				RetriesOnUnhealthy: 0,
 			},
 			want: models.Settings{
 				Git: models.GitConfig{
@@ -167,7 +173,8 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 					Token:    "",
 				},
 				Schedule: models.ScheduleConfig{
-					Cron: "",
+					Cron:               "",
+					RetriesOnUnhealthy: 0,
 				},
 				Notifications: models.NotificationConfig{
 					NotificationURL:   "",

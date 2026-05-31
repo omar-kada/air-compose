@@ -13,14 +13,15 @@ func (SettingsMapper) Map(settings models.Settings) api.Settings {
 	token := settings.GetObfuscatedToken()
 	notificationURL := settings.GetObfuscatedNotificationURL()
 	return api.Settings{
-		Repo:              settings.Git.Repo,
-		Branch:            &settings.Git.Branch,
-		Cron:              &settings.Schedule.Cron,
-		Token:             &token,
-		Username:          &settings.Git.Username,
-		NotificationURL:   &notificationURL,
-		NotificationTypes: mapEventTypes(settings.Notifications.NotificationTypes),
-		Oidc:              mapOidcConfig(settings.Oidc),
+		Repo:               settings.Git.Repo,
+		Branch:             &settings.Git.Branch,
+		Cron:               &settings.Schedule.Cron,
+		Token:              &token,
+		Username:           &settings.Git.Username,
+		NotificationURL:    &notificationURL,
+		NotificationTypes:  mapEventTypes(settings.Notifications.NotificationTypes),
+		Oidc:               mapOidcConfig(settings.Oidc),
+		RetriesOnUnhealthy: settings.Schedule.RetriesOnUnhealthy,
 	}
 }
 
@@ -52,6 +53,9 @@ func (SettingsMapper) UnMap(settings api.Settings) models.Settings {
 		},
 		Notifications: models.NotificationConfig{
 			NotificationTypes: unmapEventTypes(settings.NotificationTypes),
+		},
+		Schedule: models.ScheduleConfig{
+			RetriesOnUnhealthy: settings.RetriesOnUnhealthy,
 		},
 	}
 	if settings.Branch != nil {

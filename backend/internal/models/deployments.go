@@ -25,7 +25,6 @@ type Deployment struct {
 	EndTime time.Time
 	Title   string
 	Files   []FileDiff `gorm:"foreignKey:DeploymentID;constraint:OnDelete:CASCADE;"`
-	Events  []Event    `gorm:"foreignKey:ObjectID;constraint:OnDelete:CASCADE;"`
 	Commit  string
 	Repo    string
 	Branch  string

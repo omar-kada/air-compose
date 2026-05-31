@@ -29,11 +29,6 @@ func NewEventStorage(db *gorm.DB) (EventStorage, error) {
 
 // StoreEvent creates a new event and associates it with an existing deployment
 func (s *gormEventStorage) StoreEvent(event models.Event) error {
-	// verify deployment exists
-	var dep models.Deployment
-	if err := s.db.First(&dep, event.ObjectID).Error; err != nil {
-		return err
-	}
 	if err := s.db.Create(&event).Error; err != nil {
 		return err
 	}
