@@ -79,7 +79,7 @@ func (e EventType) ToEmoji() string {
 	case EventDeploymentError:
 		return "🔴"
 	case EventStacksUnhealthy:
-		return "⚠️"
+		return "🔴"
 	case EventConfigurationUpdated:
 		return "🔄"
 	case EventPasswordUpdated:

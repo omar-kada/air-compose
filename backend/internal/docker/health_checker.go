@@ -15,6 +15,7 @@ import (
 // HealthChecker defines the interface for checking the health of Docker stacks.
 type HealthChecker interface {
 	ScheduleStateRefresh(ctx context.Context)
+	GetChannel() <-chan models.ContainerHealth
 }
 
 type healthChecker struct {
@@ -22,6 +23,7 @@ type healthChecker struct {
 	inspector   Inspector
 	dispatcher  events.Dispatcher
 
+	healthCheckChan    chan models.ContainerHealth
 	currentStacksState models.StacksState
 	refreshDuration    time.Duration
 	refreshMu          sync.Mutex
@@ -30,13 +32,17 @@ type healthChecker struct {
 // NewHealthChecker creates a new healthChecker instance with the given dependencies.
 func NewHealthChecker(configStore storage.ConfigStore, inspector Inspector, dispatcher events.Dispatcher) HealthChecker {
 	hc := healthChecker{
-		configStore: configStore,
-		inspector:   inspector,
-		dispatcher:  dispatcher,
-
+		configStore:     configStore,
+		inspector:       inspector,
+		dispatcher:      dispatcher,
+		healthCheckChan: make(chan models.ContainerHealth, 1),
 		refreshDuration: 1 * time.Minute,
 	}
 	return &hc
+}
+
+func (hc *healthChecker) GetChannel() <-chan models.ContainerHealth {
+	return hc.healthCheckChan
 }
 
 func (hc *healthChecker) ScheduleStateRefresh(ctx context.Context) {
@@ -71,6 +77,10 @@ func (hc *healthChecker) refreshState() {
 }
 
 func (hc *healthChecker) setCurrentState(newState models.StacksState) {
+	select {
+	case hc.healthCheckChan <- newState.GetGlobalHealth(): // try to send
+	default:
+	}
 	if hc.currentStacksState.GetGlobalHealth() != newState.GetGlobalHealth() {
 		if newState.GetGlobalHealth() == models.ContainerUnhealthy {
 			hc.dispatcher.Dispatch(context.Background(), models.EventStacksUnhealthy,

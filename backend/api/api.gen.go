@@ -72,8 +72,8 @@ const (
 	EventTypeMISC                 EventType = "MISC"
 	EventTypePASSWORDUPDATED      EventType = "PASSWORD_UPDATED"
 	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
-	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 	EventTypeSTACKSHEALTHY        EventType = "STACKS_HEALTHY"
+	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 )
 
 // Defines values for UserType.
@@ -215,14 +215,16 @@ type RegistrationInfo struct {
 
 // Settings defines model for Settings.
 type Settings struct {
-	Branch            *string       `json:"branch,omitempty"`
-	Cron              *string       `json:"cron,omitempty"`
-	NotificationTypes []EventType   `json:"notificationTypes"`
-	NotificationURL   *string       `json:"notificationURL,omitempty"`
-	Oidc              *OidcSettings `json:"oidc,omitempty"`
-	Repo              string        `json:"repo"`
-	Token             *string       `json:"token,omitempty"`
-	Username          *string       `json:"username,omitempty"`
+	Branch              *string       `json:"branch,omitempty"`
+	Cron                *string       `json:"cron,omitempty"`
+	MaxRetries          int           `json:"maxRetries"`
+	NotificationTypes   []EventType   `json:"notificationTypes"`
+	NotificationURL     *string       `json:"notificationURL,omitempty"`
+	Oidc                *OidcSettings `json:"oidc,omitempty"`
+	RedeployOnUnhealthy bool          `json:"redeployOnUnhealthy"`
+	Repo                string        `json:"repo"`
+	Token               *string       `json:"token,omitempty"`
+	Username            *string       `json:"username,omitempty"`
 }
 
 // StackStatus defines model for StackStatus.

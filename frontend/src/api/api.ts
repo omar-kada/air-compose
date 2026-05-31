@@ -4,6 +4,10 @@
  * AirCompose API
  * OpenAPI spec version: 1.0
  */
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -18,17 +22,13 @@ import type {
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
 
+import * as axios from 'axios';
 import type {
   AxiosError,
   AxiosRequestConfig,
   AxiosResponse
 } from 'axios';
-import * as axios from 'axios';
 
 export interface BooleanResponse {
   success: boolean;
@@ -202,6 +202,8 @@ export interface Settings {
   notificationURL?: string;
   notificationTypes: EventType[];
   oidc?: OidcSettings;
+  redeployOnUnhealthy: boolean;
+  maxRetries: number;
 }
 
 export interface StackStatus {[key: string]: {[key: string]: ContainerStatus}}
