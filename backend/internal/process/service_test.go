@@ -142,7 +142,7 @@ func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.Dep
 	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
 	configStore.Update(currentCfg)
 	depStore := initStore(t)
-	svc := NewService(
+	svc := NewDeploymentService(
 		params,
 		mocker,
 		mocker,
@@ -389,7 +389,7 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 	depStore := initStore(t)
 
 	// Don't initialize config, so Get() will fail
-	svc := NewService(
+	svc := NewDeploymentService(
 		models.DeploymentParams{
 			ServicesDir: "/services",
 			WorkingDir:  ".",

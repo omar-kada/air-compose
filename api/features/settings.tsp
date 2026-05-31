@@ -23,6 +23,7 @@ model Settings {
   notificationURL?: string;
   notificationTypes: Array<EventType>;
   oidc?: OidcSettings;
+  retriesOnUnhealthy: integer;
 }
 
 model GitCredentials {

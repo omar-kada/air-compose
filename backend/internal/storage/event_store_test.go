@@ -59,10 +59,10 @@ func TestStoreEvent_NoDeployment(t *testing.T) {
 	s, _ := setupEventStorage(t)
 
 	ev := models.Event{Type: models.EventMisc, Msg: "ok", ObjectID: 1}
-	assert.Error(t, s.StoreEvent(ev))
+	assert.NoError(t, s.StoreEvent(ev))
 	events, err := s.GetEvents(1)
 	assert.NoError(t, err)
-	assert.Len(t, events, 0)
+	assert.Len(t, events, 1)
 }
 
 func TestGetNotifications(t *testing.T) {

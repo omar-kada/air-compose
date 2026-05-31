@@ -12,6 +12,7 @@ require (
 	github.com/go-git/go-git/v6 v6.0.0-alpha.3
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
+	github.com/lmittmann/tint v1.1.3
 	github.com/moby/moby/api v1.54.2
 	github.com/moby/moby/client v0.4.1
 	github.com/oapi-codegen/runtime v1.4.0

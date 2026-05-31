@@ -54,7 +54,6 @@ func TestInitAndGetDeployment(t *testing.T) {
 	assert.Equal(t, "diff1", got.Diff)
 	assert.Equal(t, "repo", got.Repo)
 	assert.Equal(t, "branch", got.Branch)
-	assert.Empty(t, got.Events)
 }
 
 func TestGetDeployment_NoNExisting(t *testing.T) {

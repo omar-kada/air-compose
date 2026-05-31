@@ -14,6 +14,7 @@ import (
 	"omar-kada/air-compose/internal/storage"
 
 	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/config"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/client"
 
@@ -134,6 +135,9 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	}
 	err = repo.Fetch(&git.FetchOptions{
 		ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
+		RefSpecs: []config.RefSpec{
+			"refs/heads/*:refs/remotes/origin/*",
+		},
 	})
 
 	if err != nil && err != NoErrAlreadyUpToDate {

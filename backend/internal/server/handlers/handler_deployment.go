@@ -19,7 +19,7 @@ import (
 
 // DeploymentHandler handles deployment-related operations.
 type DeploymentHandler struct {
-	processService  process.Service
+	processService  process.DeploymentService
 	deploymentStore storage.DeploymentStorage
 	eventStore      storage.EventStorage
 	fetcher         git.Fetcher
@@ -70,7 +70,14 @@ func (h *DeploymentHandler) DeployementAPIRead(_ context.Context, request api.De
 		}, nil
 	}
 
-	return api.DeployementAPIRead200JSONResponse(h.depDetailsMapper.Map(dep)), err
+	events, err := h.eventStore.GetEvents(dep.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	depDTO := h.depDetailsMapper.Map(dep)
+	depDTO.Events = models.ListMapper(h.eventMapper.Map)(events)
+	return api.DeployementAPIRead200JSONResponse(depDTO), err
 }
 
 // DeployementAPISync syncs the deployment

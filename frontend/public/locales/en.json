@@ -122,6 +122,8 @@
       "cron": "Cron period",
       "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
       "cron_PLACEHOLDER": "disabled when empty",
+      "retriesOnUnhealthy": "Retries on unhealthy stacks : {{value}}",
+      "retriesOnUnhealthy_DESCRIPTION": "(0 = disabled)",
       "ACCOUNT": "Account",
       "DELETE_ACCOUNT": "Delete account",
       "CHANGE_PASSWORD": "Change password",

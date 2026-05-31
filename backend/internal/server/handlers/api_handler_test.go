@@ -53,6 +53,11 @@ func (m *Mock) GetDeployment(id uint64) (models.Deployment, error) {
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
+func (m *Mock) GetEvents(id uint64) ([]models.Event, error) {
+	args := m.Called(id)
+	return args.Get(0).([]models.Event), args.Error(1)
+}
+
 func (m *Mock) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
 	args := m.Called(c)
 	return args.Get(0).([]models.Event), args.Error(1)
@@ -156,6 +161,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 
 	dep := models.Deployment{ID: 10, Title: "Manual Deploy", Author: "ci", Diff: "diff"}
 	m.On("GetDeployment", uint64(10)).Return(dep, nil)
+	m.On("GetEvents", uint64(10)).Return([]models.Event{}, nil)
 
 	req := api.DeployementAPIReadRequestObject{Id: "10"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)

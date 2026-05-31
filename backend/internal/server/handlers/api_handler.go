@@ -19,7 +19,15 @@ type BusinessHandler struct {
 }
 
 // NewBusinessHandler creates a new Handler
-func NewBusinessHandler(configStore storage.ConfigStore, processService process.Service, userService users.AccountService, fetcher git.Fetcher, inspector docker.Inspector, eventStore storage.EventStorage, deploymentStore storage.DeploymentStorage) *BusinessHandler {
+func NewBusinessHandler(
+	configStore storage.ConfigStore,
+	processService process.DeploymentService,
+	userService users.AccountService,
+	fetcher git.Fetcher,
+	inspector docker.Inspector,
+	eventStore storage.EventStorage,
+	deploymentStore storage.DeploymentStorage,
+) *BusinessHandler {
 	diffMapper := mappers.DiffMapper{}
 	eventMapper := mappers.EventMapper{}
 

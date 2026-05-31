@@ -110,7 +110,7 @@ func (run *runCommand) doRun() error {
 	go healthChecker.ScheduleStateRefresh(context.Background())
 
 	fetcher := git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore)
-	processService := process.NewService(
+	deploymentService := process.NewDeploymentService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher, run.executor),
 		inspector,
@@ -119,11 +119,12 @@ func (run *runCommand) doRun() error {
 		configStore,
 		dispatcher,
 		scheduler)
+	healthHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
 	oidcService := users.NewOidcService(config.Settings.Oidc, authStore)
 	userService := users.NewService(authStore)
 	go func() {
 		_, err = scheduler.Schedule(func() {
-			_, err := processService.SyncDeployment()
+			_, err := deploymentService.SyncDeployment()
 			if err != nil {
 				slog.Error(err.Error())
 			}
@@ -140,9 +141,10 @@ func (run *runCommand) doRun() error {
 			scheduler.ReSchedule()
 		}
 		oidcService.OnConfigChanged(cfg.Settings.Oidc)
+		healthHandler.ResetRetries()
 	})
 
-	businessHandler := handlers.NewBusinessHandler(configStore, processService, userService, fetcher, inspector, eventStore, deploymentStore)
+	businessHandler := handlers.NewBusinessHandler(configStore, deploymentService, userService, fetcher, inspector, eventStore, deploymentStore)
 	server := server.NewServer()
 	return server.Serve(params.ServerParams, businessHandler, userService, oidcService)
 }

@@ -30,6 +30,7 @@ export type RepoFormValues = z.infer<typeof repoSchema>;
 
 export const cronSchema = z.object({
   cron: z.string().optional(),
+  retriesOnUnhealthy: z.number(),
 });
 
 export type CronFormValues = z.infer<typeof cronSchema>;
@@ -63,6 +64,7 @@ export function toSettings(formValues: OnboardingFormValues): Settings {
     cron: formValues.cron?.trim(),
     notificationURL: formValues.notificationURL?.trim(),
     notificationTypes: formValues.notificationTypes,
+    retriesOnUnhealthy: formValues.retriesOnUnhealthy,
   };
 }
 
@@ -96,5 +98,6 @@ export function toNotificationFormValues(settings: Settings): NotificationFormVa
 export function toCronFormValues(settings: Settings): CronFormValues {
   return {
     cron: settings.cron,
+    retriesOnUnhealthy: settings.retriesOnUnhealthy,
   };
 }

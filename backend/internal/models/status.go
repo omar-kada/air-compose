@@ -94,7 +94,7 @@ func (ss StacksState) GetGlobalHealth() ContainerHealth {
 	health := ContainerNoHealth
 	for _, service := range ss {
 		if len(service) == 0 {
-			health = getCombinedHealth(health, ContainerNoHealth)
+			health = getCombinedHealth(health, ContainerUnhealthy)
 		}
 		for _, container := range service {
 			health = getCombinedHealth(health, container.Health)
