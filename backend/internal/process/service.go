@@ -20,14 +20,14 @@ const (
 	WorkingBranch = "to_be_deployed"
 )
 
-// Service abstracts service deployment operations
-type Service interface {
+// DeploymentService abstracts service deployment operations
+type DeploymentService interface {
 	SyncDeployment() (models.Deployment, error)
 	GetCurrentState() (models.State, error)
 }
 
-// NewService creates a new process Service instance
-func NewService(
+// NewDeploymentService creates a new process Service instance
+func NewDeploymentService(
 	deployParams models.DeploymentParams,
 	containersDeployer docker.Deployer,
 	containersInspector docker.Inspector,
@@ -36,7 +36,7 @@ func NewService(
 	configStore storage.ConfigStore,
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
-) Service {
+) DeploymentService {
 	cfg, _ := configStore.Get()
 	return &service{
 		containersDeployer:  containersDeployer,
@@ -67,8 +67,6 @@ type service struct {
 }
 
 func (s *service) SyncDeployment() (models.Deployment, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	cfg, err := s.configStore.Get()
 	if err != nil || cfg.Settings.Git.Repo == "" {
@@ -109,24 +107,45 @@ func (s *service) SyncDeployment() (models.Deployment, error) {
 		return deployment, err
 	}
 	go func() {
-		err := s.fetcher.PullBranch(WorkingBranch, "")
-		if err != nil {
-			s.updateDeploymentStatus(ctx, deployment, err)
-			return
-		}
-		s.dispatcher.Dispatch(ctx, models.EventMisc, "Pulled new changes into working branch")
-
-		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(oldCfg, cfg, s.params)
-		if err != nil {
-			s.updateDeploymentStatus(ctx, deployment, err)
-			return
-		}
-
-		err = s.fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
-		s.updateDeploymentStatus(ctx, deployment, err)
+		s.doDeploy(ctx, deployment, oldCfg, cfg, patch)
 	}()
 
 	return deployment, nil
+}
+
+func (s *service) doDeploy(ctx context.Context, deployment models.Deployment, oldCfg models.Config, cfg models.Config, patch models.Patch) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	err := s.fetcher.PullBranch(WorkingBranch, "")
+	if err != nil {
+		s.updateDeploymentStatus(ctx, deployment, err)
+		return
+	}
+	s.dispatcher.Dispatch(ctx, models.EventMisc, "Pulled new changes into working branch")
+
+	err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(oldCfg, cfg, s.params)
+	if err != nil {
+		s.updateDeploymentStatus(ctx, deployment, err)
+		return
+	}
+
+	err = s.fetcher.PullBranch(cfg.GetBranch(), patch.CommitHash)
+	s.updateDeploymentStatus(ctx, deployment, err)
+
+	// deploymentDone, err := WaitFor(func() bool {
+	// 	stacks, err := s.containersInspector.GetManagedStacks()
+	// 	if err != nil {
+	// 		slog.Error("error while getting managed stacks")
+	// 		return false
+	// 	}
+	// 	slog.Debug("result of waiting for deployment", "deploying", stacks.IsDeploying())
+	// 	return !stacks.IsDeploying()
+	// }, 20*time.Second, 5*time.Minute)
+	// if err != nil {
+	// 	slog.Error("couldn't wait for deployment to finish ", "err", err)
+	// } else if deploymentDone && !s.areStacksHealthy(cfg) {
+	// 	s.dispatcher.Dispatch(ctx, models.EventStacksUnhealthy, "stacks unhealthy after deploy")
+	// }
 }
 
 func (s *service) areStacksHealthy(cfg models.Config) bool {

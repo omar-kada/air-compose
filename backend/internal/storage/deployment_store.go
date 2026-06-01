@@ -45,7 +45,7 @@ func (s *gormDeploymentStorage) GetDeployments(c Cursor[uint64]) ([]models.Deplo
 // GetDeployment retrieves a specific deployment by ID with its associated files and events
 func (s *gormDeploymentStorage) GetDeployment(id uint64) (models.Deployment, error) {
 	var dep models.Deployment
-	if err := s.db.Preload("Files").Preload("Events").First(&dep, id).Error; err != nil {
+	if err := s.db.Preload("Files").First(&dep, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.Deployment{}, nil
 		}
@@ -63,7 +63,6 @@ func (s *gormDeploymentStorage) InitDeployment(title string, patch models.Patch,
 		Status: models.DeploymentStatusRunning,
 		Time:   time.Now(),
 		Files:  patch.Files,
-		Events: []models.Event{},
 		Commit: patch.CommitHash,
 		Repo:   config.Repo,
 		Branch: config.Branch,
@@ -88,7 +87,7 @@ func (s *gormDeploymentStorage) EndDeployment(deploymentID uint64, status models
 // GetLastDeployment returns the most recent deployment based on Time (or ID) descending
 func (s *gormDeploymentStorage) GetLastDeployment() (models.Deployment, error) {
 	var dep models.Deployment
-	req := s.db.Preload("Files").Preload("Events").Order("time DESC")
+	req := s.db.Preload("Files").Order("time DESC")
 	if err := req.First(&dep).Error; err != nil {
 		return models.Deployment{}, err
 	}

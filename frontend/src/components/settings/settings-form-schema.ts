@@ -9,6 +9,7 @@ export const formSchema = z.object({
   cron: z.string().optional(),
   notificationURL: z.string().optional(),
   notificationTypes: z.array(z.enum(EventType)),
+  retriesOnUnhealthy: z.number().nonoptional(),
 });
 export type FormValues = z.infer<typeof formSchema>;
 
@@ -17,11 +18,15 @@ export function fromSettings(settings?: Settings): FormValues {
     return {
       repo: '',
       notificationTypes: [],
+      retriesOnUnhealthy: 0,
     };
   }
   return settings;
 }
 
 export function toSettings(formValues: FormValues): Settings {
-  return formValues;
+  return {
+    ...formValues,
+    retriesOnUnhealthy: Number(formValues.retriesOnUnhealthy),
+  };
 }

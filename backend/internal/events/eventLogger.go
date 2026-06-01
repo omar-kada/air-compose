@@ -18,5 +18,9 @@ func NewLoggingEventHandler() EventHandler {
 
 // HandleEvent logs the event
 func (*LoggingEventHandler) HandleEvent(ctx context.Context, event models.Event) {
-	slog.Log(ctx, slog.LevelInfo, fmt.Sprintf("[%v - %v] %v : %v", event.Type, event.ObjectID, event.ObjectName, event.Msg))
+	if event.ObjectID != 0 {
+		slog.Log(ctx, slog.LevelInfo, fmt.Sprintf("[EVENT] #%v - %v: %v", event.ObjectID, event.Type, event.Msg))
+	} else {
+		slog.Log(ctx, slog.LevelInfo, fmt.Sprintf("[EVENT] %v: %v", event.Type, event.Msg))
+	}
 }

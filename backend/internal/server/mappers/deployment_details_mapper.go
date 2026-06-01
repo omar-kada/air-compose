@@ -32,7 +32,6 @@ func (m DeploymentDetailsMapper) Map(dep models.Deployment) api.DeploymentWithDe
 		Time:    dep.Time,
 		EndTime: dep.EndTime,
 		Title:   dep.Title,
-		Events:  models.ListMapper(m.eventMapper.Map)(dep.Events),
 		Files:   models.ListMapper(m.diffMapper.Map)(dep.Files),
 		Commit:  dep.Commit,
 		Repo:    dep.Repo,

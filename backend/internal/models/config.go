@@ -22,7 +22,8 @@ type GitConfig struct {
 
 // ScheduleConfig represents the configuration for schedule-related settings.
 type ScheduleConfig struct {
-	Cron string `mapstructure:"cron"`
+	Cron               string `mapstructure:"cron"`
+	RetriesOnUnhealthy int    `mapstructure:"retriesOnUnhealthy"`
 }
 
 // NotificationConfig represents the configuration for notification-related settings.

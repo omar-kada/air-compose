@@ -31,7 +31,7 @@ func TestLoggingEventHandler_HandleEvent(t *testing.T) {
 
 	expectedLog := slog.Record{
 		Level:   slog.LevelInfo,
-		Message: "[test - 123] testObject : testMessage",
+		Message: "[EVENT] #123 - test: testMessage",
 	}
 
 	if !reflect.DeepEqual(mockLogger.loggedEvents[0], expectedLog) {

@@ -15,6 +15,7 @@ import {
   FieldTitle,
 } from '../ui/field';
 import { Input } from '../ui/input';
+import { Slider } from '../ui/slider';
 import { ConfirmationDialog, NotificationMultiSelect } from '../view';
 import { ChangePasswordDialog } from './change-password-dialog';
 import { type FormValues } from './settings-form-schema';
@@ -61,6 +62,7 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
         <SettingsSection title={t('SETTINGS.FORM.AUTO_SYNC')} Icon={Timer}>
           <FieldSet>
             <SettingsField form={form} name="cron" withDescription />
+            <SettingsSliderField form={form} name="retriesOnUnhealthy" withDescription />
           </FieldSet>
         </SettingsSection>
 
@@ -111,7 +113,7 @@ function SettingsField({
   withPlaceholder = true,
 }: {
   form: UseFormReturn<FormValues>;
-  name: keyof FormValues;
+  name: Exclude<keyof FormValues, 'retriesOnUnhealthy'>;
   withDescription?: boolean;
   withPlaceholder?: boolean;
 }) {
@@ -132,6 +134,54 @@ function SettingsField({
             autoComplete="off"
             placeholder={withPlaceholder ? t(`SETTINGS.FORM.${name}_PLACEHOLDER`) : ''}
           />
+          {fieldState.invalid && (
+            <FieldError
+              errors={[{ ...fieldState.error, message: t(fieldState.error?.message ?? '') }]}
+            />
+          )}
+        </Field>
+      )}
+    />
+  );
+}
+
+function SettingsSliderField({
+  form,
+  name,
+  withDescription = false,
+  min = 0,
+  max = 10,
+  step = 1,
+}: {
+  form: UseFormReturn<FormValues>;
+  name: 'retriesOnUnhealthy';
+  withDescription?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Controller
+      name={name}
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldTitle>{t(`SETTINGS.FORM.${name}`, { value: field.value ?? min })}</FieldTitle>
+          {withDescription && (
+            <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
+          )}
+          <div>
+            <Slider
+              min={min}
+              max={max}
+              step={step}
+              value={[field.value ?? min]} // shadcn expects an array
+              onValueChange={(val) => field.onChange(val[0] ?? min)} // unwrap the array
+              onBlur={field.onBlur}
+              aria-invalid={fieldState.invalid}
+            />
+          </div>
           {fieldState.invalid && (
             <FieldError
               errors={[{ ...fieldState.error, message: t(fieldState.error?.message ?? '') }]}

@@ -5,9 +5,12 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"omar-kada/air-compose/internal/cli"
 	"omar-kada/air-compose/internal/shell"
+
+	"github.com/lmittmann/tint"
 )
 
 func main() {
@@ -16,7 +19,13 @@ func main() {
 
 	isDev := strings.ToUpper(os.Getenv("ENV")) == "DEV"
 	if isDev {
-		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})))
+		slog.SetDefault(slog.New(
+			tint.NewHandler(os.Stdout, &tint.Options{
+				Level:      slog.LevelDebug,
+				TimeFormat: time.Kitchen,
+				AddSource:  true,
+			}),
+		))
 	} else {
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	}
