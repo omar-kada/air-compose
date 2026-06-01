@@ -91,11 +91,16 @@ func (run *runCommand) doRun() error {
 		return fmt.Errorf("couldn't init AuthStorage %w", err)
 	}
 
-	configStore := storage.NewConfigStore(params.ConfigFile)
-	config, err := configStore.Get()
+	configStore, err := storage.NewConfigStore(params.ConfigFile)
 	if err != nil {
-		slog.Warn("config not found", "err", err)
+		return fmt.Errorf("error creating config storage %w", err)
+
 	}
+	err = configStore.WatchFile()
+	if err != nil {
+		slog.Error("error watching config file", "err", err)
+	}
+	config := configStore.Get()
 	dispatcher := events.NewDefaultDispatcher([]events.EventHandler{
 		events.NewLoggingEventHandler(),
 		events.NewNotificationEventHandler(configStore, eventStore),

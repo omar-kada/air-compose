@@ -97,9 +97,9 @@ type MockStore struct {
 	mock.Mock
 }
 
-func (m *MockStore) Get() (models.Config, error) {
+func (m *MockStore) Get() models.Config {
 	args := m.Called()
-	return args.Get(0).(models.Config), args.Error(1)
+	return args.Get(0).(models.Config)
 }
 
 func (m *MockStore) Update(config models.Config) error {
@@ -114,6 +114,11 @@ func (m *MockStore) ToYaml(config models.Config) ([]byte, error) {
 
 func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
 	m.Called(fn)
+}
+
+func (m *MockStore) WatchFile() error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 func TestDeployementAPIList_Success(t *testing.T) {
@@ -406,7 +411,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 			"ENV": "VALUE",
 		},
 	}
-	store.On("Get").Return(config, nil)
+	store.On("Get").Return(config)
 
 	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -417,21 +422,6 @@ func TestConfigAPIGet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
-
-	store.AssertExpectations(t)
-}
-
-func TestConfigAPIGet_Error(t *testing.T) {
-	m := &Mock{}
-	store := &MockStore{}
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
-
-	errConfig := errors.New("config error")
-	store.On("Get").Return(models.Config{}, errConfig)
-
-	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
-	assert.Nil(t, resp)
-	assert.Equal(t, errConfig, err)
 
 	store.AssertExpectations(t)
 }
@@ -499,21 +489,6 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
-
-	store.AssertExpectations(t)
-}
-
-func TestSettingsAPIGet_Error(t *testing.T) {
-	m := &Mock{}
-	store := &MockStore{}
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
-
-	errSettings := errors.New("settings error")
-	store.On("Get").Return(models.Config{}, errSettings)
-
-	resp, err := h.SettingsAPIGet(context.Background(), api.SettingsAPIGetRequestObject{})
-	assert.Nil(t, resp)
-	assert.Equal(t, errSettings, err)
 
 	store.AssertExpectations(t)
 }
@@ -667,7 +642,8 @@ func TestSettingsAPISet_Error(t *testing.T) {
 	}
 
 	errSettings := errors.New("settings error")
-	store.On("Get").Return(models.Config{}, errSettings)
+	store.On("Get").Return(models.Config{})
+	store.On("Update", mock.Anything).Return(errSettings)
 
 	req := api.SettingsAPISetRequestObject{Body: &settings}
 	resp, err := h.SettingsAPISet(context.Background(), req)
@@ -752,7 +728,8 @@ func TestConfigAPISet_Error(t *testing.T) {
 	}
 
 	errConfig := errors.New("config error")
-	store.On("Get").Return(models.Config{}, errConfig)
+	store.On("Get").Return(models.Config{})
+	store.On("Update", mock.Anything).Return(errConfig)
 
 	req := api.ConfigAPISetRequestObject{Body: &config}
 	resp, err := h.ConfigAPISet(context.Background(), req)

@@ -53,10 +53,7 @@ func (h *AuthUserHandler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegi
 	if err != nil {
 		return api.AuthAPIRegistereddefaultJSONResponse{}, err
 	}
-	cfg, err := h.configStore.Get()
-	if err != nil {
-		return api.AuthAPIRegistereddefaultJSONResponse{}, err
-	}
+	cfg := h.configStore.Get()
 	return api.AuthAPIRegistered200JSONResponse{
 		Registered: hasUsers,
 		Oidc:       cfg.Settings.Oidc.IssuerURL != "",

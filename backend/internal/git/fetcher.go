@@ -57,10 +57,7 @@ func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore storage.Con
 
 // setConfig sets the configuration for the fetcher
 func (f *fetcher) setConfig() error {
-	cfg, err := f.cfgStore.Get()
-	if err != nil {
-		return err
-	}
+	cfg := f.cfgStore.Get()
 	f._cfg = cfg
 	f._auth = &http.BasicAuth{
 		Username: cfg.Settings.Git.Username,

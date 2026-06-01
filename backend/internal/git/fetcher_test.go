@@ -25,8 +25,14 @@ var mockConfig = models.Config{
 }
 
 func configStoreWith(t *testing.T, cfg models.Config) storage.ConfigStore {
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
-	configStore.Update(cfg)
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal("error while creating config store", err)
+	}
+	err = configStore.Update(cfg)
+	if err != nil {
+		t.Fatal("error while updating config", err)
+	}
 	return configStore
 }
 

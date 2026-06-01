@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -29,9 +28,9 @@ type MockConfigStore struct {
 	storage.ConfigStore
 }
 
-func (m *MockConfigStore) Get() (models.Config, error) {
+func (m *MockConfigStore) Get() models.Config {
 	args := m.Called()
-	return args.Get(0).(models.Config), args.Error(1)
+	return args.Get(0).(models.Config)
 }
 
 func (m *MockConfigStore) IsEventNotificationEnabled(eventType models.EventType) bool {
@@ -74,7 +73,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			Msg:        "Test Message",
 		}
 
-		mockConfigStore.On("Get").Return(cfg, nil)
+		mockConfigStore.On("Get").Return(cfg)
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
 		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
@@ -83,22 +82,6 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 
 		mockConfigStore.AssertExpectations(t)
 		mockSend.AssertExpectations(t)
-	})
-
-	t.Run("should not send notification when config is invalid", func(t *testing.T) {
-		event := models.Event{
-			Type:       models.EventMisc,
-			ObjectID:   1,
-			ObjectName: "Test Object",
-			Msg:        "Test Message",
-		}
-
-		mockConfigStore.On("Get").Return(models.Config{}, errors.New("config error"))
-
-		handler.HandleEvent(context.Background(), event)
-
-		mockConfigStore.AssertExpectations(t)
-		mockSend.AssertNotCalled(t, "Send")
 	})
 
 	t.Run("should not send notification when event is not enabled", func(t *testing.T) {
@@ -117,7 +100,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			Msg:        "Test Message",
 		}
 
-		mockConfigStore.On("Get").Return(cfg, nil)
+		mockConfigStore.On("Get").Return(cfg)
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
