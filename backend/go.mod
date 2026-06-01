@@ -9,6 +9,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.18.0
 	github.com/docker/compose/v2 v2.40.3
 	github.com/elliotchance/orderedmap/v3 v3.1.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-git/go-git/v6 v6.0.0-alpha.3
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674

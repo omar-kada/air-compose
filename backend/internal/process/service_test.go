@@ -139,7 +139,10 @@ func initStore(t *testing.T) storage.DeploymentStorage {
 }
 
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal("error while creating configStore", err)
+	}
 	configStore.Update(currentCfg)
 	depStore := initStore(t)
 	svc := NewDeploymentService(
@@ -385,7 +388,8 @@ func TestGetCurrentState_WithDeployments(t *testing.T) {
 
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	assert.NoError(t, err)
 	depStore := initStore(t)
 
 	// Don't initialize config, so Get() will fail
