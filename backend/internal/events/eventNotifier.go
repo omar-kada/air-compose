@@ -30,11 +30,7 @@ func NewNotificationEventHandler(configStore storage.ConfigStore, eventStore sto
 
 // HandleEvent sends a notification for the event
 func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.Event) {
-	cfg, err := h.configStore.Get()
-	if err != nil {
-		slog.Error("can't retrieve config", "error", err)
-		return
-	}
+	cfg := h.configStore.Get()
 	event.IsNotification = h.sendNotification(cfg, event)
 	h.storeNotification(event)
 }

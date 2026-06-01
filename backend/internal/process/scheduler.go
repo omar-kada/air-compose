@@ -45,10 +45,7 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 		a.cron = nil
 	}
 
-	cfg, err := a.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
+	cfg := a.configStore.Get()
 	newCronPeriod := cfg.Settings.Schedule.Cron
 	if newCronPeriod == "1" {
 		slog.Debug("running job for a single time")

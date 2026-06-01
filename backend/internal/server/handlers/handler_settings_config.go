@@ -25,23 +25,17 @@ func (h *SettingsConfigHandler) FeaturesAPIGet(_ context.Context, _ api.Features
 
 // ConfigAPIGet retrieves the current configuration
 func (h *SettingsConfigHandler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
-	config, err := h.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
+	config := h.configStore.Get()
 	return api.ConfigAPIGet200JSONResponse(h.configMapper.Map(config)), nil
 }
 
 // ConfigAPISet updates the current configuration
 func (h *SettingsConfigHandler) ConfigAPISet(_ context.Context, r api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
 	config := h.configMapper.UnMap(api.Config(*r.Body))
-	oldConfig, err := h.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
+	oldConfig := h.configStore.Get()
 	oldConfig.Environment = config.Environment
 	oldConfig.Services = config.Services
-	err = h.configStore.Update(oldConfig)
+	err := h.configStore.Update(oldConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -50,22 +44,16 @@ func (h *SettingsConfigHandler) ConfigAPISet(_ context.Context, r api.ConfigAPIS
 
 // SettingsAPIGet retrieves the current settings
 func (h *SettingsConfigHandler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
-	config, err := h.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
+	config := h.configStore.Get()
 	return api.SettingsAPIGet200JSONResponse(h.settingsMapper.Map(config.Settings)), nil
 }
 
 // SettingsAPISet updates the current settings
 func (h *SettingsConfigHandler) SettingsAPISet(_ context.Context, r api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
-	oldConfig, err := h.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
+	oldConfig := h.configStore.Get()
 	settings := h.settingsMapper.UnMap(api.Settings(*r.Body))
 	oldConfig.Settings = settings
-	err = h.configStore.Update(oldConfig)
+	err := h.configStore.Update(oldConfig)
 	if err != nil {
 		return nil, err
 	}

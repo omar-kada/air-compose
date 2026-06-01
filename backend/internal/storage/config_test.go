@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"omar-kada/air-compose/internal/models"
 
@@ -63,7 +64,8 @@ func TestUpdateConfig(t *testing.T) {
 	t.Run("successful update", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath)
+		assert.NoError(t, err)
 
 		input := models.Config{
 			Settings: models.Settings{
@@ -86,15 +88,14 @@ func TestUpdateConfig(t *testing.T) {
 			},
 		}
 
-		err := store.Update(input)
+		err = store.Update(input)
 		assert.NoError(t, err)
 
 		// Verify the file was written correctly
 		_, err = os.ReadFile(filePath)
 		assert.NoError(t, err)
 
-		cfg, err := store.Get()
-		assert.NoError(t, err)
+		cfg := store.Get()
 
 		// Use deepEqual to compare the result with the expected value
 		if !reflect.DeepEqual(cfg, input) {
@@ -105,7 +106,8 @@ func TestUpdateConfig(t *testing.T) {
 	t.Run("on config update callback", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath)
+		assert.NoError(t, err)
 
 		// Initial config
 		initialCfg := models.Config{
@@ -119,7 +121,7 @@ func TestUpdateConfig(t *testing.T) {
 				},
 			},
 		}
-		err := store.Update(initialCfg)
+		err = store.Update(initialCfg)
 		assert.NoError(t, err)
 
 		// Set up the callback
@@ -145,6 +147,8 @@ func TestUpdateConfig(t *testing.T) {
 		err = store.Update(updatedCfg)
 		assert.NoError(t, err)
 
+		time.Sleep(100 * time.Millisecond)
+
 		// Verify the callback was called
 		assert.True(t, called)
 		assert.Equal(t, initialCfg, oldCfg)
@@ -159,32 +163,15 @@ func TestUpdateConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		filePath := filepath.Join(readOnlyDir, "config.yaml")
-		store := NewConfigStore(filePath)
-		called := false
-		store.SetOnChange(func(_, _ models.Config) {
-			called = true
-		})
-
-		input := models.Config{
-			Environment: models.Environment{
-				"AIR_COMPOSE_HOST": "localhost",
-			},
-			Settings: models.Settings{
-				Notifications: models.NotificationConfig{
-					NotificationTypes: []models.EventType{},
-				},
-			},
-		}
-
-		err = store.Update(input)
+		_, err = NewConfigStore(filePath)
 		assert.Error(t, err)
-		assert.False(t, called)
 	})
 
 	t.Run("obfuscate token on update", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath)
+		assert.NoError(t, err)
 
 		input := models.Config{
 			Settings: models.Settings{
@@ -204,12 +191,11 @@ func TestUpdateConfig(t *testing.T) {
 			Services:    map[string]models.ServiceConfig{},
 		}
 
-		err := store.Update(input)
+		err = store.Update(input)
 		assert.NoError(t, err)
 
 		// Verify the token was obfuscated in the stored config
-		storedCfg, err := store.Get()
-		assert.NoError(t, err)
+		storedCfg := store.Get()
 
 		storedToken := storedCfg.Settings.Git.Token
 		assert.Equal(t, "my-secret-token-12345", storedToken)
@@ -239,8 +225,7 @@ func TestUpdateConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify the notification URL was obfuscated in the stored config
-		storedCfg, err = store.Get()
-		assert.NoError(t, err)
+		storedCfg = store.Get()
 
 		storedToken = storedCfg.Settings.Git.Token
 		assert.Equal(t, "my-secret-token-12345", storedToken)
@@ -255,10 +240,10 @@ func TestUpdateConfig(t *testing.T) {
 
 func TestLoadConfig_FileError(t *testing.T) {
 	t.Run("missing file", func(t *testing.T) {
-		configStore := NewConfigStore("/does/not/exist.yaml")
-		cfg, err := configStore.Get()
+		tmp := t.TempDir()
+		configStore, err := NewConfigStore(filepath.Join(tmp, "non-existant.yaml"))
 		assert.NoError(t, err)
-		assert.Equal(t, models.Config{}, cfg)
+		assert.Equal(t, models.Config{}, configStore.Get())
 	})
 
 	t.Run("invalid yaml", func(t *testing.T) {
@@ -269,9 +254,7 @@ func TestLoadConfig_FileError(t *testing.T) {
 		err := os.WriteFile(f, invalid, 0o644)
 		assert.NoError(t, err)
 
-		configStore := NewConfigStore(f)
-
-		_, err = configStore.Get()
+		_, err = NewConfigStore(f)
 		assert.Error(t, err)
 	})
 }

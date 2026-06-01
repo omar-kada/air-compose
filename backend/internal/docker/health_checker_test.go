@@ -34,7 +34,10 @@ func (m *MockInspector) GetCurrentStacks(services []string) (models.StacksState,
 }
 
 func newCheckerWithMock(t *testing.T, inspector Inspector, mockDispatcher events.Dispatcher) *healthChecker {
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal("error while creating config store", err)
+	}
 	configStore.Update(models.Config{
 		Services: map[string]models.ServiceConfig{
 			"service1": {},
