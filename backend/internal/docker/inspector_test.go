@@ -35,12 +35,18 @@ func (m *MockExec) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
 }
 
 func newInspectorWithMock(t *testing.T, client Client, mockExec shell.Executor, servicesDir string) *inspector {
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
-	configStore.Update(models.Config{
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal("error creating config store ", err)
+	}
+	err = configStore.Update(models.Config{
 		Services: map[string]models.ServiceConfig{
 			"service1": {},
 		},
 	})
+	if err != nil {
+		t.Fatal("error updating config", err)
+	}
 	return &inspector{
 		dockerClient: client,
 		executor:     mockExec,

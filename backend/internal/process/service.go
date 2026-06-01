@@ -37,7 +37,6 @@ func NewDeploymentService(
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
 ) DeploymentService {
-	cfg, _ := configStore.Get()
 	return &service{
 		containersDeployer:  containersDeployer,
 		containersInspector: containersInspector,
@@ -47,7 +46,7 @@ func NewDeploymentService(
 		dispatcher:          dispatcher,
 		params:              deployParams,
 		scheduler:           scheduler,
-		currentCfg:          cfg,
+		currentCfg:          configStore.Get(),
 	}
 }
 
@@ -68,9 +67,9 @@ type service struct {
 
 func (s *service) SyncDeployment() (models.Deployment, error) {
 
-	cfg, err := s.configStore.Get()
-	if err != nil || cfg.Settings.Git.Repo == "" {
-		return models.Deployment{}, fmt.Errorf("error getting repo: %v, %w", cfg.Settings.Git.Repo, err)
+	cfg := s.configStore.Get()
+	if cfg.Settings.Git.Repo == "" {
+		return models.Deployment{}, fmt.Errorf("error getting repo: %v", cfg.Settings.Git.Repo)
 	}
 	oldCfg := s.currentCfg
 	s.currentCfg = cfg
@@ -170,7 +169,7 @@ func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.
 func (s *service) GetCurrentState() (models.State, error) {
 	dep, _ := s.store.GetLastDeployment()
 	stackstate, _ := s.containersInspector.GetCurrentStacks(s.currentCfg.GetEnabledServices())
-	cfg, _ := s.configStore.Get()
+	cfg := s.configStore.Get()
 
 	return models.State{
 		LastStatus:  dep.Status,

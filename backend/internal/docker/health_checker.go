@@ -62,11 +62,7 @@ func (hc *healthChecker) ScheduleStateRefresh(ctx context.Context) {
 }
 
 func (hc *healthChecker) refreshState() {
-	cfg, err := hc.configStore.Get()
-	if err != nil {
-		slog.Error("error while getting configuration in health refresh", "err", err)
-		return
-	}
+	cfg := hc.configStore.Get()
 	state, err := hc.inspector.GetCurrentStacks(cfg.GetEnabledServices())
 	if err != nil {
 		slog.Error("error while getting stacks state", "err", err)

@@ -139,8 +139,14 @@ func initStore(t *testing.T) storage.DeploymentStorage {
 }
 
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
-	configStore.Update(currentCfg)
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal("error while creating configStore", err)
+	}
+	err = configStore.Update(currentCfg)
+	if err != nil {
+		t.Fatal("error updating config", err)
+	}
 	depStore := initStore(t)
 	svc := NewDeploymentService(
 		params,
@@ -175,7 +181,8 @@ func TestSync_Success(t *testing.T) {
 	})
 
 	wantCfg := mockConfigOld
-	service.configStore.Update(wantCfg)
+	err := service.configStore.Update(wantCfg)
+	assert.NoError(t, err)
 	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}, nil)
 	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mockState := models.NewStacksState()
@@ -222,7 +229,9 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	}, mockConfigOld)
 
 	wantCfg := mockConfigNew
-	service.configStore.Update(wantCfg)
+	err := service.configStore.Update(wantCfg)
+	assert.NoError(t, err)
+
 	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -263,7 +272,8 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
-	service.configStore.Update(wantCfg)
+	err := service.configStore.Update(wantCfg)
+	assert.NoError(t, err)
 	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -297,7 +307,8 @@ func TestSync_Errors(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
-	service.configStore.Update(wantCfg)
+	err := service.configStore.Update(wantCfg)
+	assert.NoError(t, err)
 	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -385,7 +396,8 @@ func TestGetCurrentState_WithDeployments(t *testing.T) {
 
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
-	configStore := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	assert.NoError(t, err)
 	depStore := initStore(t)
 
 	// Don't initialize config, so Get() will fail
@@ -417,8 +429,8 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	service.configStore.Update(mockConfigOld)
-
+	err := service.configStore.Update(mockConfigOld)
+	assert.NoError(t, err)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -445,8 +457,8 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	service.configStore.Update(mockConfigOld)
-
+	err := service.configStore.Update(mockConfigOld)
+	assert.NoError(t, err)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -486,7 +498,8 @@ func TestSync_NoStacksRunning(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	service.configStore.Update(mockConfigOld)
+	err := service.configStore.Update(mockConfigOld)
+	assert.NoError(t, err)
 	mocker.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
 	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
@@ -517,8 +530,8 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	service.configStore.Update(mockConfigOld)
-
+	err := service.configStore.Update(mockConfigOld)
+	assert.NoError(t, err)
 	mocker.On("GetCurrentStacks", mock.Anything).Return(models.StacksState{}, errors.New("failed to get stacks"))
 	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
@@ -601,7 +614,8 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 	}, mockConfigOld)
 
 	wantCfg := mockConfigOld
-	service.configStore.Update(wantCfg)
+	err := service.configStore.Update(wantCfg)
+	assert.NoError(t, err)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{

@@ -55,11 +55,7 @@ func NewInspector(servicesDir string, configStore storage.ConfigStore) (Inspecto
 // GetManagedStacks returns the list of containers (as returned by ContainerList)
 // that are managed by AirCompose
 func (i *inspector) GetManagedStacks() (models.StacksState, error) {
-	cfg, err := i.configStore.Get()
-	if err != nil {
-		return nil, err
-	}
-	return i.GetCurrentStacks(cfg.GetEnabledServices())
+	return i.GetCurrentStacks(i.configStore.Get().GetEnabledServices())
 }
 
 func (i *inspector) GetCurrentStacks(services []string) (models.StacksState, error) {

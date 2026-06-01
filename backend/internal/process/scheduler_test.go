@@ -15,7 +15,11 @@ import (
 func createTestConfigStore(t *testing.T) storage.ConfigStore {
 	tempDir := t.TempDir()
 	configFilePath := filepath.Join(tempDir, "config.yaml")
-	return storage.NewConfigStore(configFilePath)
+	store, err := storage.NewConfigStore(configFilePath)
+	if err != nil {
+		t.Fatal("error while creating config store", err)
+	}
+	return store
 }
 
 func TestNewConfigScheduler(t *testing.T) {
