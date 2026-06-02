@@ -1,17 +1,18 @@
-package storage
+package events
 
 import (
 	"testing"
 	"time"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 func setupEventStorage(t *testing.T) (EventStorage, *gorm.DB) {
-	db, err := NewGormDb(":memory:", 0o000)
+	db, err := storage.NewGormDb(":memory:", 0o000)
 	if err != nil {
 		t.Fatalf("new db: %v", err)
 	}
@@ -97,7 +98,7 @@ func TestGetNotifications(t *testing.T) {
 	assert.NoError(t, s.StoreEvent(nonNotif))
 
 	// Test with cursor
-	cursor := Cursor[uint64]{Offset: 10, Limit: 10}
+	cursor := storage.Cursor[uint64]{Offset: 10, Limit: 10}
 	notifs, err := s.GetNotifications(cursor)
 	assert.NoError(t, err)
 	assert.Len(t, notifs, 2)

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log/slog"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -28,11 +27,11 @@ type OidcService interface {
 
 type oidcService struct {
 	config    models.OidcConfig
-	authStore storage.AuthStore
+	authStore AuthStore
 }
 
 // NewOidcService creates a new OidcService
-func NewOidcService(config models.OidcConfig, authStore storage.AuthStore) OidcService {
+func NewOidcService(config models.OidcConfig, authStore AuthStore) OidcService {
 	return &oidcService{
 		config:    config,
 		authStore: authStore,

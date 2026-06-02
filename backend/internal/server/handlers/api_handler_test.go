@@ -3,14 +3,19 @@ package handlers
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -18,9 +23,10 @@ import (
 
 type Mock struct {
 	mock.Mock
-	git.Fetcher
-	storage.EventStorage
-	storage.DeploymentStorage
+	mocks.Fetcher
+	events.EventStorage
+	deployments.DeploymentStorage
+	mocks.Inspector
 }
 
 func (m *Mock) SyncDeployment() (models.Deployment, error) {
@@ -31,16 +37,6 @@ func (m *Mock) SyncDeployment() (models.Deployment, error) {
 func (m *Mock) GetCurrentState() (models.State, error) {
 	args := m.Called()
 	return args.Get(0).(models.State), args.Error(1)
-}
-
-func (m *Mock) GetManagedStacks() (models.StacksState, error) {
-	args := m.Called()
-	return args.Get(0).(models.StacksState), args.Error(1)
-}
-
-func (m *Mock) GetCurrentStacks(services []string) (models.StacksState, error) {
-	args := m.Called(services)
-	return args.Get(0).(models.StacksState), args.Error(1)
 }
 
 func (m *Mock) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
@@ -83,47 +79,10 @@ func (m *Mock) IsRegistered() (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *Mock) TestGitConnection(repo, branch, username, token string) (bool, error) {
-	args := m.Called(repo, branch, username, token)
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *Mock) DiffWithRemote() (models.Patch, error) {
-	args := m.Called()
-	return args.Get(0).(models.Patch), args.Error(1)
-}
-
-type MockStore struct {
-	mock.Mock
-}
-
-func (m *MockStore) Get() models.Config {
-	args := m.Called()
-	return args.Get(0).(models.Config)
-}
-
-func (m *MockStore) Update(config models.Config) error {
-	args := m.Called(config)
-	return args.Error(0)
-}
-
-func (m *MockStore) ToYaml(config models.Config) ([]byte, error) {
-	args := m.Called(config)
-	return args.Get(0).([]byte), args.Error(1)
-}
-
-func (m *MockStore) SetOnChange(fn func(models.Config, models.Config)) {
-	m.Called(fn)
-}
-
-func (m *MockStore) WatchFile() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	deps := []models.Deployment{
@@ -149,7 +108,9 @@ func TestDeployementAPIList_Success(t *testing.T) {
 
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	off := "notuint"
@@ -161,7 +122,9 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 
 func TestDeployementAPIRead_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 10, Title: "Manual Deploy", Author: "ci", Diff: "diff"}
@@ -179,13 +142,13 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected response type: %T", resp)
 	}
-
-	store.AssertExpectations(t)
 }
 
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.DeployementAPIReadRequestObject{Id: "abc"}
@@ -196,7 +159,9 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 99, Title: "Manual Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
@@ -226,7 +191,9 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 
 func TestStatusAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	stacks := models.NewStacksState()
@@ -234,7 +201,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 		ID: "c1", Name: "container1", Image: "img1",
 		State: models.StateRunning, Health: models.ContainerHealthy,
 	})
-	m.On("GetManagedStacks").Return(stacks, nil)
+	m.Inspector.On("GetManagedStacks").Return(stacks, nil)
 
 	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -256,7 +223,9 @@ func TestStatusAPIGet_Success(t *testing.T) {
 
 func TestStateAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	next := time.Now().Add(1 * time.Hour)
@@ -279,11 +248,13 @@ func TestStateAPIGet_Success(t *testing.T) {
 
 func TestDiffAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	fileDiffs := []models.FileDiff{{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "d1"}}
-	m.On("DiffWithRemote").Return(models.Patch{
+	m.Fetcher.On("DiffWithRemote").Return(models.Patch{
 		Files: fileDiffs,
 	}, nil)
 
@@ -303,7 +274,9 @@ func TestDiffAPIGet_Success(t *testing.T) {
 
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errList := errors.New("db error")
@@ -326,7 +299,9 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 0}}
@@ -337,7 +312,9 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errGet := errors.New("not found")
@@ -349,16 +326,17 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	assert.Equal(t, errGet, err)
 	assert.Nil(t, resp)
 
-	store.AssertExpectations(t)
 }
 
 func TestStatusAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errStacks := errors.New("failed to get stacks")
-	m.On("GetManagedStacks").Return(models.StacksState{}, errStacks)
+	m.Inspector.On("GetManagedStacks").Return(models.StacksState{}, errStacks)
 
 	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
 	assert.Nil(t, resp)
@@ -369,7 +347,9 @@ func TestStatusAPIGet_Error(t *testing.T) {
 
 func TestStateAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errState := errors.New("state error")
@@ -385,11 +365,13 @@ func TestStateAPIGet_Error(t *testing.T) {
 
 func TestDiffAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errDiff := errors.New("diff error")
-	m.On("DiffWithRemote").Return(models.Patch{
+	m.Fetcher.On("DiffWithRemote").Return(models.Patch{
 		Files: []models.FileDiff{},
 	}, errDiff)
 
@@ -402,7 +384,8 @@ func TestDiffAPIGet_Error(t *testing.T) {
 
 func TestConfigAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
@@ -411,7 +394,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 			"ENV": "VALUE",
 		},
 	}
-	store.On("Get").Return(config)
+	assert.NoError(t, store.Update(config))
 
 	resp, err := h.ConfigAPIGet(context.Background(), api.ConfigAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -423,12 +406,12 @@ func TestConfigAPIGet_Success(t *testing.T) {
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
 
-	store.AssertExpectations(t)
 }
 
 func TestFeaturesAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 
 	t.Setenv("AIR_COMPOSE_DISPLAY_CONFIG", "true")
 	t.Setenv("AIR_COMPOSE_EDIT_CONFIG", "true")
@@ -455,7 +438,9 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 
 func TestSettingsAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	settings := models.Settings{
@@ -473,7 +458,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 			NotificationURL: "gotify://123456789123456789",
 		},
 	}
-	store.On("Get").Return(models.Config{Settings: settings}, nil)
+	assert.NoError(t, store.Update(models.Config{Settings: settings}))
 
 	resp, err := h.SettingsAPIGet(context.Background(), api.SettingsAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -489,13 +474,13 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
-
-	store.AssertExpectations(t)
 }
 
 func TestSettingsAPISet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
@@ -530,29 +515,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 		NotificationURL: new("http://ex*********************"),
 	}
 
-	store.On("Get").Return(oldConfig, nil)
-	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
-		// Check that only settings are updated
-		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
-		assert.Equal(t, oldConfig.Services, newCfg.Services)
-		assert.Equal(t, models.Settings{
-			Git: models.GitConfig{
-
-				Repo:     newSettings.Repo,
-				Branch:   *newSettings.Branch,
-				Username: *newSettings.Username,
-				Token:    "******************************",
-			},
-			Schedule: models.ScheduleConfig{
-
-				Cron: *newSettings.Cron,
-			},
-			Notifications: models.NotificationConfig{
-				NotificationURL: "http://ex*********************",
-			},
-		}, newCfg.Settings)
-		return true
-	})).Return(nil)
+	assert.NoError(t, store.Update(oldConfig))
 
 	req := api.SettingsAPISetRequestObject{Body: &newSettings}
 	resp, err := h.SettingsAPISet(context.Background(), req)
@@ -569,13 +532,34 @@ func TestSettingsAPISet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
+	newCfg := store.Get()
+	// Check that only settings are updated
+	assert.Equal(t, oldConfig.Environment, newCfg.Environment)
+	assert.Equal(t, oldConfig.Services, newCfg.Services)
+	assert.Equal(t, models.Settings{
+		Git: models.GitConfig{
 
-	store.AssertExpectations(t)
+			Repo:     newSettings.Repo,
+			Branch:   *newSettings.Branch,
+			Username: *newSettings.Username,
+			Token:    oldConfig.Settings.Git.Token,
+		},
+		Schedule: models.ScheduleConfig{
+
+			Cron: *newSettings.Cron,
+		},
+		Notifications: models.NotificationConfig{
+			NotificationURL: oldConfig.Settings.Notifications.NotificationURL,
+		},
+	}, newCfg.Settings)
+
 }
 
 func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
@@ -596,21 +580,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 		Token:    new("123456789123456789123456789"),
 	}
 
-	store.On("Get").Return(oldConfig, nil)
-	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
-		// Check that only settings are updated
-		assert.Equal(t, oldConfig.Environment, newCfg.Environment)
-		assert.Equal(t, oldConfig.Services, newCfg.Services)
-		assert.Equal(t, models.Settings{
-			Git: models.GitConfig{
-
-				Repo:     newSettings.Repo,
-				Username: *newSettings.Username,
-				Token:    *newSettings.Token,
-			},
-		}, newCfg.Settings)
-		return true
-	})).Return(nil)
+	assert.NoError(t, store.Update(oldConfig))
 
 	req := api.SettingsAPISetRequestObject{Body: &newSettings}
 	resp, err := h.SettingsAPISet(context.Background(), req)
@@ -625,12 +595,34 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
 
-	store.AssertExpectations(t)
+	newCfg := store.Get()
+	// Check that only settings are updated
+	assert.Equal(t, oldConfig.Environment, newCfg.Environment)
+	assert.Equal(t, oldConfig.Services, newCfg.Services)
+	assert.Equal(t, models.Settings{
+		Git: models.GitConfig{
+
+			Repo:     newSettings.Repo,
+			Username: *newSettings.Username,
+			Token:    *newSettings.Token,
+		},
+	}, newCfg.Settings)
+
 }
 
 func TestSettingsAPISet_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	configFilePath := filepath.Join(t.TempDir(), "config.yaml")
+	store, err := config.NewConfigStore(configFilePath)
+	assert.NoError(t, err)
+	// Write some data to the file
+	err = os.WriteFile(configFilePath, []byte{}, 0744)
+	assert.NoError(t, err)
+	// Update file permissions to read-only
+	err = os.Chmod(configFilePath, 0400)
+	assert.NoError(t, err)
+	defer os.Chmod(configFilePath, 0600)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	settings := api.Settings{
@@ -641,21 +633,17 @@ func TestSettingsAPISet_Error(t *testing.T) {
 		Username: new("user"),
 	}
 
-	errSettings := errors.New("settings error")
-	store.On("Get").Return(models.Config{})
-	store.On("Update", mock.Anything).Return(errSettings)
-
 	req := api.SettingsAPISetRequestObject{Body: &settings}
 	resp, err := h.SettingsAPISet(context.Background(), req)
 	assert.Nil(t, resp)
-	assert.Equal(t, errSettings, err)
-
-	store.AssertExpectations(t)
+	assert.Error(t, err)
 }
 
 func TestConfigAPISet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
@@ -687,16 +675,7 @@ func TestConfigAPISet_Success(t *testing.T) {
 		},
 	}
 
-	store.On("Get").Return(oldConfig, nil)
-	store.On("Update", mock.MatchedBy(func(newCfg models.Config) bool {
-		// Check that only environment and services are updated
-		assert.Equal(t, models.Environment{"NEW_ENV": "NEW_VALUE"}, newCfg.Environment)
-		assert.Equal(t, map[string]models.ServiceConfig{
-			"service2": {"key2": "value2"},
-		}, newCfg.Services)
-		assert.Equal(t, oldConfig.Settings, newCfg.Settings)
-		return true
-	})).Return(nil)
+	assert.NoError(t, store.Update(oldConfig))
 
 	req := api.ConfigAPISetRequestObject{Body: &newConfig}
 	resp, err := h.ConfigAPISet(context.Background(), req)
@@ -709,13 +688,25 @@ func TestConfigAPISet_Success(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
-
-	store.AssertExpectations(t)
+	newCfg := store.Get()
+	// Check that only environment and services are updated
+	assert.Equal(t, models.Environment{"NEW_ENV": "NEW_VALUE"}, newCfg.Environment)
+	assert.Equal(t, map[string]models.ServiceConfig{
+		"service2": {"key2": "value2"},
+	}, newCfg.Services)
+	assert.Equal(t, oldConfig.Settings, newCfg.Settings)
 }
 
 func TestConfigAPISet_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	configFilePath := filepath.Join(t.TempDir(), "config.yaml")
+	store, err := config.NewConfigStore(configFilePath)
+	assert.NoError(t, err)
+	// Update file permissions to read-only
+	err = os.Chmod(configFilePath, 0400)
+	assert.NoError(t, err)
+	defer os.Chmod(configFilePath, 0600)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	config := api.Config{
@@ -727,21 +718,17 @@ func TestConfigAPISet_Error(t *testing.T) {
 		},
 	}
 
-	errConfig := errors.New("config error")
-	store.On("Get").Return(models.Config{})
-	store.On("Update", mock.Anything).Return(errConfig)
-
 	req := api.ConfigAPISetRequestObject{Body: &config}
 	resp, err := h.ConfigAPISet(context.Background(), req)
 	assert.Nil(t, resp)
-	assert.Equal(t, errConfig, err)
-
-	store.AssertExpectations(t)
+	assert.Error(t, err)
 }
 
 func TestUserAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser", Type: models.UserTypeLocal}
@@ -762,7 +749,9 @@ func TestUserAPIGet_Success(t *testing.T) {
 
 func TestUserAPIGet_NoUser(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIGet(context.Background(), api.UserAPIGetRequestObject{})
@@ -772,7 +761,9 @@ func TestUserAPIGet_NoUser(t *testing.T) {
 
 func TestUserAPIDelete_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
@@ -794,7 +785,9 @@ func TestUserAPIDelete_Success(t *testing.T) {
 
 func TestUserAPIDelete_NoUser(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIDelete(context.Background(), api.UserAPIDeleteRequestObject{})
@@ -811,7 +804,9 @@ func TestUserAPIDelete_NoUser(t *testing.T) {
 
 func TestUserAPIDelete_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
@@ -835,18 +830,20 @@ func TestUserAPIDelete_Error(t *testing.T) {
 
 func TestAuthAPIRegistered(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	// Mock IsRegistered and Get
 	m.On("IsRegistered").Return(true, nil)
-	store.On("Get").Return(models.Config{
+	assert.NoError(t, store.Update(models.Config{
 		Settings: models.Settings{
 			Oidc: models.OidcConfig{
 				IssuerURL: "https://issuer.example.com",
 			},
 		},
-	}, nil)
+	}))
 
 	resp, err := h.AuthAPIRegistered(context.Background(), api.AuthAPIRegisteredRequestObject{})
 	assert.NoError(t, err)
@@ -860,12 +857,13 @@ func TestAuthAPIRegistered(t *testing.T) {
 	}
 
 	m.AssertExpectations(t)
-	store.AssertExpectations(t)
 }
 
 func TestAuthAPILogout(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogout(context.Background(), api.AuthAPILogoutRequestObject{})
@@ -882,7 +880,9 @@ func TestAuthAPILogout(t *testing.T) {
 
 func TestAuthAPILogin(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogin(context.Background(), api.AuthAPILoginRequestObject{})
@@ -899,7 +899,9 @@ func TestAuthAPILogin(t *testing.T) {
 
 func TestAuthAPIRegister(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPIRegister(context.Background(), api.AuthAPIRegisterRequestObject{})
@@ -916,7 +918,9 @@ func TestAuthAPIRegister(t *testing.T) {
 
 func TestUserAPIChangePassword_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
@@ -946,7 +950,9 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 
 func TestUserAPIChangePassword_NoUser(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	req := api.UserAPIChangePasswordRequestObject{
@@ -970,7 +976,9 @@ func TestUserAPIChangePassword_NoUser(t *testing.T) {
 
 func TestUserAPIChangePassword_Error(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
@@ -1002,10 +1010,12 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 
 func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
-	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(true, nil)
+	m.Fetcher.On("TestGitConnection", "test-repo", "main", "user", "token").Return(true, nil)
 
 	req := api.SettingsAPITestGitConnectionRequestObject{
 		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{
@@ -1031,11 +1041,13 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 
 func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	m := &Mock{}
-	store := &MockStore{}
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
+
 	h := NewBusinessHandler(store, m, m, m, m, m, m)
 
 	errTest := errors.New("connection failed")
-	m.On("TestGitConnection", "test-repo", "main", "user", "token").Return(false, errTest)
+	m.Fetcher.On("TestGitConnection", "test-repo", "main", "user", "token").Return(false, errTest)
 
 	req := api.SettingsAPITestGitConnectionRequestObject{
 		Body: &api.SettingsAPITestGitConnectionJSONRequestBody{

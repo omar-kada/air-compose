@@ -9,20 +9,11 @@ import (
 	"time"
 
 	"omar-kada/air-compose/testutil"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 )
-
-type Mocker struct {
-	mock.Mock
-}
-
-func (m *Mocker) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
-	args := m.Called(cmd, cmdArgs)
-	return args.Get(0).([]byte), args.Error(1)
-}
 
 func initConfigRepo(t *testing.T) string {
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
@@ -40,7 +31,7 @@ func initConfigRepo(t *testing.T) string {
 
 func TestRunCommand_CmdParams(t *testing.T) {
 	baseDir := t.TempDir()
-	mocker := &Mocker{}
+	mocker := &mocks.Executor{}
 	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
 		return testutil.NewMemoryStorage(t), nil
 	})
@@ -98,7 +89,7 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 func TestRunCommand_EnvParams(t *testing.T) {
 	baseDir := t.TempDir()
-	mocker := &Mocker{}
+	mocker := &mocks.Executor{}
 	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
 		return testutil.NewMemoryStorage(t), nil
 	})
@@ -165,7 +156,7 @@ func TestRunCommand_EnvParams(t *testing.T) {
 }
 
 func TestRunCommand_WithInvalidConfig(t *testing.T) {
-	mocker := &Mocker{}
+	mocker := &mocks.Executor{}
 	cmd := NewRunCommand(mocker, func(_ RunParams) (*gorm.DB, error) {
 		return nil, errors.New("mock error")
 	})

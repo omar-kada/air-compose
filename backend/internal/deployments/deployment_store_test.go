@@ -1,4 +1,4 @@
-package storage
+package deployments
 
 import (
 	"fmt"
@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 func setupDeploymentStorage(t *testing.T) (DeploymentStorage, *gorm.DB) {
-	db, err := NewGormDb(":memory:", 0o000)
+	db, err := storage.NewGormDb(":memory:", 0o000)
 	if err != nil {
 		t.Fatalf("new db: %v", err)
 	}
@@ -81,7 +82,7 @@ func TestGetLastAndGetDeploymentsOrdering(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, dep3.ID, last.ID)
 
-	deps, err := s.GetDeployments(Cursor[uint64]{Limit: 10, Offset: 999999})
+	deps, err := s.GetDeployments(storage.Cursor[uint64]{Limit: 10, Offset: 999999})
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(deps), 3)
 	assert.Equal(t, dep3.ID, deps[0].ID)
@@ -104,15 +105,15 @@ func TestGetDeployments_Pagination(t *testing.T) {
 	cases := []struct {
 		name     string
 		seed     int
-		cursor   Cursor[uint64]
+		cursor   storage.Cursor[uint64]
 		expected int
 	}{
-		{"DefaultOffset", 15, NewIDCursor(5, 0), 5},
-		{"LimitCapped", 50, NewIDCursor(200, 0), 50},
-		{"OffsetWithinRange", 15, NewIDCursor(10, 10), 9},
+		{"DefaultOffset", 15, storage.NewIDCursor(5, 0), 5},
+		{"LimitCapped", 50, storage.NewIDCursor(200, 0), 50},
+		{"OffsetWithinRange", 15, storage.NewIDCursor(10, 10), 9},
 
-		{"ExactLimit", 10, NewIDCursor(3, 0), 3},
-		{"NoResults", 10, Cursor[uint64]{Limit: 10, Offset: 1}, 0},
+		{"ExactLimit", 10, storage.NewIDCursor(3, 0), 3},
+		{"NoResults", 10, storage.Cursor[uint64]{Limit: 10, Offset: 1}, 0},
 	}
 
 	for _, c := range cases {

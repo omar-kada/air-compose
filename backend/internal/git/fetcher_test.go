@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil"
 
 	"github.com/go-git/go-git/v6"
@@ -24,8 +24,9 @@ var mockConfig = models.Config{
 	},
 }
 
-func configStoreWith(t *testing.T, cfg models.Config) storage.ConfigStore {
-	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+func configStoreWith(t *testing.T, cfg models.Config) config.Store {
+	t.Helper()
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
 	if err != nil {
 		t.Fatal("error while creating config store", err)
 	}
@@ -73,18 +74,6 @@ func TestClearRepo(t *testing.T) {
 	if !os.IsNotExist(err) {
 		t.Fatalf("Expected repo directory to be removed, but it still exists")
 	}
-}
-
-func TestCheckoutBranch(t *testing.T) {
-	clonePath := t.TempDir() + "/clone-repo"
-	remoteRepoPath := testutil.SetupRemoteRepo(t)
-	mockConfig.Settings.Git.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
-
-	err := fetcher.CheckoutBranch("main")
-	assert.NoError(t, err)
-
-	assertBranch(t, clonePath, "main")
 }
 
 func TestPullBranch(t *testing.T) {
@@ -160,18 +149,6 @@ func TestPullBranch_NonExistentRepo(t *testing.T) {
 	}))
 	err := fetcher.PullBranch("main", "")
 	assert.Error(t, err)
-}
-
-func TestFetch_NonExistentBranch(t *testing.T) {
-	clonePath := t.TempDir() + "/clone-repo"
-	remoteRepoPath := testutil.SetupRemoteRepo(t)
-	mockConfig.Settings.Git.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
-
-	err := fetcher.CheckoutBranch("non-existent-branch")
-
-	assert.NoError(t, err)
-	assertBranch(t, clonePath, "non-existent-branch")
 }
 
 func TestFetch_WithAddPermissions(t *testing.T) {

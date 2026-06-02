@@ -6,12 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +22,8 @@ import (
 
 type Mocker struct {
 	mock.Mock
+	mocks.Fetcher
+	mocks.Inspector
 }
 
 func (m *Mocker) WithCtx(_ context.Context) docker.Deployer {
@@ -41,16 +45,6 @@ func (m *Mocker) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models.
 	return args.Error(0)
 }
 
-func (m *Mocker) GetManagedStacks() (models.StacksState, error) {
-	args := m.Called()
-	return args.Get(0).(models.StacksState), args.Error(1)
-}
-
-func (m *Mocker) GetCurrentStacks(services []string) (models.StacksState, error) {
-	args := m.Called(services)
-	return args.Get(0).(models.StacksState), args.Error(1)
-}
-
 func (m *Mocker) GetNext() time.Time {
 	args := m.Called()
 	return args.Get(0).(time.Time)
@@ -64,31 +58,6 @@ func (m *Mocker) Schedule(fn func()) (*cron.Cron, error) {
 func (m *Mocker) ReSchedule() (*cron.Cron, error) {
 	args := m.Called()
 	return args.Get(0).(*cron.Cron), args.Error(1)
-}
-
-func (m *Mocker) ClearRepo() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *Mocker) CheckoutBranch(branch string) error {
-	args := m.Called(branch)
-	return args.Error(0)
-}
-
-func (m *Mocker) PullBranch(branch string, commitSHA string) error {
-	args := m.Called(branch, commitSHA)
-	return args.Error(0)
-}
-
-func (m *Mocker) DiffWithRemote() (models.Patch, error) {
-	args := m.Called()
-	return args.Get(0).(models.Patch), args.Error(1)
-}
-
-func (m *Mocker) TestGitConnection(repo, branch, username, token string) (bool, error) {
-	args := m.Called(repo, branch, username, token)
-	return args.Bool(0), args.Error(1)
 }
 
 var (
@@ -129,9 +98,9 @@ var (
 	}
 )
 
-func initStore(t *testing.T) storage.DeploymentStorage {
+func initStore(t *testing.T) deployments.DeploymentStorage {
 	db := testutil.NewMemoryStorage(t)
-	depStore, err := storage.NewDeploymentStorage(db)
+	depStore, err := deployments.NewDeploymentStorage(db)
 	if err != nil {
 		t.Fatalf("error creating deployment storage : %v", err)
 	}
@@ -139,7 +108,7 @@ func initStore(t *testing.T) storage.DeploymentStorage {
 }
 
 func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
-	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
 	if err != nil {
 		t.Fatal("error while creating configStore", err)
 	}
@@ -183,8 +152,8 @@ func TestSync_Success(t *testing.T) {
 	wantCfg := mockConfigOld
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}, nil)
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}, nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -193,11 +162,11 @@ func TestSync_Success(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 	mocker.On("RemoveAndDeployStacks", models.Config{}, wantCfg, service.params).Once().Return(nil)
 	// signal when working branch pull completes
 	done := make(chan struct{})
-	mocker.On("PullBranch", "main", mock.Anything).Once().
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
@@ -232,7 +201,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
 
-	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -241,13 +210,13 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).Once().Return(nil)
 	// signal when working branch pull completes
 	done := make(chan struct{})
-	mocker.On("PullBranch", "main", mock.Anything).Once().
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 	dep, err := service.SyncDeployment()
@@ -274,7 +243,7 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	wantCfg := mockConfigNew
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -283,10 +252,10 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
 	done := make(chan struct{})
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(ErrFetch).
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(ErrFetch).
 		Run(func(_ mock.Arguments) { close(done) })
 
 	dep, err := service.SyncDeployment()
@@ -309,7 +278,7 @@ func TestSync_Errors(t *testing.T) {
 	wantCfg := mockConfigNew
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -318,9 +287,9 @@ func TestSync_Errors(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 
 	done := make(chan struct{})
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, wantCfg, service.params).
@@ -352,7 +321,7 @@ func TestGetCurrentState_NoDeployments(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
 	state, err := service.GetCurrentState()
 	assert.NoError(t, err)
@@ -374,7 +343,7 @@ func TestGetCurrentState_WithDeployments(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
 	// create a successful deployment
 	dep1, err := service.store.InitDeployment("first", models.Patch{}, models.GitConfig{})
@@ -396,7 +365,7 @@ func TestGetCurrentState_WithDeployments(t *testing.T) {
 
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
-	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
 	assert.NoError(t, err)
 	depStore := initStore(t)
 
@@ -439,9 +408,9 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 
 	dep, err := service.SyncDeployment()
 
@@ -467,13 +436,13 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 			Health: models.ContainerUnhealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
-	mocker.On("PullBranch", "main", mock.Anything).Once().
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
@@ -500,12 +469,12 @@ func TestSync_NoStacksRunning(t *testing.T) {
 
 	err := service.configStore.Update(mockConfigOld)
 	assert.NoError(t, err)
-	mocker.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
-	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
+	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
-	mocker.On("PullBranch", "main", mock.Anything).Once().
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
@@ -532,12 +501,12 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 
 	err := service.configStore.Update(mockConfigOld)
 	assert.NoError(t, err)
-	mocker.On("GetCurrentStacks", mock.Anything).Return(models.StacksState{}, errors.New("failed to get stacks"))
-	mocker.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.StacksState{}, errors.New("failed to get stacks"))
+	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
 	done := make(chan struct{})
-	mocker.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
-	mocker.On("PullBranch", "main", mock.Anything).Once().
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
@@ -562,7 +531,7 @@ func TestGetCurrentState_ErrorGettingStacks(t *testing.T) {
 
 	next := time.Now().Add(1 * time.Hour)
 	mocker.On("GetNext").Return(next)
-	mocker.On("GetCurrentStacks", mock.Anything).Return(
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(
 		models.NewStacksState(), errors.New("failed to get stacks"))
 
 	state, err := service.GetCurrentState()
@@ -583,7 +552,7 @@ func TestGetCurrentState_MultipleDeploymentsVariousStatuses(t *testing.T) {
 	next := time.Now().Add(30 * time.Minute)
 	mocker.On("GetNext").Return(next)
 
-	mocker.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
 
 	// Create multiple deployments
 	dep1, _ := service.store.InitDeployment("first", models.Patch{}, models.GitConfig{})
@@ -624,9 +593,9 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 			Health: models.ContainerHealthy,
 			State:  models.StateRunning,
 		})
-	mocker.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
+	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.On("DiffWithRemote").Once().Return(models.Patch{}, git.NoErrAlreadyUpToDate)
+	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{}, git.NoErrAlreadyUpToDate)
 
 	dep, err := service.SyncDeployment()
 

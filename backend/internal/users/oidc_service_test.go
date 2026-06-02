@@ -3,7 +3,6 @@ package users
 import (
 	"net/url"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil"
 	"testing"
 
@@ -15,10 +14,10 @@ func TestOidcService_GetAuthURL(t *testing.T) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
 	defer mockServer.Close()
 
-	userStore, _ := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := storage.NewTokenHolder()
-	authStore, _ := storage.NewAuthStorage(userStore, sessionStore, tokenHolder)
+	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
+	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
+	tokenHolder := NewTokenHolder()
+	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
 
 	oidcConfig := models.OidcConfig{
 		IssuerURL: mockServer.IssuerURL,
@@ -49,10 +48,10 @@ func TestOidcService_LoginOidc(t *testing.T) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
 	defer mockServer.Close()
 
-	userStore, _ := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := storage.NewTokenHolder()
-	authStore, _ := storage.NewAuthStorage(userStore, sessionStore, tokenHolder)
+	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
+	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
+	tokenHolder := NewTokenHolder()
+	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
 
 	oidcConfig := models.OidcConfig{
 		IssuerURL: mockServer.IssuerURL,
@@ -86,10 +85,10 @@ func TestOidcService_LoginOidc_NonceMismatch(t *testing.T) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
 	defer mockServer.Close()
 
-	userStore, _ := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := storage.NewTokenHolder()
-	authStore, _ := storage.NewAuthStorage(userStore, sessionStore, tokenHolder)
+	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
+	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
+	tokenHolder := NewTokenHolder()
+	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
 
 	oidcConfig := models.OidcConfig{
 		IssuerURL: mockServer.IssuerURL,
@@ -123,10 +122,10 @@ func TestOidcService_OnConfigChanged(t *testing.T) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
 	defer mockServer.Close()
 
-	userStore, _ := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := storage.NewTokenHolder()
-	authStore, _ := storage.NewAuthStorage(userStore, sessionStore, tokenHolder)
+	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
+	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
+	tokenHolder := NewTokenHolder()
+	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
 
 	oldConfig := models.OidcConfig{
 		IssuerURL: "http://new-issuer-url.com",

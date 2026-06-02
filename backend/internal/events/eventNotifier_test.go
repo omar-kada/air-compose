@@ -2,12 +2,14 @@ package events
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -22,26 +24,10 @@ func (m *MockSend) Send(rawURL string, message string) error {
 	return args.Error(0)
 }
 
-// MockConfigStore is a mock implementation of the ConfigStore interface
-type MockConfigStore struct {
-	mock.Mock
-	storage.ConfigStore
-}
-
-func (m *MockConfigStore) Get() models.Config {
-	args := m.Called()
-	return args.Get(0).(models.Config)
-}
-
-func (m *MockConfigStore) IsEventNotificationEnabled(eventType models.EventType) bool {
-	args := m.Called(eventType)
-	return args.Bool(0)
-}
-
-// MockConfigStore is a mock implementation of the ConfigStore interface
+// configStore is a mock implementation of the ConfigStore interface
 type MockEventStore struct {
 	mock.Mock
-	storage.EventStorage
+	EventStorage
 }
 
 func (m *MockEventStore) StoreEvent(event models.Event) error {
@@ -51,10 +37,11 @@ func (m *MockEventStore) StoreEvent(event models.Event) error {
 
 func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 	mockSend := new(MockSend)
-	mockConfigStore := new(MockConfigStore)
+	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 	mockEventStore := new(MockEventStore)
 
-	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
 
 	t.Run("should send notification when config is valid and event is enabled", func(t *testing.T) {
@@ -73,14 +60,12 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			Msg:        "Test Message",
 		}
 
-		mockConfigStore.On("Get").Return(cfg)
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
-
+		assert.NoError(t, configStore.Update(cfg))
 		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
 
-		mockConfigStore.AssertExpectations(t)
 		mockSend.AssertExpectations(t)
 	})
 
@@ -100,22 +85,22 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			Msg:        "Test Message",
 		}
 
-		mockConfigStore.On("Get").Return(cfg)
+		assert.NoError(t, configStore.Update(cfg))
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
 
-		mockConfigStore.AssertExpectations(t)
 		mockSend.AssertNotCalled(t, "Send")
 	})
 }
 
 func TestStoringEventHandler_HandleEvent(t *testing.T) {
 	mockSend := new(MockSend)
-	mockConfigStore := new(MockConfigStore)
+	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 	mockEventStore := new(MockEventStore)
 
-	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
 
 	event := models.Event{
@@ -127,7 +112,7 @@ func TestStoringEventHandler_HandleEvent(t *testing.T) {
 		ObjectName: "Test object",
 	}
 
-	mockConfigStore.On("Get").Return(models.Config{}, nil)
+	assert.NoError(t, configStore.Update(models.Config{}))
 	mockEventStore.On("StoreEvent", event).Return(nil).Once()
 
 	// Call the HandleEvent method with the event
@@ -139,10 +124,11 @@ func TestStoringEventHandler_HandleEvent(t *testing.T) {
 
 func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testing.T) {
 	mockSend := new(MockSend)
-	mockConfigStore := new(MockConfigStore)
+	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 	mockEventStore := new(MockEventStore)
 
-	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
 
 	cfg := models.Config{
@@ -160,7 +146,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 		Msg:        "Test Message",
 	}
 
-	mockConfigStore.On("Get").Return(cfg, nil)
+	assert.NoError(t, configStore.Update(cfg))
 	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
 		return e.ObjectID == 1 && e.IsNotification == true
 	})).Return(nil)
@@ -173,10 +159,11 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 
 func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testing.T) {
 	mockSend := new(MockSend)
-	mockConfigStore := new(MockConfigStore)
+	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	assert.NoError(t, err)
 	mockEventStore := new(MockEventStore)
 
-	handler := NewNotificationEventHandler(mockConfigStore, mockEventStore).(*NotificationEventHandler)
+	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
 	cfg := models.Config{
 		Settings: models.Settings{
@@ -193,7 +180,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testi
 		Msg:        "Test Message",
 	}
 
-	mockConfigStore.On("Get").Return(cfg, nil)
+	assert.NoError(t, configStore.Update(cfg))
 	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
 		return e.ObjectID == 2 && e.IsNotification == false
 	})).Return(nil)

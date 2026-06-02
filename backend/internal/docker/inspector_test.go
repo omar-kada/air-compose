@@ -1,13 +1,13 @@
 package docker
 
 import (
-	"context"
 	"errors"
 	"testing"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/shell"
-	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -15,27 +15,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockClient is a mock implementation of the Client interface
-type MockClient struct {
-	mock.Mock
-}
-
-func (m *MockClient) ContainerList(ctx context.Context, options client.ContainerListOptions) (client.ContainerListResult, error) {
-	args := m.Called(ctx, options)
-	return args.Get(0).(client.ContainerListResult), args.Error(1)
-}
-
-type MockExec struct {
-	mock.Mock
-}
-
-func (m *MockExec) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
-	args := m.Called(cmd, cmdArgs)
-	return args.Get(0).([]byte), args.Error(1)
-}
-
 func newInspectorWithMock(t *testing.T, client Client, mockExec shell.Executor, servicesDir string) *inspector {
-	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
 	if err != nil {
 		t.Fatal("error creating config store ", err)
 	}
@@ -56,8 +37,8 @@ func newInspectorWithMock(t *testing.T, client Client, mockExec shell.Executor, 
 }
 
 func TestGetManagedStacks(t *testing.T) {
-	mockClient := new(MockClient)
-	mockExec := new(MockExec)
+	mockClient := new(mocks.DockerClient)
+	mockExec := new(mocks.Executor)
 
 	// Test successful case
 	mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{
@@ -146,8 +127,8 @@ func TestGetServiceNameFromLabel(t *testing.T) {
 }
 
 func TestGetServiceContainers(t *testing.T) {
-	mockClient := new(MockClient)
-	mockExec := new(MockExec)
+	mockClient := new(mocks.DockerClient)
+	mockExec := new(mocks.Executor)
 
 	// Test successful case
 	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).Once().Return([]byte("service1 service2"), nil)
@@ -173,8 +154,8 @@ func TestGetServiceContainers(t *testing.T) {
 
 func TestGetCurrentStacksState(t *testing.T) {
 	t.Run("successful case with healthy stack", func(t *testing.T) {
-		mockClient := new(MockClient)
-		mockExec := new(MockExec)
+		mockClient := new(mocks.DockerClient)
+		mockExec := new(mocks.Executor)
 
 		servicesDir := "/services"
 		inspector := newInspectorWithMock(t, mockClient, mockExec, servicesDir)
@@ -214,8 +195,8 @@ func TestGetCurrentStacksState(t *testing.T) {
 	})
 
 	t.Run("case with unhealthy stack (missing container)", func(t *testing.T) {
-		mockClient := new(MockClient)
-		mockExec := new(MockExec)
+		mockClient := new(mocks.DockerClient)
+		mockExec := new(mocks.Executor)
 		servicesDir := "/services"
 		inspector := newInspectorWithMock(t, mockClient, mockExec, servicesDir)
 
@@ -241,8 +222,8 @@ func TestGetCurrentStacksState(t *testing.T) {
 	})
 
 	t.Run("case with error getting service containers", func(t *testing.T) {
-		mockClient := new(MockClient)
-		mockExec := new(MockExec)
+		mockClient := new(mocks.DockerClient)
+		mockExec := new(mocks.Executor)
 		servicesDir := "/services"
 		inspector := newInspectorWithMock(t, mockClient, mockExec, servicesDir)
 		mockClient.On("ContainerList", mock.Anything, mock.Anything).Once().Return(client.ContainerListResult{

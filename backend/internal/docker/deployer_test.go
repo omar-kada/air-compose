@@ -9,11 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/files"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,16 +22,12 @@ import (
 
 type Mocker struct {
 	mock.Mock
+	mocks.Executor
 }
 
 func (m *Mocker) WriteToFile(filePath string, content string) error {
 	args := m.Called(filePath, content)
 	return args.Error(0)
-}
-
-func (m *Mocker) Exec(cmd string, cmdArgs ...string) ([]byte, error) {
-	args := m.Called(cmd, cmdArgs)
-	return args.Get(0).([]byte), args.Error(1)
 }
 
 func (m *Mocker) Copy(src, dest string) error {
@@ -41,7 +38,7 @@ func (m *Mocker) Copy(src, dest string) error {
 func newDeployerWithMocks(t *testing.T, mocker *Mocker) *deployer {
 	t.Helper()
 	db := testutil.NewMemoryStorage(t)
-	depStore, _ := storage.NewDeploymentStorage(db)
+	depStore, _ := deployments.NewDeploymentStorage(db)
 	dep, _ := depStore.InitDeployment("test commit", models.Patch{}, models.GitConfig{})
 	ctx := events.GetDeploymentContext(context.Background(), dep)
 
@@ -96,7 +93,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 	mock.InOrder(
 		mocker.On("Copy", "repo/services/svc1", serviceDir).Return(nil),
 		mocker.On("WriteToFile", envFilePath, wantEnv).Return(nil),
-		mocker.On(
+		mocker.Executor.On(
 			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
 		).Return([]byte{}, nil),
 	)
@@ -115,10 +112,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 	assert.NoError(t, err)
 
 	deployer := newDeployerWithMocks(t, mocker)
-	mocker.On(
+	mocker.Executor.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
 	).Return([]byte{}, nil)
-	mocker.On(
+	mocker.Executor.On(
 		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
 	).Return([]byte{}, fmt.Errorf("mock error"))
 	errs := deployer.RemoveServices([]string{"svc1", "svc2"}, baseDir)
@@ -164,7 +161,7 @@ func TestDeployServices_Errors(t *testing.T) {
 			deployer := newDeployerWithMocks(t, mocker)
 			mocker.On("Copy", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
 			mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeFileErr)
-			mocker.On("Exec", "docker", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
+			mocker.Executor.On("Exec", "docker", mock.Anything).Return([]byte{}, tc.errors.runCmdErr)
 			errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
 				ServicesDir: "/services",
 			})
@@ -184,7 +181,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 			"Copy", "configDir/repo/services/svc1", "/services/svc1",
 		).Return(nil),
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
-		mocker.On(
+		mocker.Executor.On(
 			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 		).Return([]byte{}, nil),
 	)
@@ -232,7 +229,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			deployer := newDeployerWithMocks(t, mocker)
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
-				mocker.On(
+				mocker.Executor.On(
 					"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
 				).Return([]byte{}, tc.errors.runErr),
 			)

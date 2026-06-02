@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/go-git/go-git/v6"
-	"github.com/go-git/go-git/v6/config"
+	gitConfig "github.com/go-git/go-git/v6/config"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/client"
 
@@ -28,7 +28,6 @@ var NoErrAlreadyUpToDate = git.NoErrAlreadyUpToDate
 // Fetcher is responsible for syncing files from repo
 type Fetcher interface {
 	ClearRepo() error
-	CheckoutBranch(branch string) error
 	PullBranch(branch string, commitSHA string) error
 	DiffWithRemote() (models.Patch, error)
 	TestGitConnection(repo, branch, username, token string) (bool, error)
@@ -39,14 +38,14 @@ type fetcher struct {
 	parser         PatchParser
 	addPermissions os.FileMode
 	repoDir        string
-	cfgStore       storage.ConfigStore
+	cfgStore       config.Store
 
 	_cfg  models.Config
 	_auth *http.BasicAuth
 }
 
 // NewFetcher creates a new Syncer and returns it
-func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore storage.ConfigStore) Fetcher {
+func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore config.Store) Fetcher {
 	return &fetcher{
 		parser:         NewPatchParser(),
 		addPermissions: addPermissions,
@@ -84,21 +83,6 @@ func (f *fetcher) ClearRepo() error {
 	return os.RemoveAll(f.repoDir)
 }
 
-// CheckoutBranch checks out the given local branch. If the branch does not
-// exist locally but exists on the remote (origin/<branch>), it will create
-// the local branch from the remote HEAD and check it out.
-func (f *fetcher) CheckoutBranch(branch string) error {
-	err := f.setConfig()
-	if err != nil {
-		return err
-	}
-	_, err = f.openRepo(branch)
-	if err != nil {
-		return fmt.Errorf("error while opening repo: %w", err)
-	}
-	return nil
-}
-
 // PullBranch pulls changes for a local target branch from the remote branch
 // (optionally resetting to a provided commit SHA).
 func (f *fetcher) PullBranch(branch string, commitHash string) error {
@@ -132,7 +116,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	}
 	err = repo.Fetch(&git.FetchOptions{
 		ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
-		RefSpecs: []config.RefSpec{
+		RefSpecs: []gitConfig.RefSpec{
 			"refs/heads/*:refs/remotes/origin/*",
 		},
 	})

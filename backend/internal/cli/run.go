@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
@@ -13,7 +15,6 @@ import (
 	"omar-kada/air-compose/internal/server"
 	"omar-kada/air-compose/internal/server/handlers"
 	"omar-kada/air-compose/internal/shell"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
 
 	"github.com/spf13/cobra"
@@ -70,28 +71,28 @@ func (run *runCommand) doRun() error {
 		return fmt.Errorf("couldn't init storage %w", err)
 	}
 
-	eventStore, err := storage.NewEventStorage(db)
+	eventStore, err := events.NewEventStorage(db)
 	if err != nil {
 		return fmt.Errorf("couldn't init EventStorage %w", err)
 	}
-	deploymentStore, err := storage.NewDeploymentStorage(db)
+	deploymentStore, err := deployments.NewDeploymentStorage(db)
 	if err != nil {
 		return fmt.Errorf("couldn't init DeploymentStorage %w", err)
 	}
-	userStore, err := storage.NewUsersStorage(db)
+	userStore, err := users.NewUsersStorage(db)
 	if err != nil {
 		return fmt.Errorf("couldn't init UserStorage %w", err)
 	}
-	sessionStore, err := storage.NewSessionStorage(db)
+	sessionStore, err := users.NewSessionStorage(db)
 	if err != nil {
 		return fmt.Errorf("couldn't init SessionStorage %w", err)
 	}
-	authStore, err := storage.NewAuthStorage(userStore, sessionStore, storage.NewTokenHolder())
+	authStore, err := users.NewAuthStorage(userStore, sessionStore, users.NewTokenHolder())
 	if err != nil {
 		return fmt.Errorf("couldn't init AuthStorage %w", err)
 	}
 
-	configStore, err := storage.NewConfigStore(params.ConfigFile)
+	configStore, err := config.NewConfigStore(params.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
 

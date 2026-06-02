@@ -2,22 +2,24 @@ package process
 
 import (
 	"log/slog"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
+	"sync"
 )
 
 // HealthTransitionHandler processes container health transitions and handles redeployment
 // when containers become unhealthy.
 type HealthTransitionHandler struct {
-	configStore       storage.ConfigStore
+	configStore       config.Store
 	deploymentService DeploymentService
 
 	retries       int
+	mu            sync.Mutex
 	currentHealth models.ContainerHealth
 }
 
 // NewHealthTransitionHandler creates a new HealthTransitionHandler that processes container health transitions.
-func NewHealthTransitionHandler(configStore storage.ConfigStore,
+func NewHealthTransitionHandler(configStore config.Store,
 	deploymentService DeploymentService,
 	healthCheckChan <-chan models.ContainerHealth) *HealthTransitionHandler {
 
@@ -36,8 +38,12 @@ func NewHealthTransitionHandler(configStore storage.ConfigStore,
 }
 
 func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealth) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	switch health {
 	case models.ContainerUnhealthy:
+
 		cfg := h.configStore.Get()
 
 		if h.retries == cfg.Settings.Schedule.RetriesOnUnhealthy {
@@ -69,5 +75,7 @@ func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealt
 
 // ResetRetries resets the retry counter to zero.
 func (h *HealthTransitionHandler) ResetRetries() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.retries = 0
 }

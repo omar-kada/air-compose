@@ -1,16 +1,17 @@
-package storage
+package users
 
 import (
 	"testing"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 func setupUserStorage(t *testing.T) (UserStorage, *gorm.DB) {
-	db, err := NewGormDb(":memory:", 0o000)
+	db, err := storage.NewGormDb(":memory:", 0o000)
 	if err != nil {
 		t.Fatalf("new db: %v", err)
 	}

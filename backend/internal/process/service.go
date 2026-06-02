@@ -8,11 +8,12 @@ import (
 	"reflect"
 	"sync"
 
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 )
 
 const (
@@ -32,8 +33,8 @@ func NewDeploymentService(
 	containersDeployer docker.Deployer,
 	containersInspector docker.Inspector,
 	fetcher git.Fetcher,
-	store storage.DeploymentStorage,
-	configStore storage.ConfigStore,
+	store deployments.DeploymentStorage,
+	configStore config.Store,
 	dispatcher events.Dispatcher,
 	scheduler ConfigScheduler,
 ) DeploymentService {
@@ -55,8 +56,8 @@ type service struct {
 	containersDeployer  docker.Deployer
 	containersInspector docker.Inspector
 	fetcher             git.Fetcher
-	store               storage.DeploymentStorage
-	configStore         storage.ConfigStore
+	store               deployments.DeploymentStorage
+	configStore         config.Store
 	dispatcher          events.Dispatcher
 	scheduler           ConfigScheduler
 	params              models.DeploymentParams

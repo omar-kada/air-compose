@@ -6,21 +6,21 @@ import (
 	"fmt"
 	"log/slog"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/containrrr/shoutrrr"
 )
 
 // NotificationEventHandler is an event handler that sends notifications
 type NotificationEventHandler struct {
-	configStore storage.ConfigStore
-	eventStore  storage.EventStorage
+	configStore config.Store
+	eventStore  EventStorage
 	Send        func(rawURL string, message string) error
 }
 
 // NewNotificationEventHandler creates a new notification event handler
-func NewNotificationEventHandler(configStore storage.ConfigStore, eventStore storage.EventStorage) EventHandler {
+func NewNotificationEventHandler(configStore config.Store, eventStore EventStorage) EventHandler {
 	return &NotificationEventHandler{
 		configStore: configStore,
 		eventStore:  eventStore,

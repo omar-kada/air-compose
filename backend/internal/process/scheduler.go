@@ -3,10 +3,9 @@ package process
 import (
 	"fmt"
 	"log/slog"
+	"omar-kada/air-compose/internal/config"
 	"sync"
 	"time"
-
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/robfig/cron/v3"
 )
@@ -19,7 +18,7 @@ type ConfigScheduler interface {
 }
 
 // NewConfigScheduler creates a new ConfigScheduler that ensures only one cron job runs at a time.
-func NewConfigScheduler(configStore storage.ConfigStore) ConfigScheduler {
+func NewConfigScheduler(configStore config.Store) ConfigScheduler {
 	return &AtomicConfigScheduler{
 		configStore: configStore,
 	}
@@ -27,7 +26,7 @@ func NewConfigScheduler(configStore storage.ConfigStore) ConfigScheduler {
 
 // AtomicConfigScheduler runs only a single cron job at a time
 type AtomicConfigScheduler struct {
-	configStore storage.ConfigStore
+	configStore config.Store
 	fn          func()
 	cron        *cron.Cron
 	mu          sync.Mutex
