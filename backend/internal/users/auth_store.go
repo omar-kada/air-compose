@@ -1,13 +1,12 @@
-package storage
+package users
 
 import (
-	"errors"
 	"omar-kada/air-compose/internal/models"
 )
 
 var (
-	// ErrEmptyToken indicates that the provided token is empty
-	ErrEmptyToken = errors.New("empty token")
+// ErrEmptyToken indicates that the provided token is empty
+// ErrEmptyTokenS = errors.New("empty token")
 )
 
 // AuthStore is an abstraction of all authorization related database operations

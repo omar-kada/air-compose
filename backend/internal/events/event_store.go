@@ -1,7 +1,8 @@
-package storage
+package events
 
 import (
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"gorm.io/gorm"
 )
@@ -15,7 +16,7 @@ type gormEventStorage struct {
 type EventStorage interface {
 	StoreEvent(event models.Event) error
 	GetEvents(objectID uint64) ([]models.Event, error)
-	GetNotifications(c Cursor[uint64]) ([]models.Event, error)
+	GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error)
 }
 
 // NewEventStorage creates a storage for events using gorm
@@ -45,10 +46,10 @@ func (s *gormEventStorage) GetEvents(objectID uint64) ([]models.Event, error) {
 }
 
 // GetNotifications retrieves all events that are notifications
-func (s *gormEventStorage) GetNotifications(c Cursor[uint64]) ([]models.Event, error) {
+func (s *gormEventStorage) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
 	var notifs []models.Event
 	if err := s.db.
-		Scopes(Paginate(c)).Order("Time desc").Where("is_notification = true").Find(&notifs).Error; err != nil {
+		Scopes(storage.Paginate(c)).Order("Time desc").Where("is_notification = true").Find(&notifs).Error; err != nil {
 		return nil, err
 	}
 	return notifs, nil

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +19,7 @@ type HealthChecker interface {
 }
 
 type healthChecker struct {
-	configStore storage.ConfigStore
+	configStore config.Store
 	inspector   Inspector
 	dispatcher  events.Dispatcher
 
@@ -30,7 +30,7 @@ type healthChecker struct {
 }
 
 // NewHealthChecker creates a new healthChecker instance with the given dependencies.
-func NewHealthChecker(configStore storage.ConfigStore, inspector Inspector, dispatcher events.Dispatcher) HealthChecker {
+func NewHealthChecker(configStore config.Store, inspector Inspector, dispatcher events.Dispatcher) HealthChecker {
 	hc := healthChecker{
 		configStore:     configStore,
 		inspector:       inspector,

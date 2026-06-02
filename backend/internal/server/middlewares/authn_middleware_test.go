@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
 	"omar-kada/air-compose/testutil"
 
@@ -20,13 +19,13 @@ var userCreds = models.Credentials{
 }
 
 func newUsersService(t *testing.T) users.Service {
-	userStore, err := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
+	userStore, err := users.NewUsersStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
-	SessionStore, err := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
+	SessionStore, err := users.NewSessionStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
 
-	tokenHolder := storage.NewTokenHolder()
-	store, err := storage.NewAuthStorage(userStore, SessionStore, tokenHolder)
+	tokenHolder := users.NewTokenHolder()
+	store, err := users.NewAuthStorage(userStore, SessionStore, tokenHolder)
 	assert.NoError(t, err)
 
 	return users.NewService(store)

@@ -3,15 +3,15 @@ package handlers
 import (
 	"context"
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/mappers"
-	"omar-kada/air-compose/internal/storage"
 )
 
 // SettingsConfigHandler handles settings and configuration-related operations.
 type SettingsConfigHandler struct {
-	configStore    storage.ConfigStore
+	configStore    config.Store
 	configMapper   mappers.MapperUnmapper[models.Config, api.Config]
 	settingsMapper mappers.MapperUnmapper[models.Settings, api.Settings]
 	featuresMapper mappers.Mapper[models.Features, api.Features]

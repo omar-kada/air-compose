@@ -2,11 +2,13 @@
 package handlers
 
 import (
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server/mappers"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/internal/users"
 	"strconv"
 )
@@ -20,13 +22,13 @@ type BusinessHandler struct {
 
 // NewBusinessHandler creates a new Handler
 func NewBusinessHandler(
-	configStore storage.ConfigStore,
+	configStore config.Store,
 	processService process.DeploymentService,
 	userService users.AccountService,
 	fetcher git.Fetcher,
 	inspector docker.Inspector,
-	eventStore storage.EventStorage,
-	deploymentStore storage.DeploymentStorage,
+	eventStore events.EventStorage,
+	deploymentStore deployments.DeploymentStorage,
 ) *BusinessHandler {
 	diffMapper := mappers.DiffMapper{}
 	eventMapper := mappers.EventMapper{}

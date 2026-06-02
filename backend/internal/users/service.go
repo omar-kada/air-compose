@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 )
 
 var (
@@ -52,11 +51,11 @@ type AccountService interface {
 }
 
 type service struct {
-	authStore storage.AuthStore
+	authStore AuthStore
 }
 
 // NewService creates a new userService
-func NewService(authStore storage.AuthStore) Service {
+func NewService(authStore AuthStore) Service {
 	return &service{
 		authStore: authStore,
 	}

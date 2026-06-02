@@ -1,10 +1,13 @@
-package storage
+// Package deployments provides functionality for managing deployment records in the system.
+// It includes operations for creating, retrieving, and updating deployment information.
+package deployments
 
 import (
 	"errors"
 	"time"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"gorm.io/gorm"
 )
@@ -16,7 +19,7 @@ type gormDeploymentStorage struct {
 
 // DeploymentStorage is an abstraction of all deployment database operations
 type DeploymentStorage interface {
-	GetDeployments(c Cursor[uint64]) ([]models.Deployment, error)
+	GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error)
 	GetDeployment(id uint64) (models.Deployment, error)
 	InitDeployment(title string, patch models.Patch, config models.GitConfig) (models.Deployment, error)
 	EndDeployment(deploymentID uint64, status models.DeploymentStatus) error
@@ -33,10 +36,10 @@ func NewDeploymentStorage(db *gorm.DB) (DeploymentStorage, error) {
 }
 
 // GetDeployments retrieves all deployments with their associated files and events
-func (s *gormDeploymentStorage) GetDeployments(c Cursor[uint64]) ([]models.Deployment, error) {
+func (s *gormDeploymentStorage) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
 	var deps []models.Deployment
 	if err := s.db.
-		Scopes(Paginate(c)).Order("Time desc").Find(&deps).Error; err != nil {
+		Scopes(storage.Paginate(c)).Order("Time desc").Find(&deps).Error; err != nil {
 		return nil, err
 	}
 	return deps, nil

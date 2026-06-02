@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/shell"
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -30,14 +30,14 @@ type Client interface {
 
 // inspector implements information retrieval about docker stacks
 type inspector struct {
-	configStore  storage.ConfigStore
+	configStore  config.Store
 	executor     shell.Executor
 	dockerClient Client
 	servicesDir  string
 }
 
 // NewInspector creates new inspector given a docker client
-func NewInspector(servicesDir string, configStore storage.ConfigStore) (Inspector, error) {
+func NewInspector(servicesDir string, configStore config.Store) (Inspector, error) {
 	client, err := client.New(client.FromEnv)
 	if err != nil {
 		slog.Error("Failed to create docker client", "error", err)

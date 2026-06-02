@@ -9,7 +9,9 @@ import (
 	"strconv"
 
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/process"
@@ -20,8 +22,8 @@ import (
 // DeploymentHandler handles deployment-related operations.
 type DeploymentHandler struct {
 	processService  process.DeploymentService
-	deploymentStore storage.DeploymentStorage
-	eventStore      storage.EventStorage
+	deploymentStore deployments.DeploymentStorage
+	eventStore      events.EventStorage
 	fetcher         git.Fetcher
 	inspector       docker.Inspector
 

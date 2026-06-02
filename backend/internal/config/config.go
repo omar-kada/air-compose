@@ -1,4 +1,5 @@
-package storage
+// Package config provides functionality for operations on configuration
+package config
 
 import (
 	"errors"
@@ -14,8 +15,8 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// ConfigStore stores and retreives the configuration
-type ConfigStore interface {
+// Store stores and retreives the configuration
+type Store interface {
 	Update(cfg models.Config) error
 	Get() models.Config
 	ToYaml(cfg models.Config) ([]byte, error)
@@ -33,7 +34,7 @@ type configStore struct {
 }
 
 // NewConfigStore creates a new config file storage
-func NewConfigStore(filePath string) (ConfigStore, error) {
+func NewConfigStore(filePath string) (Store, error) {
 	cfg, err := readConfig(filePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

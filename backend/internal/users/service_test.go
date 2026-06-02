@@ -5,20 +5,19 @@ import (
 	"time"
 
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func newMemoryAuthStore(t *testing.T) storage.AuthStore {
-	userStore, err := storage.NewUsersStorage(testutil.NewMemoryStorage(t))
+func newMemoryAuthStore(t *testing.T) AuthStore {
+	userStore, err := NewUsersStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
-	SessionStore, err := storage.NewSessionStorage(testutil.NewMemoryStorage(t))
+	SessionStore, err := NewSessionStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
 
-	tokenHolder := storage.NewTokenHolder()
-	store, err := storage.NewAuthStorage(userStore, SessionStore, tokenHolder)
+	tokenHolder := NewTokenHolder()
+	store, err := NewAuthStorage(userStore, SessionStore, tokenHolder)
 	assert.NoError(t, err)
 	return store
 }

@@ -1,17 +1,18 @@
-package storage
+package users
 
 import (
 	"testing"
 	"time"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 func setupAuthStorage(t *testing.T) (AuthStore, *gorm.DB) {
-	db, err := NewGormDb(":memory:", 0o000)
+	db, err := storage.NewGormDb(":memory:", 0o000)
 	if err != nil {
 		t.Fatalf("couldn't init memory store %v", err)
 	}

@@ -5,17 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
 
 	"github.com/stretchr/testify/assert"
 )
 
 // createTestConfigStore creates a ConfigStore with a temporary config file
-func createTestConfigStore(t *testing.T) storage.ConfigStore {
+func createTestConfigStore(t *testing.T) config.Store {
 	tempDir := t.TempDir()
 	configFilePath := filepath.Join(tempDir, "config.yaml")
-	store, err := storage.NewConfigStore(configFilePath)
+	store, err := config.NewConfigStore(configFilePath)
 	if err != nil {
 		t.Fatal("error while creating config store", err)
 	}

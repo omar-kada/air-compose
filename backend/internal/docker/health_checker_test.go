@@ -1,23 +1,15 @@
 package docker
 
 import (
-	"context"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/storage"
+	"omar-kada/air-compose/testutil/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-type MockDispatcher struct {
-	mock.Mock
-}
-
-func (m *MockDispatcher) Dispatch(ctx context.Context, eventType models.EventType, message string) {
-	m.Called(ctx, eventType, message)
-}
 
 type MockInspector struct {
 	mock.Mock
@@ -34,7 +26,7 @@ func (m *MockInspector) GetCurrentStacks(services []string) (models.StacksState,
 }
 
 func newCheckerWithMock(t *testing.T, inspector Inspector, mockDispatcher events.Dispatcher) *healthChecker {
-	configStore, err := storage.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
 	if err != nil {
 		t.Fatal("error while creating config store", err)
 	}
@@ -91,7 +83,7 @@ func TestStateRefresh_Table(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockInspector := new(MockInspector)
-			mockDispatcher := new(MockDispatcher)
+			mockDispatcher := new(mocks.Dispatcher)
 			healthChecker := newCheckerWithMock(t, mockInspector, mockDispatcher)
 
 			// Set initial state if needed
