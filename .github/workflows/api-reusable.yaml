@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           # prefer the input ref if provided, otherwise use the caller's SHA
           ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
