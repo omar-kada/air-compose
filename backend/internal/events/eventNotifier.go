@@ -20,7 +20,7 @@ type NotificationEventHandler struct {
 }
 
 // NewNotificationEventHandler creates a new notification event handler
-func NewNotificationEventHandler(configStore config.Store, eventStore EventStorage) EventHandler {
+func NewNotificationEventHandler(configStore config.Store, eventStore EventStorage) Handler {
 	return &NotificationEventHandler{
 		configStore: configStore,
 		eventStore:  eventStore,

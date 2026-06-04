@@ -30,21 +30,20 @@ type Fetcher interface {
 	ClearRepo() error
 	PullBranch(branch string, commitSHA string) error
 	DiffWithRemote() (models.Patch, error)
+	IsRemoteSameAsConfig() (bool, error)
 	TestGitConnection(repo, branch, username, token string) (bool, error)
 }
 
-// Syncer is responsible for syncing files from repo
 type fetcher struct {
 	parser         PatchParser
 	addPermissions os.FileMode
 	repoDir        string
 	cfgStore       config.Store
 
-	_cfg  models.Config
 	_auth *http.BasicAuth
 }
 
-// NewFetcher creates a new Syncer and returns it
+// NewFetcher creates a new Fetcher and returns it
 func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore config.Store) Fetcher {
 	return &fetcher{
 		parser:         NewPatchParser(),
@@ -57,7 +56,6 @@ func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore config.Stor
 // setConfig sets the configuration for the fetcher
 func (f *fetcher) setConfig() error {
 	cfg := f.cfgStore.Get()
-	f._cfg = cfg
 	f._auth = &http.BasicAuth{
 		Username: cfg.Settings.Git.Username,
 		Password: cfg.Settings.Git.Token,
@@ -100,10 +98,10 @@ func (f *fetcher) PullBranch(branch string, commitHash string) error {
 }
 
 func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
-	if !repoExists(f.repoDir) {
+	if !f.repoExists() {
 		repo, err = git.PlainClone(f.repoDir, &git.CloneOptions{
-			URL:           f._cfg.Settings.Git.Repo,
-			ReferenceName: plumbing.NewBranchReferenceName(f._cfg.GetBranch()),
+			URL:           f.cfgStore.Get().Settings.Git.Repo,
+			ReferenceName: plumbing.NewBranchReferenceName(f.cfgStore.Get().GetBranch()),
 			SingleBranch:  true,
 			Progress:      events.NewSlogWriter(slog.LevelDebug, "git clone "+branch),
 			ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
@@ -140,7 +138,7 @@ func (f *fetcher) DiffWithRemote() (models.Patch, error) {
 	if err != nil {
 		return models.Patch{}, err
 	}
-	repo, err := f.openRepo(f._cfg.GetBranch())
+	repo, err := f.openRepo(f.cfgStore.Get().GetBranch())
 	if err != nil {
 		return models.Patch{}, err
 	}
@@ -157,7 +155,7 @@ func (f *fetcher) reset(repo *git.Repository, branch string, hash string) error 
 	if hash != "" {
 		targetHash = plumbing.NewHash(hash)
 	} else {
-		remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", f._cfg.GetBranch()), true)
+		remoteRef, err := repo.Reference(plumbing.NewRemoteReferenceName("origin", f.cfgStore.Get().GetBranch()), true)
 		if err != nil {
 			return fmt.Errorf("error while getting reference for remote branch '%v': %w", branch, err)
 		}
@@ -207,10 +205,41 @@ func (f *fetcher) checkoutOrCreate(repo *git.Repository, branch string) error {
 	return nil
 }
 
-func repoExists(path string) bool {
-	_, e := os.Stat(filepath.Join(path, ".git"))
-	//_, e2 := os.Stat(filepath.Join(path, "services"))
-	return e == nil /*&& e2 == nil*/
+func (f *fetcher) repoExists() bool {
+	_, e := os.Stat(filepath.Join(f.repoDir, ".git"))
+	return e == nil
+}
+
+func (f *fetcher) IsRemoteSameAsConfig() (bool, error) {
+	if !f.repoExists() {
+		return false, nil
+	}
+	err := f.setConfig()
+	if err != nil {
+		return false, err
+	}
+
+	repo, err := git.PlainOpen(f.repoDir)
+	if err != nil {
+		return false, fmt.Errorf("failed to open repository: %w", err)
+	}
+
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return false, fmt.Errorf("failed to get remote: %w", err)
+	}
+
+	remotes := remote.Config().URLs
+	if len(remotes) == 0 {
+		return false, errors.New("no remote URLs configured")
+	}
+
+	for _, remoteURL := range remotes {
+		if remoteURL == f.cfgStore.Get().Settings.Git.Repo {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func branchExists(repo *git.Repository, branch string) bool {
@@ -257,7 +286,7 @@ func (f *fetcher) getPatch(repo *git.Repository) (models.Patch, error) {
 }
 
 func (f *fetcher) getRemoteCommit(repo *git.Repository) (*gitObject.Commit, error) {
-	remoteRefName := plumbing.NewRemoteReferenceName("origin", f._cfg.GetBranch())
+	remoteRefName := plumbing.NewRemoteReferenceName("origin", f.cfgStore.Get().GetBranch())
 
 	remoteRef, err := repo.Reference(remoteRefName, true)
 	if err != nil {

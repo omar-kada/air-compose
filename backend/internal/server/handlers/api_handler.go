@@ -27,6 +27,7 @@ func NewBusinessHandler(
 	userService users.AccountService,
 	fetcher git.Fetcher,
 	inspector docker.Inspector,
+	watcher process.RepoWatcher,
 	eventStore events.EventStorage,
 	deploymentStore deployments.DeploymentStorage,
 ) *BusinessHandler {
@@ -43,8 +44,10 @@ func NewBusinessHandler(
 			processService:   processService,
 			deploymentStore:  deploymentStore,
 			eventStore:       eventStore,
+			configStore:      configStore,
 			fetcher:          fetcher,
 			inspector:        inspector,
+			watcher:          watcher,
 			depMapper:        mappers.DeploymentMapper{},
 			depDetailsMapper: mappers.NewDeploymentDetailsMapper(diffMapper, eventMapper),
 			statusMapper:     mappers.StatusMapper{},
@@ -54,10 +57,10 @@ func NewBusinessHandler(
 		},
 		&SettingsConfigHandler{
 			configStore:    configStore,
+			fetcher:        fetcher,
 			configMapper:   mappers.ConfigMapper{},
 			settingsMapper: mappers.SettingsMapper{},
 			featuresMapper: mappers.FeaturesMapper{},
-			fetcher:        fetcher,
 		},
 	}
 }

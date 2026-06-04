@@ -14,12 +14,10 @@ import (
 // for testing purposes.
 type MockDeploymentService struct {
 	mock.Mock
-	DeploymentService
 }
 
-// SyncDeployment is a mock implementation of the SyncDeployment method.
-func (m *MockDeploymentService) SyncDeployment() (models.Deployment, error) {
-	args := m.Called()
+func (m *MockDeploymentService) DoDeploy(trigger DeploymentTrigger, patch models.Patch) (models.Deployment, error) {
+	args := m.Called(trigger, patch)
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
@@ -54,7 +52,7 @@ func TestHandleHealthCheck_Unhealthy(t *testing.T) {
 	handler := NewHealthTransitionHandler(configStore, mockDeploymentService, healthCheckChan)
 
 	// Set up the mock deployment service
-	mockDeploymentService.On("SyncDeployment").Return(models.Deployment{}, nil)
+	mockDeploymentService.On("DoDeploy", DeploymentTriggerUnhealthyStacks, models.Patch{}).Return(models.Deployment{}, nil)
 
 	// Send an unhealthy health check
 	healthCheckChan <- models.ContainerUnhealthy
@@ -89,7 +87,7 @@ func TestHandleHealthCheck_MaxRetriesReached(t *testing.T) {
 	handler := NewHealthTransitionHandler(configStore, mockDeploymentService, healthCheckChan)
 
 	// Set up the mock deployment service
-	mockDeploymentService.On("SyncDeployment").Return(models.Deployment{}, nil)
+	mockDeploymentService.On("DoDeploy", DeploymentTriggerUnhealthyStacks, models.Patch{}).Return(models.Deployment{}, nil)
 
 	// Send unhealthy health checks until max retries is reached
 	healthCheckChan <- models.ContainerUnhealthy
@@ -104,7 +102,7 @@ func TestHandleHealthCheck_MaxRetriesReached(t *testing.T) {
 	handler.mu.Lock()
 	defer handler.mu.Unlock()
 	assert.Equal(t, 3, handler.retries)
-	mockDeploymentService.AssertNumberOfCalls(t, "SyncDeployment", 2)
+	mockDeploymentService.AssertNumberOfCalls(t, "DoDeploy", 2)
 }
 
 func TestHandleHealthCheck_Healthy(t *testing.T) {

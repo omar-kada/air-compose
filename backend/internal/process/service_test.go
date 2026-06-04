@@ -10,7 +10,7 @@ import (
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
-	"omar-kada/air-compose/internal/git"
+
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil"
 	"omar-kada/air-compose/testutil/mocks"
@@ -121,11 +121,9 @@ func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.Dep
 		params,
 		mocker,
 		mocker,
-		mocker,
 		depStore,
 		configStore,
 		events.NewVoidDispatcher(),
-		mocker,
 	).(*service)
 	svc.currentCfg = currentCfg
 	return svc
@@ -152,7 +150,7 @@ func TestSync_Success(t *testing.T) {
 	wantCfg := mockConfigOld
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}, nil)
+	patch := models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -170,7 +168,7 @@ func TestSync_Success(t *testing.T) {
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 	assert.NoError(t, err)
 	assert.Equal(t, "Configuration changed", dep.Title)
 	assert.Equal(t, "test", dep.Diff)
@@ -200,8 +198,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	wantCfg := mockConfigNew
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-
-	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -219,7 +216,7 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 	assert.NoError(t, err)
 	assert.Equal(t, "Configuration changed", dep.Title)
 	assert.Equal(t, models.DeploymentStatusRunning, dep.Status)
@@ -243,7 +240,7 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	wantCfg := mockConfigNew
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -258,7 +255,7 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(ErrFetch).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 	assert.NoError(t, err)
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
 	time.Sleep(10 * time.Millisecond)
@@ -278,7 +275,7 @@ func TestSync_Errors(t *testing.T) {
 	wantCfg := mockConfigNew
 	err := service.configStore.Update(wantCfg)
 	assert.NoError(t, err)
-	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{Diff: "test"}, nil)
+	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -296,7 +293,7 @@ func TestSync_Errors(t *testing.T) {
 		Once().Return(ErrDeploy).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 	assert.NoError(t, err)
 	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
 	time.Sleep(10 * time.Millisecond)
@@ -307,87 +304,32 @@ func TestSync_Errors(t *testing.T) {
 	mocker.AssertExpectations(t)
 }
 
-func TestGetCurrentState_NoDeployments(t *testing.T) {
-	mocker := &Mocker{}
-	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
-
-	next := time.Now().Add(1 * time.Hour)
-	mocker.On("GetNext").Return(next)
-	mockState := models.NewStacksState()
-	mockState.SetContainerStatus("service",
-		models.ContainerSummary{
-			ID:     "id",
-			Name:   "container",
-			Health: models.ContainerHealthy,
-			State:  models.StateRunning,
-		})
-	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
-
-	state, err := service.GetCurrentState()
-	assert.NoError(t, err)
-	assert.Equal(t, next, state.NextDeploy)
-	mocker.AssertExpectations(t)
-}
-
-func TestGetCurrentState_WithDeployments(t *testing.T) {
-	mocker := &Mocker{}
-	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
-
-	next := time.Now().Add(30 * time.Minute)
-	mocker.On("GetNext").Return(next)
-	mockState := models.NewStacksState()
-	mockState.SetContainerStatus("service",
-		models.ContainerSummary{
-			ID:     "id",
-			Name:   "container",
-			Health: models.ContainerHealthy,
-			State:  models.StateRunning,
-		})
-	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
-
-	// create a successful deployment
-	dep1, err := service.store.InitDeployment("first", models.Patch{}, models.GitConfig{})
-	assert.NoError(t, err)
-	err = service.store.EndDeployment(dep1.ID, models.DeploymentStatusSuccess)
-	assert.NoError(t, err)
-
-	// create a failed (last) deployment
-	dep2, err := service.store.InitDeployment("second", models.Patch{}, models.GitConfig{})
-	assert.NoError(t, err)
-	err = service.store.EndDeployment(dep2.ID, models.DeploymentStatusError)
-	assert.NoError(t, err)
-	state, err := service.GetCurrentState()
-	assert.NoError(t, err)
-	assert.Equal(t, models.DeploymentStatusError, state.LastStatus)
-	assert.Equal(t, next, state.NextDeploy)
-	mocker.AssertExpectations(t)
-}
-
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
+	svc := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+		ServicesDir: "/services",
+		WorkingDir:  ".",
+	}, mockConfigOld)
+
+	patch := models.Patch{}
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, svc.params).Once().Return(nil)
+	done := make(chan struct{})
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
+		Return(nil).
+		Run(func(_ mock.Arguments) { close(done) })
+
+	dep, err := svc.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
+
 	assert.NoError(t, err)
-	depStore := initStore(t)
+	assert.NotEqual(t, models.Deployment{}, dep)
+	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
 
-	// Don't initialize config, so Get() will fail
-	svc := NewDeploymentService(
-		models.DeploymentParams{
-			ServicesDir: "/services",
-			WorkingDir:  ".",
-		},
-		mocker,
-		mocker,
-		mocker,
-		depStore,
-		configStore,
-		events.NewVoidDispatcher(),
-		mocker,
-	).(*service)
+	newDep, err := svc.store.GetDeployment(dep.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
 
-	dep, err := svc.SyncDeployment()
-
-	assert.ErrorContains(t, err, "error getting repo")
-	assert.Equal(t, models.Deployment{}, dep)
 	mocker.AssertExpectations(t)
 }
 
@@ -410,12 +352,25 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 		})
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	patch := models.Patch{Diff: ""}
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
+	done := make(chan struct{})
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
+		Return(nil).
+		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 
 	assert.NoError(t, err)
-	assert.Equal(t, models.Deployment{}, dep)
+	assert.NotEqual(t, models.Deployment{}, dep)
+	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
+
+	newDep, err := service.store.GetDeployment(dep.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
+
 	mocker.AssertExpectations(t)
 }
 
@@ -438,7 +393,7 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 		})
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	patch := models.Patch{Diff: ""}
 	done := make(chan struct{})
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
@@ -446,7 +401,7 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 
 	assert.NoError(t, err)
 	assert.NotEqual(t, models.Deployment{}, dep)
@@ -470,7 +425,7 @@ func TestSync_NoStacksRunning(t *testing.T) {
 	err := service.configStore.Update(mockConfigOld)
 	assert.NoError(t, err)
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
-	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	patch := models.Patch{Diff: ""}
 	done := make(chan struct{})
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
@@ -478,7 +433,7 @@ func TestSync_NoStacksRunning(t *testing.T) {
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 
 	assert.NoError(t, err)
 	assert.NotEqual(t, models.Deployment{}, dep)
@@ -502,7 +457,7 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	err := service.configStore.Update(mockConfigOld)
 	assert.NoError(t, err)
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.StacksState{}, errors.New("failed to get stacks"))
-	mocker.Fetcher.On("DiffWithRemote").Return(models.Patch{Diff: ""}, nil)
+	patch := models.Patch{Diff: ""}
 	done := make(chan struct{})
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mocker.On("RemoveAndDeployStacks", mockConfigOld, mockConfigOld, service.params).Once().Return(nil)
@@ -510,7 +465,7 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 		Return(nil).
 		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 
 	assert.NoError(t, err)
 	assert.NotEqual(t, models.Deployment{}, dep)
@@ -522,56 +477,6 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
 
-	mocker.AssertExpectations(t)
-}
-
-func TestGetCurrentState_ErrorGettingStacks(t *testing.T) {
-	mocker := &Mocker{}
-	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
-
-	next := time.Now().Add(1 * time.Hour)
-	mocker.On("GetNext").Return(next)
-	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(
-		models.NewStacksState(), errors.New("failed to get stacks"))
-
-	state, err := service.GetCurrentState()
-
-	assert.NoError(t, err)
-	assert.Equal(t, models.State{
-		NextDeploy: next,
-		Health:     models.ContainerNoHealth,
-	}, state)
-
-	mocker.AssertExpectations(t)
-}
-
-func TestGetCurrentState_MultipleDeploymentsVariousStatuses(t *testing.T) {
-	mocker := &Mocker{}
-	service := newServiceWithMocks(t, mocker, models.DeploymentParams{})
-
-	next := time.Now().Add(30 * time.Minute)
-	mocker.On("GetNext").Return(next)
-
-	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
-
-	// Create multiple deployments
-	dep1, _ := service.store.InitDeployment("first", models.Patch{}, models.GitConfig{})
-	service.store.EndDeployment(dep1.ID, models.DeploymentStatusSuccess)
-
-	dep2, _ := service.store.InitDeployment("second", models.Patch{}, models.GitConfig{})
-	service.store.EndDeployment(dep2.ID, models.DeploymentStatusSuccess)
-
-	dep3, _ := service.store.InitDeployment("third", models.Patch{}, models.GitConfig{})
-	service.store.EndDeployment(dep3.ID, models.DeploymentStatusError)
-
-	dep4, _ := service.store.InitDeployment("fourth", models.Patch{}, models.GitConfig{})
-	service.store.EndDeployment(dep4.ID, models.DeploymentStatusError)
-
-	state, err := service.GetCurrentState()
-
-	assert.NoError(t, err)
-	assert.Equal(t, models.DeploymentStatusError, state.LastStatus)
-	assert.Equal(t, next, state.NextDeploy)
 	mocker.AssertExpectations(t)
 }
 
@@ -595,11 +500,23 @@ func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 		})
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(mockState, nil)
 
-	mocker.Fetcher.On("DiffWithRemote").Once().Return(models.Patch{}, git.NoErrAlreadyUpToDate)
+	patch := models.Patch{}
+	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
+	mocker.On("RemoveAndDeployStacks", wantCfg, wantCfg, service.params).Once().Return(nil)
+	done := make(chan struct{})
+	mocker.Fetcher.On("PullBranch", "main", mock.Anything).Once().
+		Return(nil).
+		Run(func(_ mock.Arguments) { close(done) })
 
-	dep, err := service.SyncDeployment()
+	dep, err := service.DoDeploy(DeploymentTriggerConfigurationUpdated, patch)
 
 	assert.NoError(t, err)
-	assert.Equal(t, models.Deployment{}, dep)
+	assert.NotEqual(t, models.Deployment{}, dep)
+	testutil.WaitForChannel(t, done, 1*time.Second, "timeout waiting for background deployment goroutine")
+	time.Sleep(10 * time.Millisecond)
+
+	newDep, err := service.store.GetDeployment(dep.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, models.DeploymentStatusSuccess, newDep.Status)
 	mocker.AssertExpectations(t)
 }

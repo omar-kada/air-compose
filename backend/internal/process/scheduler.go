@@ -3,37 +3,33 @@ package process
 import (
 	"fmt"
 	"log/slog"
-	"omar-kada/air-compose/internal/config"
 	"sync"
 	"time"
 
 	"github.com/robfig/cron/v3"
 )
 
-// ConfigScheduler is responsible for cron running a sheduled job with updated config
-type ConfigScheduler interface {
-	Schedule(fn func()) (*cron.Cron, error)
-	ReSchedule() (*cron.Cron, error)
+// CronScheduler is responsible for cron running a sheduled job with updated config
+type CronScheduler interface {
+	Schedule(fn func(), newCronPeriod string) (*cron.Cron, error)
+	ReSchedule(newCronPeriod string) (*cron.Cron, error)
 	GetNext() time.Time
 }
 
-// NewConfigScheduler creates a new ConfigScheduler that ensures only one cron job runs at a time.
-func NewConfigScheduler(configStore config.Store) ConfigScheduler {
-	return &AtomicConfigScheduler{
-		configStore: configStore,
-	}
+// NewCronScheduler creates a new ConfigScheduler that ensures only one cron job runs at a time.
+func NewCronScheduler() CronScheduler {
+	return &AtomicScheduler{}
 }
 
-// AtomicConfigScheduler runs only a single cron job at a time
-type AtomicConfigScheduler struct {
-	configStore config.Store
-	fn          func()
-	cron        *cron.Cron
-	mu          sync.Mutex
+// AtomicScheduler runs only a single cron job at a time
+type AtomicScheduler struct {
+	fn   func()
+	cron *cron.Cron
+	mu   sync.Mutex
 }
 
 // Schedule stops the old cron when it exists, and runs a new cron job
-func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
+func (a *AtomicScheduler) Schedule(fn func(), newCronPeriod string) (*cron.Cron, error) {
 	// make sure only one sync job is running at a time
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -44,8 +40,6 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 		a.cron = nil
 	}
 
-	cfg := a.configStore.Get()
-	newCronPeriod := cfg.Settings.Schedule.Cron
 	if newCronPeriod == "1" {
 		slog.Debug("running job for a single time")
 		fn()
@@ -67,13 +61,13 @@ func (a *AtomicConfigScheduler) Schedule(fn func()) (*cron.Cron, error) {
 }
 
 // ReSchedule stops the current cron job and schedules a new one with the same function.
-func (a *AtomicConfigScheduler) ReSchedule() (*cron.Cron, error) {
-	return a.Schedule(a.fn)
+func (a *AtomicScheduler) ReSchedule(newCronPeriod string) (*cron.Cron, error) {
+	return a.Schedule(a.fn, newCronPeriod)
 }
 
 // GetNext returns the next scheduled time of the cron job.
 // If no cron job is scheduled or no entries are present, it returns the zero time.
-func (a *AtomicConfigScheduler) GetNext() time.Time {
+func (a *AtomicScheduler) GetNext() time.Time {
 	if a.cron == nil {
 		return time.Time{}
 	}

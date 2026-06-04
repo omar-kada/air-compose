@@ -57,7 +57,7 @@ func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealt
 		h.retries = h.retries + 1
 		slog.Debug("incrementing number of retries", "retries", h.retries)
 
-		_, err := h.deploymentService.SyncDeployment()
+		_, err := h.deploymentService.DoDeploy(DeploymentTriggerUnhealthyStacks, models.Patch{})
 		if err != nil {
 			slog.Error(err.Error())
 			return
