@@ -4,6 +4,8 @@ package shell
 import (
 	"fmt"
 	"log/slog"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/models"
 	"os/exec"
 	"strings"
 )
@@ -13,26 +15,35 @@ type Executor interface {
 	Exec(cmd string, args ...string) ([]byte, error)
 }
 
-type cmdExecuter struct{}
+type cmdExecuter struct {
+	showLogs bool
+}
 
 // NewExecutor creates and new Writer and returns it
 func NewExecutor() Executor {
-	return cmdExecuter{}
+	features := models.LoadFeatures()
+	return cmdExecuter{
+		showLogs: features.DisplayCmdLogs,
+	}
 }
 
 // Run runs a shell command and returns error if any
-func (cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
+func (e cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 	path, err := exec.LookPath(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("executable not found: %w", err)
 	}
 	fullCmd := cmd + " " + strings.Join(args, " ")
+	slog.Debug("[CMD] " + fullCmd)
 	c := execCommand(path, args...)
-	builder := &strings.Builder{}
-	c.Stderr = builder
+	if e.showLogs {
+		c.Stderr = events.NewSlogWriter(slog.LevelDebug, cmd+"(error)")
+	}
 
 	out, err := c.Output()
-	slog.Debug("[CMD] "+fullCmd, "out", string(out), "err", err, "stdErr", builder.String())
+	if e.showLogs {
+		slog.Debug("[CMD] "+cmd, "out", out)
+	}
 	return out, err
 }
 

@@ -7,17 +7,19 @@ import (
 
 // Features represents the feature flags that can be enabled or disabled.
 type Features struct {
-	DisplayConfig bool
-	EditConfig    bool
-	EditSettings  bool
+	DisplayConfig  bool
+	EditConfig     bool
+	EditSettings   bool
+	DisplayCmdLogs bool
 }
 
 // LoadFeatures loads feature flags from environment variables.
 func LoadFeatures() Features {
 	return Features{
-		DisplayConfig: getBool("AIR_COMPOSE_DISPLAY_CONFIG", false),
-		EditConfig:    getBool("AIR_COMPOSE_EDIT_CONFIG", false),
-		EditSettings:  getBool("AIR_COMPOSE_EDIT_SETTINGS", false),
+		DisplayConfig:  getBool("AIR_COMPOSE_DISPLAY_CONFIG", false),
+		EditConfig:     getBool("AIR_COMPOSE_EDIT_CONFIG", false),
+		EditSettings:   getBool("AIR_COMPOSE_EDIT_SETTINGS", false),
+		DisplayCmdLogs: getBool("AIR_COMPOSE_DISPLAY_CMD_LOGS", false),
 	}
 }
 

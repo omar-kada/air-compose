@@ -118,6 +118,7 @@ func (run *runCommand) doRun() error {
 		deploymentStore,
 		configStore,
 		dispatcher)
+	dispatcher.AddHandler(process.NewConfigurationUpdatedHandler(deploymentService))
 	watcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, dispatcher, process.NewCronScheduler())
 	go func() {
 		_, err := watcher.Schedule()

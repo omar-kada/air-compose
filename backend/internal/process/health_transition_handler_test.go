@@ -59,7 +59,7 @@ func TestHandleHealthCheck_Unhealthy(t *testing.T) {
 
 	// Close the channel
 	close(healthCheckChan)
-
+	time.Sleep(time.Millisecond)
 	// Assert that the reset is incremented
 	handler.mu.Lock()
 	defer handler.mu.Unlock()
