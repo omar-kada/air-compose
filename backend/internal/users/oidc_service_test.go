@@ -2,6 +2,7 @@ package users
 
 import (
 	"net/url"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil"
 	"testing"
@@ -9,31 +10,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOidcService_GetAuthURL(t *testing.T) {
-	// Setup
+func setupOidcTest(t *testing.T) (*testutil.MockOIDCServer, OidcService, UserStorage) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
-	defer mockServer.Close()
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
 	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
 	tokenHolder := NewTokenHolder()
 	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
 
-	oidcConfig := models.OidcConfig{
-		IssuerURL: mockServer.IssuerURL,
-		ClientID:  testutil.ClientID,
-	}
+	configStore.Update(models.Config{
+		Settings: models.Settings{
+			Oidc: models.OidcConfig{
+				IssuerURL: mockServer.IssuerURL,
+				ClientID:  testutil.ClientID,
+			},
+		},
+	})
+	t.Cleanup(mockServer.Close)
+	return mockServer, NewOidcService(configStore, authStore), userStore
+}
 
-	oidcService := NewOidcService(oidcConfig, authStore)
+func TestOidcService_GetAuthURL(t *testing.T) {
+	mockServer, oidcService, _ := setupOidcTest(t)
 
-	// Test
 	redirectURL := "http://localhost:8080/callback"
 	state := "teststate"
 	nonce := "testnonce"
 
 	authURL, err := oidcService.GetAuthURL(redirectURL, state, nonce)
 
-	// Assert
 	assert.NoError(t, err)
 	assert.Contains(t, authURL, mockServer.IssuerURL)
 	assert.Contains(t, authURL, "response_type=code")
@@ -44,23 +53,8 @@ func TestOidcService_GetAuthURL(t *testing.T) {
 }
 
 func TestOidcService_LoginOidc(t *testing.T) {
-	// Setup
-	mockServer := testutil.NewOidcTestServerWithToken(t)
-	defer mockServer.Close()
+	mockServer, oidcService, userStore := setupOidcTest(t)
 
-	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := NewTokenHolder()
-	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
-
-	oidcConfig := models.OidcConfig{
-		IssuerURL: mockServer.IssuerURL,
-		ClientID:  testutil.ClientID,
-	}
-
-	oidcService := NewOidcService(oidcConfig, authStore)
-
-	// Test
 	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]any{
 		"email":        testutil.Email,
 		"redirect-uri": "callback-url",
@@ -68,88 +62,29 @@ func TestOidcService_LoginOidc(t *testing.T) {
 
 	token, err := oidcService.LoginOidc(code, testutil.Nonce, "callback-url")
 
-	// Assert
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token.Value)
 	assert.NotEmpty(t, token.RefreshToken)
-	// Verify the user was created
 	user, err := userStore.UserByUsername(testutil.Email)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, testutil.Email, user.Username)
-
 }
 
 func TestOidcService_LoginOidc_NonceMismatch(t *testing.T) {
-	// Setup
-	mockServer := testutil.NewOidcTestServerWithToken(t)
-	defer mockServer.Close()
+	mockServer, oidcService, userStore := setupOidcTest(t)
 
-	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := NewTokenHolder()
-	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
-
-	oidcConfig := models.OidcConfig{
-		IssuerURL: mockServer.IssuerURL,
-		ClientID:  testutil.ClientID,
-	}
-
-	oidcService := NewOidcService(oidcConfig, authStore)
-
-	// Test
 	code := mockServer.SignIDToken(testutil.ClientID, testutil.User, map[string]any{
 		"email":        testutil.Email,
 		"redirect-uri": "callback-url",
 	})
 
-	// Use a different nonce than what was expected
 	token, err := oidcService.LoginOidc(code, "wrong-nonce", "")
-
-	// Assert
 
 	assert.Error(t, err)
 	assert.Equal(t, ErrNonceMismatch, err)
 	assert.Empty(t, token.Value)
 	assert.Empty(t, token.RefreshToken)
-	// Verify no user was created
 	user, _ := userStore.UserByUsername(testutil.Email)
 	assert.Empty(t, user.Username)
-}
-
-func TestOidcService_OnConfigChanged(t *testing.T) {
-	// Setup
-	mockServer := testutil.NewOidcTestServerWithToken(t)
-	defer mockServer.Close()
-
-	userStore, _ := NewUsersStorage(testutil.NewMemoryStorage(t))
-	sessionStore, _ := NewSessionStorage(testutil.NewMemoryStorage(t))
-	tokenHolder := NewTokenHolder()
-	authStore, _ := NewAuthStorage(userStore, sessionStore, tokenHolder)
-
-	oldConfig := models.OidcConfig{
-		IssuerURL: "http://new-issuer-url.com",
-		ClientID:  "new-client-id",
-	}
-
-	oidcService := NewOidcService(oldConfig, authStore)
-
-	newConfig := models.OidcConfig{
-		IssuerURL: mockServer.IssuerURL,
-		ClientID:  testutil.ClientID,
-	}
-
-	oidcService.OnConfigChanged(newConfig)
-
-	// Verify the config was updated
-	redirectURL := "http://localhost:8080/callback"
-	state := "teststate"
-	nonce := "testnonce"
-
-	authURL, err := oidcService.GetAuthURL(redirectURL, state, nonce)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Contains(t, authURL, newConfig.IssuerURL)
-	assert.Contains(t, authURL, "client_id="+newConfig.ClientID)
 }

@@ -95,62 +95,59 @@ func (run *runCommand) doRun() error {
 	configStore, err := config.NewConfigStore(params.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
-
 	}
 	err = configStore.WatchFile()
 	if err != nil {
 		slog.Error("error watching config file", "err", err)
 	}
-	config := configStore.Get()
-	dispatcher := events.NewDefaultDispatcher([]events.EventHandler{
+	dispatcher := events.NewDefaultDispatcher([]events.Handler{
 		events.NewLoggingEventHandler(),
 		events.NewNotificationEventHandler(configStore, eventStore),
 	})
-	scheduler := process.NewConfigScheduler(configStore)
 
 	inspector, err := docker.NewInspector(params.ServicesDir, configStore)
 	if err != nil {
 		return fmt.Errorf("couldn't init docker client %w", err)
 	}
-	healthChecker := docker.NewHealthChecker(configStore, inspector, dispatcher)
-	go healthChecker.ScheduleStateRefresh(context.Background())
 
 	fetcher := git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore)
 	deploymentService := process.NewDeploymentService(
 		params.DeploymentParams,
 		docker.NewDeployer(dispatcher, run.executor),
-		inspector,
 		fetcher,
 		deploymentStore,
 		configStore,
-		dispatcher,
-		scheduler)
-	healthHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
-	oidcService := users.NewOidcService(config.Settings.Oidc, authStore)
-	userService := users.NewService(authStore)
+		dispatcher)
+	watcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, dispatcher, process.NewCronScheduler())
 	go func() {
-		_, err = scheduler.Schedule(func() {
-			_, err := deploymentService.SyncDeployment()
-			if err != nil {
-				slog.Error(err.Error())
-			}
-		})
+		_, err := watcher.Schedule()
 		if err != nil {
-			slog.Warn(err.Error())
+			slog.Error("error scheduling polling job", "err", err)
+			dispatcher.Dispatch(context.Background(), models.EventError,
+				fmt.Sprintf("failed to schedule repo polling %v", err))
 		}
 	}()
+
+	healthChecker := docker.NewHealthChecker(configStore, inspector, dispatcher)
+	go healthChecker.ScheduleStateRefresh(context.Background())
+	healthHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
+
+	oidcService := users.NewOidcService(configStore, authStore)
+	userService := users.NewService(authStore)
 
 	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
 		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated, "")
 		if oldCfg.Settings.Schedule.Cron != cfg.Settings.Schedule.Cron {
 			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Schedule.Cron, "newCron", cfg.Settings.Schedule.Cron)
-			scheduler.ReSchedule()
+			watcher.Schedule()
 		}
-		oidcService.OnConfigChanged(cfg.Settings.Oidc)
 		healthHandler.ResetRetries()
 	})
 
-	businessHandler := handlers.NewBusinessHandler(configStore, deploymentService, userService, fetcher, inspector, eventStore, deploymentStore)
+	businessHandler := handlers.NewBusinessHandler(
+		configStore, deploymentService, userService,
+		fetcher, inspector, watcher,
+		eventStore, deploymentStore)
 	server := server.NewServer()
 	return server.Serve(params.ServerParams, businessHandler, userService, oidcService)
 }

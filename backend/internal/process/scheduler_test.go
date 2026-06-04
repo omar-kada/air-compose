@@ -1,44 +1,20 @@
 package process
 
 import (
-	"path/filepath"
 	"testing"
 	"time"
-
-	"omar-kada/air-compose/internal/config"
-	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// createTestConfigStore creates a ConfigStore with a temporary config file
-func createTestConfigStore(t *testing.T) config.Store {
-	tempDir := t.TempDir()
-	configFilePath := filepath.Join(tempDir, "config.yaml")
-	store, err := config.NewConfigStore(configFilePath)
-	if err != nil {
-		t.Fatal("error while creating config store", err)
-	}
-	return store
-}
-
-func TestNewConfigScheduler(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore)
+func TestNewCronScheduler(t *testing.T) {
+	scheduler := NewCronScheduler()
 
 	assert.NotNil(t, scheduler, "Expected non-nil scheduler")
 }
 
 func TestSchedule(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
-	}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Create a channel to signal when the function is called
 	fnCalled := make(chan bool, 1)
@@ -46,7 +22,7 @@ func TestSchedule(t *testing.T) {
 	// Schedule the function
 	c, err := scheduler.Schedule(func() {
 		fnCalled <- true
-	})
+	}, "@every 1s")
 
 	// Verify the cron was created and started
 	assert.NoError(t, err)
@@ -65,13 +41,7 @@ func TestSchedule(t *testing.T) {
 }
 
 func TestScheduleNoCronPeriod(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config with no cron period
-	testConfig := models.Config{}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Create a channel to signal when the function is called
 	fnCalled := make(chan bool, 1)
@@ -79,7 +49,7 @@ func TestScheduleNoCronPeriod(t *testing.T) {
 	// Schedule the function
 	c, err := scheduler.Schedule(func() {
 		fnCalled <- true
-	})
+	}, "")
 
 	// Verify the cron was not created
 	assert.Error(t, err, "Expected error when no cron period is defined")
@@ -95,16 +65,7 @@ func TestScheduleNoCronPeriod(t *testing.T) {
 }
 
 func TestScheduleWhileRunning(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
-	}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
-
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 	// First function call channel
 	fn1Called := make(chan bool, 1)
 	// Second function call channel
@@ -113,7 +74,7 @@ func TestScheduleWhileRunning(t *testing.T) {
 	// Schedule first function
 	c1, err := scheduler.Schedule(func() {
 		fn1Called <- true
-	})
+	}, "@every 1s")
 	assert.NoError(t, err)
 	assert.NotNil(t, c1, "Expected non-nil cron for first function")
 
@@ -128,7 +89,7 @@ func TestScheduleWhileRunning(t *testing.T) {
 	// Schedule second function while first is running
 	c2, err := scheduler.Schedule(func() {
 		fn2Called <- true
-	})
+	}, "@every 1s")
 	assert.NoError(t, err)
 	assert.NotNil(t, c2, "Expected non-nil cron for second function")
 
@@ -146,16 +107,7 @@ func TestScheduleWhileRunning(t *testing.T) {
 }
 
 func TestScheduleImmediateExecution(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config with "1" cron period
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "1"}},
-	}
-
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Create a channel to signal when the function is called
 	fnCalled := make(chan bool, 1)
@@ -163,7 +115,7 @@ func TestScheduleImmediateExecution(t *testing.T) {
 	// Schedule the function
 	c, err := scheduler.Schedule(func() {
 		fnCalled <- true
-	})
+	}, "1")
 
 	// Verify the function was called immediately
 	select {
@@ -179,8 +131,7 @@ func TestScheduleImmediateExecution(t *testing.T) {
 }
 
 func TestGetNext_NoCronScheduled(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// GetNext should return zero time when no cron is scheduled
 	next := scheduler.GetNext()
@@ -189,18 +140,10 @@ func TestGetNext_NoCronScheduled(t *testing.T) {
 }
 
 func TestGetNext_AfterScheduling(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "@every 10s"}},
-	}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Schedule a function
-	c, err := scheduler.Schedule(func() {})
+	c, err := scheduler.Schedule(func() {}, "@every 10s")
 	assert.NoError(t, err)
 	assert.NotNil(t, c, "Expected non-nil cron")
 
@@ -215,18 +158,10 @@ func TestGetNext_AfterScheduling(t *testing.T) {
 }
 
 func TestGetNext_MultipleSchedules(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "@every 1m"}},
-	}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Schedule first function
-	c1, err := scheduler.Schedule(func() {})
+	c1, err := scheduler.Schedule(func() {}, "@every 1m")
 	assert.NoError(t, err)
 	assert.NotNil(t, c1)
 
@@ -235,7 +170,7 @@ func TestGetNext_MultipleSchedules(t *testing.T) {
 	assert.True(t, next1.After(time.Now()), "Expected next time to be in the future")
 
 	// Schedule second function (replaces first)
-	c2, err := scheduler.Schedule(func() {})
+	c2, err := scheduler.Schedule(func() {}, "@every 1m")
 	assert.NoError(t, err)
 	assert.NotNil(t, c2)
 
@@ -252,18 +187,10 @@ func TestGetNext_MultipleSchedules(t *testing.T) {
 }
 
 func TestGetNext_ImmediateExecution(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config with immediate execution
-	testConfig := models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "1"}},
-	}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Schedule with immediate execution
-	c, err := scheduler.Schedule(func() {})
+	c, err := scheduler.Schedule(func() {}, "1")
 	assert.NoError(t, err)
 	assert.Nil(t, c, "Expected nil cron for immediate execution")
 
@@ -273,13 +200,7 @@ func TestGetNext_ImmediateExecution(t *testing.T) {
 }
 
 func TestReSchedule(t *testing.T) {
-	configStore := createTestConfigStore(t)
-	scheduler := NewConfigScheduler(configStore).(*AtomicConfigScheduler)
-
-	// Set up test config
-	testConfig := models.Config{Settings: models.Settings{}}
-	err := configStore.Update(testConfig)
-	assert.NoError(t, err)
+	scheduler := NewCronScheduler().(*AtomicScheduler)
 
 	// Create a channel to signal when the function is called
 	fnCalled := make(chan bool, 1)
@@ -287,19 +208,12 @@ func TestReSchedule(t *testing.T) {
 	// Schedule the function
 	c, err := scheduler.Schedule(func() {
 		fnCalled <- true
-	})
+	}, "")
 	assert.Error(t, err)
 	assert.Nil(t, c, "nothing should be scheduled")
 
-	// Update the config
-	testConfig = models.Config{Settings: models.Settings{
-		Schedule: models.ScheduleConfig{Cron: "@every 1s"}},
-	}
-	err = configStore.Update(testConfig)
-	assert.NoError(t, err)
-
 	// ReSchedule the function
-	c, err = scheduler.ReSchedule()
+	c, err = scheduler.ReSchedule("@every 1s")
 	assert.NoError(t, err)
 	assert.NotNil(t, c, "Expected non-nil cron after rescheduling")
 

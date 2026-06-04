@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
@@ -24,8 +25,10 @@ type DeploymentHandler struct {
 	processService  process.DeploymentService
 	deploymentStore deployments.DeploymentStorage
 	eventStore      events.EventStorage
+	configStore     config.Store
 	fetcher         git.Fetcher
 	inspector       docker.Inspector
+	watcher         process.RepoWatcher
 
 	depMapper        mappers.PageMapper[models.Deployment, api.Deployment]
 	depDetailsMapper mappers.Mapper[models.Deployment, api.DeploymentWithDetails]
@@ -84,7 +87,7 @@ func (h *DeploymentHandler) DeployementAPIRead(_ context.Context, request api.De
 
 // DeployementAPISync syncs the deployment
 func (h *DeploymentHandler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
-	dep, err := h.processService.SyncDeployment()
+	dep, err := h.processService.DoDeploy(process.DeploymentTriggerManual, models.Patch{})
 	if err != nil {
 		slog.Error(err.Error())
 	} else if reflect.DeepEqual(models.Deployment{}, dep) {
@@ -108,11 +111,16 @@ func (h *DeploymentHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRe
 
 // StateAPIGet retrieves the state of AirCompose
 func (h *DeploymentHandler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
-	state, err := h.processService.GetCurrentState()
-	if err != nil {
-		return nil, err
-	}
-	return api.StateAPIGet200JSONResponse(h.stateMapper.Map(state)), nil
+	dep, _ := h.deploymentStore.GetLastDeployment()
+	cfg := h.configStore.Get()
+	stackstate, _ := h.inspector.GetManagedStacks()
+
+	return api.StateAPIGet200JSONResponse(h.stateMapper.Map(models.State{
+		LastStatus:  dep.Status,
+		NextDeploy:  h.watcher.GetNext(),
+		Health:      stackstate.GetGlobalHealth(),
+		Initialized: cfg.Settings.Git.Repo != "",
+	})), nil
 }
 
 // DiffAPIGet retrieves the differences in files

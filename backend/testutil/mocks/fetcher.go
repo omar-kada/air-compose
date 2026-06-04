@@ -30,6 +30,12 @@ func (m *Fetcher) DiffWithRemote() (models.Patch, error) {
 	return args.Get(0).(models.Patch), args.Error(1)
 }
 
+// IsRemoteSameAsConfig checks if the repo has the same remote
+func (m *Fetcher) IsRemoteSameAsConfig() (bool, error) {
+	args := m.Called()
+	return args.Bool(0), args.Error(1)
+}
+
 // TestGitConnection tests the git connection with the given parameters.
 func (m *Fetcher) TestGitConnection(repo, branch, username, token string) (bool, error) {
 	args := m.Called(repo, branch, username, token)

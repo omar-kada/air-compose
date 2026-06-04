@@ -19,17 +19,17 @@ type Dispatcher interface {
 	Dispatch(ctx context.Context, eventType models.EventType, msg string)
 }
 
-// EventHandler handles events dispatched by the Dispatcher.
-type EventHandler interface {
+// Handler handles events dispatched by the Dispatcher.
+type Handler interface {
 	HandleEvent(ctx context.Context, event models.Event)
 }
 
 type dispatcher struct {
-	eventHandlers []EventHandler
+	eventHandlers []Handler
 }
 
 // NewDefaultDispatcher creates a new event dispatcher
-func NewDefaultDispatcher(eventHandlers []EventHandler) Dispatcher {
+func NewDefaultDispatcher(eventHandlers []Handler) Dispatcher {
 	return &dispatcher{
 		eventHandlers: eventHandlers,
 	}
@@ -53,7 +53,7 @@ func (d *dispatcher) Dispatch(ctx context.Context, eventType models.EventType, m
 	}
 
 	for _, handler := range d.eventHandlers {
-		handler.HandleEvent(ctx, event)
+		go handler.HandleEvent(ctx, event)
 	}
 }
 
