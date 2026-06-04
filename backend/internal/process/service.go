@@ -90,6 +90,7 @@ func (s *service) DoDeploy(trigger DeploymentTrigger, patch models.Patch) (model
 
 	deployment, err := s.store.InitDeployment(title, patch, newCfg.Settings.Git)
 	if err != nil {
+		s.dispatcher.Dispatch(context.Background(), models.EventError, err.Error())
 		return deployment, err
 	}
 	go func() {

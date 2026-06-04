@@ -18,6 +18,7 @@ const objectNameCtxKey models.ContextKey = "OBJECT_NAME"
 // Dispatcher is responsible of processing deployment events
 type Dispatcher interface {
 	Dispatch(ctx context.Context, eventType models.EventType, msg string)
+	AddHandler(handler Handler)
 }
 
 // Handler handles events dispatched by the Dispatcher.
@@ -63,6 +64,11 @@ func (d *dispatcher) Dispatch(ctx context.Context, eventType models.EventType, m
 			h.HandleEvent(ctx, event)
 		}(handler)
 	}
+}
+
+// AddHandler adds a new event handler to the dispatcher.
+func (d *dispatcher) AddHandler(handler Handler) {
+	d.eventHandlers = append(d.eventHandlers, handler)
 }
 
 // GetObjectFromContext extracts object ID and name from the context.

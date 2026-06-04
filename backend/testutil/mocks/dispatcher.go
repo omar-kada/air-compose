@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 
 	"github.com/stretchr/testify/mock"
@@ -15,4 +16,9 @@ type Dispatcher struct {
 // Dispatch records the call to the Dispatch method with the provided arguments.
 func (m *Dispatcher) Dispatch(ctx context.Context, eventType models.EventType, message string) {
 	m.Called(ctx, eventType, message)
+}
+
+// AddHandler registers an event handler with the dispatcher.
+func (m *Dispatcher) AddHandler(handler events.Handler) {
+	m.Called(handler)
 }
