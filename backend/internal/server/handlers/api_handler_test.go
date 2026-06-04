@@ -13,6 +13,7 @@ import (
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/storage"
 	"omar-kada/air-compose/testutil/mocks"
@@ -27,16 +28,12 @@ type Mock struct {
 	events.EventStorage
 	deployments.DeploymentStorage
 	mocks.Inspector
+	process.RepoWatcher
 }
 
-func (m *Mock) SyncDeployment() (models.Deployment, error) {
-	args := m.Called()
+func (m *Mock) DoDeploy(trigger process.DeploymentTrigger, patch models.Patch) (models.Deployment, error) {
+	args := m.Called(trigger, patch)
 	return args.Get(0).(models.Deployment), args.Error(1)
-}
-
-func (m *Mock) GetCurrentState() (models.State, error) {
-	args := m.Called()
-	return args.Get(0).(models.State), args.Error(1)
 }
 
 func (m *Mock) GetDeployments(c storage.Cursor[uint64]) ([]models.Deployment, error) {
@@ -57,6 +54,16 @@ func (m *Mock) GetEvents(id uint64) ([]models.Event, error) {
 func (m *Mock) GetNotifications(c storage.Cursor[uint64]) ([]models.Event, error) {
 	args := m.Called(c)
 	return args.Get(0).([]models.Event), args.Error(1)
+}
+
+func (m *Mock) GetLastDeployment() (models.Deployment, error) {
+	args := m.Called()
+	return args.Get(0).(models.Deployment), args.Error(1)
+}
+
+func (m *Mock) GetNext() time.Time {
+	args := m.Called()
+	return args.Get(0).(time.Time)
 }
 
 func (m *Mock) GetUser(username string) (models.User, error) {
@@ -83,7 +90,7 @@ func TestDeployementAPIList_Success(t *testing.T) {
 	m := &Mock{}
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	deps := []models.Deployment{
 		{ID: 1, Title: "first", Author: "alice", Diff: "d1", Status: models.DeploymentStatusSuccess},
@@ -111,7 +118,7 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	off := "notuint"
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 1, Offset: &off}}
@@ -125,7 +132,7 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 10, Title: "Manual Deploy", Author: "ci", Diff: "diff"}
 	m.On("GetDeployment", uint64(10)).Return(dep, nil)
@@ -149,7 +156,7 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	req := api.DeployementAPIReadRequestObject{Id: "abc"}
 	resp, err := h.DeployementAPIRead(context.Background(), req)
@@ -162,10 +169,10 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	dep := models.Deployment{ID: 99, Title: "Manual Deploy", Author: "ci", Diff: "dd", Status: models.DeploymentStatusRunning}
-	m.On("SyncDeployment").Return(dep, nil)
+	m.On("DoDeploy", process.DeploymentTriggerManual, mock.Anything).Return(dep, nil)
 
 	resp, err := h.DeployementAPISync(context.Background(), api.DeployementAPISyncRequestObject{})
 	assert.NoError(t, err)
@@ -181,7 +188,7 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	// now return an error (handler should return both response and error)
 	errTest := errors.New("sync failed")
 	m.ExpectedCalls = nil
-	m.On("SyncDeployment").Return(models.Deployment{}, errTest)
+	m.On("DoDeploy", process.DeploymentTriggerManual, mock.Anything).Return(models.Deployment{}, errTest)
 
 	_, err2 := h.DeployementAPISync(context.Background(), api.DeployementAPISyncRequestObject{})
 	assert.Equal(t, errTest, err2)
@@ -194,7 +201,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	stacks := models.NewStacksState()
 	stacks.SetContainerStatus("service1", models.ContainerSummary{
@@ -226,11 +233,15 @@ func TestStateAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	next := time.Now().Add(1 * time.Hour)
-	state := models.State{LastStatus: models.DeploymentStatusError, NextDeploy: next}
-	m.On("GetCurrentState").Return(state, nil)
+	dep := models.Deployment{Status: models.DeploymentStatusError}
+	m.On("GetLastDeployment").Return(dep, nil)
+	stacks := models.NewStacksState()
+	stacks.SetContainerStatus("service1", models.ContainerSummary{ID: "c1", Name: "container1", Image: "img1", State: models.StateRunning, Health: models.ContainerHealthy})
+	m.Inspector.On("GetManagedStacks").Return(stacks, nil)
+	m.On("GetNext").Return(next)
 
 	req := api.StateAPIGetRequestObject{}
 	resp, err := h.StateAPIGet(context.Background(), req)
@@ -251,7 +262,7 @@ func TestDiffAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	fileDiffs := []models.FileDiff{{OldFile: "file1.txt", NewFile: "file1.txt", Diff: "d1"}}
 	m.Fetcher.On("DiffWithRemote").Return(models.Patch{
@@ -277,7 +288,7 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errList := errors.New("db error")
 	m.On("GetDeployments", storage.NewIDCursor(2, uint64(0))).Return([]models.Deployment{}, errList)
@@ -302,7 +313,7 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	req := api.DeployementAPIListRequestObject{Params: api.DeployementAPIListParams{Limit: 0}}
 	resp, err := h.DeployementAPIList(context.Background(), req)
@@ -315,7 +326,7 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errGet := errors.New("not found")
 	m.On("GetDeployment", uint64(10)).Return(models.Deployment{}, errGet)
@@ -333,7 +344,7 @@ func TestStatusAPIGet_Error(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errStacks := errors.New("failed to get stacks")
 	m.Inspector.On("GetManagedStacks").Return(models.StacksState{}, errStacks)
@@ -350,15 +361,23 @@ func TestStateAPIGet_Error(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errState := errors.New("state error")
-	m.On("GetCurrentState").Return(models.State{}, errState)
+	m.On("GetLastDeployment").Return(models.Deployment{}, errState)
+	m.Inspector.On("GetManagedStacks").Return(models.StacksState{}, errState)
+	m.On("GetNext").Return(time.Time{})
 
 	req := api.StateAPIGetRequestObject{}
 	resp, err := h.StateAPIGet(context.Background(), req)
-	assert.Nil(t, resp)
-	assert.Equal(t, errState, err)
+	assert.NoError(t, err)
+
+	switch r := resp.(type) {
+	case api.StateAPIGet200JSONResponse:
+		assert.Equal(t, time.Time{}, r.NextDeploy)
+	default:
+		t.Fatalf("unexpected resp type: %T", resp)
+	}
 
 	m.AssertExpectations(t)
 }
@@ -368,7 +387,7 @@ func TestDiffAPIGet_Error(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errDiff := errors.New("diff error")
 	m.Fetcher.On("DiffWithRemote").Return(models.Patch{
@@ -387,7 +406,7 @@ func TestConfigAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	config := models.Config{
 		Environment: models.Environment{
@@ -417,7 +436,7 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 	t.Setenv("AIR_COMPOSE_EDIT_CONFIG", "true")
 	t.Setenv("AIR_COMPOSE_EDIT_SETTINGS", "true")
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.FeaturesAPIGet(context.Background(), api.FeaturesAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -441,7 +460,7 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	settings := models.Settings{
 		Git: models.GitConfig{
@@ -481,7 +500,7 @@ func TestSettingsAPISet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -560,7 +579,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{},
@@ -623,7 +642,7 @@ func TestSettingsAPISet_Error(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Chmod(configFilePath, 0600)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	settings := api.Settings{
 		Repo:     "test-repo",
@@ -644,7 +663,7 @@ func TestConfigAPISet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	oldConfig := models.Config{
 		Environment: models.Environment{
@@ -707,7 +726,7 @@ func TestConfigAPISet_Error(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Chmod(configFilePath, 0600)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	config := api.Config{
 		GlobalVariables: map[string]string{
@@ -729,7 +748,7 @@ func TestUserAPIGet_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser", Type: models.UserTypeLocal}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -752,7 +771,7 @@ func TestUserAPIGet_NoUser(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIGet(context.Background(), api.UserAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -764,7 +783,7 @@ func TestUserAPIDelete_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -788,7 +807,7 @@ func TestUserAPIDelete_NoUser(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.UserAPIDelete(context.Background(), api.UserAPIDeleteRequestObject{})
 	assert.Error(t, err)
@@ -807,7 +826,7 @@ func TestUserAPIDelete_Error(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -833,7 +852,7 @@ func TestAuthAPIRegistered(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	// Mock IsRegistered and Get
 	m.On("IsRegistered").Return(true, nil)
@@ -864,7 +883,7 @@ func TestAuthAPILogout(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogout(context.Background(), api.AuthAPILogoutRequestObject{})
 	assert.Error(t, err)
@@ -883,7 +902,7 @@ func TestAuthAPILogin(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPILogin(context.Background(), api.AuthAPILoginRequestObject{})
 	assert.Error(t, err)
@@ -902,7 +921,7 @@ func TestAuthAPIRegister(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	resp, err := h.AuthAPIRegister(context.Background(), api.AuthAPIRegisterRequestObject{})
 	assert.Error(t, err)
@@ -921,7 +940,7 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -953,7 +972,7 @@ func TestUserAPIChangePassword_NoUser(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	req := api.UserAPIChangePasswordRequestObject{
 		Body: &api.UserAPIChangePasswordJSONRequestBody{
@@ -979,7 +998,7 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	user := models.User{Username: "testuser"}
 	ctx := middlewares.ContextWithUsername(context.Background(), user.Username)
@@ -1013,7 +1032,7 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	m.Fetcher.On("TestGitConnection", "test-repo", "main", "user", "token").Return(true, nil)
 
@@ -1044,7 +1063,7 @@ func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
 	assert.NoError(t, err)
 
-	h := NewBusinessHandler(store, m, m, m, m, m, m)
+	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
 	errTest := errors.New("connection failed")
 	m.Fetcher.On("TestGitConnection", "test-repo", "main", "user", "token").Return(false, errTest)

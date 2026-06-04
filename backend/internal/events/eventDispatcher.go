@@ -3,6 +3,7 @@ package events
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"omar-kada/air-compose/internal/models"
@@ -19,17 +20,17 @@ type Dispatcher interface {
 	Dispatch(ctx context.Context, eventType models.EventType, msg string)
 }
 
-// EventHandler handles events dispatched by the Dispatcher.
-type EventHandler interface {
+// Handler handles events dispatched by the Dispatcher.
+type Handler interface {
 	HandleEvent(ctx context.Context, event models.Event)
 }
 
 type dispatcher struct {
-	eventHandlers []EventHandler
+	eventHandlers []Handler
 }
 
 // NewDefaultDispatcher creates a new event dispatcher
-func NewDefaultDispatcher(eventHandlers []EventHandler) Dispatcher {
+func NewDefaultDispatcher(eventHandlers []Handler) Dispatcher {
 	return &dispatcher{
 		eventHandlers: eventHandlers,
 	}
@@ -53,7 +54,14 @@ func (d *dispatcher) Dispatch(ctx context.Context, eventType models.EventType, m
 	}
 
 	for _, handler := range d.eventHandlers {
-		handler.HandleEvent(ctx, event)
+		go func(h Handler) {
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("event handler panicked", "err", r)
+				}
+			}()
+			h.HandleEvent(ctx, event)
+		}(handler)
 	}
 }
 

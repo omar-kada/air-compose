@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -22,28 +23,27 @@ var (
 type OidcService interface {
 	GetAuthURL(redirectURL string, state string, nonce string) (string, error)
 	LoginOidc(oauthToken string, nonce string, callbackURL string) (models.Token, error)
-	OnConfigChanged(newConfig models.OidcConfig)
 }
 
 type oidcService struct {
-	config    models.OidcConfig
-	authStore AuthStore
+	configStore config.Store
+	authStore   AuthStore
 }
 
 // NewOidcService creates a new OidcService
-func NewOidcService(config models.OidcConfig, authStore AuthStore) OidcService {
+func NewOidcService(configStore config.Store, authStore AuthStore) OidcService {
 	return &oidcService{
-		config:    config,
-		authStore: authStore,
+		configStore: configStore,
+		authStore:   authStore,
 	}
 }
 
-func (s *oidcService) OnConfigChanged(newConfig models.OidcConfig) {
-	s.config = newConfig
+func (s *oidcService) getCfg() models.OidcConfig {
+	return s.configStore.Get().Settings.Oidc
 }
 
 func (s *oidcService) GetAuthURL(redirectURL string, state string, nonce string) (string, error) {
-	provider, err := oidc.NewProvider(context.Background(), s.config.IssuerURL)
+	provider, err := oidc.NewProvider(context.Background(), s.getCfg().IssuerURL)
 	if err != nil {
 		return "", err
 	}
@@ -53,8 +53,8 @@ func (s *oidcService) GetAuthURL(redirectURL string, state string, nonce string)
 
 func (s *oidcService) getConfig(provider *oidc.Provider, redirectURL string) oauth2.Config {
 	return oauth2.Config{
-		ClientID:     s.config.ClientID,
-		ClientSecret: s.config.ClientSecret,
+		ClientID:     s.getCfg().ClientID,
+		ClientSecret: s.getCfg().ClientSecret,
 		RedirectURL:  redirectURL,
 
 		// Discovery returns the OAuth2 endpoints.
@@ -66,7 +66,7 @@ func (s *oidcService) getConfig(provider *oidc.Provider, redirectURL string) oau
 }
 
 func (s *oidcService) extractUsername(code, nonce, redirectURL string) (string, error) {
-	provider, err := oidc.NewProvider(context.Background(), s.config.IssuerURL)
+	provider, err := oidc.NewProvider(context.Background(), s.getCfg().IssuerURL)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +74,7 @@ func (s *oidcService) extractUsername(code, nonce, redirectURL string) (string, 
 	// Configure an OpenID Connect aware OAuth2 client.
 	oauth2Config := s.getConfig(provider, redirectURL)
 
-	var verifier = provider.Verifier(&oidc.Config{ClientID: s.config.ClientID})
+	var verifier = provider.Verifier(&oidc.Config{ClientID: s.getCfg().ClientID})
 
 	oauth2Token, err := oauth2Config.Exchange(context.Background(), code)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/users"
 	"omar-kada/air-compose/testutil"
@@ -12,8 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newOidcService(t *testing.T) (*testutil.MockOIDCServer, users.OidcService) {
+func newOidcService(t *testing.T) (*testutil.MockOIDCServer, users.OidcService, config.Store) {
 	server := testutil.NewOidcTestServerWithToken(t)
+
+	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
+	assert.NoError(t, err)
 
 	userStore, err := users.NewUsersStorage(testutil.NewMemoryStorage(t))
 	assert.NoError(t, err)
@@ -24,14 +28,19 @@ func newOidcService(t *testing.T) (*testutil.MockOIDCServer, users.OidcService) 
 	store, err := users.NewAuthStorage(userStore, SessionStore, tokenHolder)
 	assert.NoError(t, err)
 
-	return server, users.NewOidcService(models.OidcConfig{
-		IssuerURL: server.IssuerURL,
-		ClientID:  testutil.ClientID,
-	}, store)
+	configStore.Update(models.Config{
+		Settings: models.Settings{
+			Oidc: models.OidcConfig{
+				IssuerURL: server.IssuerURL,
+				ClientID:  testutil.ClientID,
+			},
+		},
+	})
+	return server, users.NewOidcService(configStore, store), configStore
 }
 
 func TestOidcMiddleware_LoginRedirect(t *testing.T) {
-	server, oidcService := newOidcService(t)
+	server, oidcService, _ := newOidcService(t)
 	defer server.Close()
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -57,12 +66,15 @@ func TestOidcMiddleware_LoginRedirect(t *testing.T) {
 }
 
 func TestOidcMiddleware_LoginWrongConfig(t *testing.T) {
-	server, oidcService := newOidcService(t)
+	server, oidcService, configStore := newOidcService(t)
 	defer server.Close()
-
-	oidcService.OnConfigChanged(models.OidcConfig{
-		IssuerURL: "http://invalid-url.com",
-		ClientID:  "invalid-client-id",
+	configStore.Update(models.Config{
+		Settings: models.Settings{
+			Oidc: models.OidcConfig{
+				IssuerURL: "http://invalid-url.com",
+				ClientID:  "invalid-client-id",
+			},
+		},
 	})
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -85,7 +97,7 @@ func TestOidcMiddleware_LoginWrongConfig(t *testing.T) {
 }
 
 func TestOidcMiddleware_LoginInvalidMethod(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -99,7 +111,7 @@ func TestOidcMiddleware_LoginInvalidMethod(t *testing.T) {
 }
 
 func TestOidcMiddleware_Callback(t *testing.T) {
-	server, oidcService := newOidcService(t)
+	server, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -140,7 +152,7 @@ func TestOidcMiddleware_Callback(t *testing.T) {
 }
 
 func TestOidcMiddleware_InvalidMethod(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -154,7 +166,7 @@ func TestOidcMiddleware_InvalidMethod(t *testing.T) {
 }
 
 func TestOidcMiddleware_MissingCode(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -168,7 +180,7 @@ func TestOidcMiddleware_MissingCode(t *testing.T) {
 }
 
 func TestOidcMiddleware_InvalidState(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -182,7 +194,7 @@ func TestOidcMiddleware_InvalidState(t *testing.T) {
 }
 
 func TestOidcMiddleware_OidcLoginFailure(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -196,7 +208,7 @@ func TestOidcMiddleware_OidcLoginFailure(t *testing.T) {
 }
 
 func TestOidcMiddleware_InsecureCookies(t *testing.T) {
-	server, oidcService := newOidcService(t)
+	server, oidcService, _ := newOidcService(t)
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		t.Fail() // shouldn't be called
 	}), oidcService)
@@ -238,7 +250,7 @@ func TestOidcMiddleware_InsecureCookies(t *testing.T) {
 }
 
 func TestOidcMiddleware_NextHandlerCalled(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	called := false
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -254,7 +266,7 @@ func TestOidcMiddleware_NextHandlerCalled(t *testing.T) {
 }
 
 func TestOidcMiddleware_OriginURLSet(t *testing.T) {
-	_, oidcService := newOidcService(t)
+	_, oidcService, _ := newOidcService(t)
 	called := false
 
 	handler := OidcMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {

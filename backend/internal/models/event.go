@@ -27,6 +27,9 @@ const (
 	// EventStacksHealthy indicates that all stacks are back to being healthy
 	EventStacksHealthy EventType = "STACKS_HEALTHY"
 
+	// EventNewCommit indicates that the repo has been updated
+	EventNewCommit EventType = "NEW_COMMIT"
+
 	// EventConfigurationUpdated indicates that a configuration has been updated
 	EventConfigurationUpdated EventType = "CONFIGURATION_UPDATED"
 
@@ -54,6 +57,8 @@ func (e EventType) ToText() string {
 		return "Some stacks are not healthy"
 	case EventStacksHealthy:
 		return "All stacks are healthy"
+	case EventNewCommit:
+		return "New commit"
 	case EventConfigurationUpdated:
 		return "Configuration updated"
 	case EventPasswordUpdated:
@@ -80,6 +85,8 @@ func (e EventType) ToEmoji() string {
 		return "🔴"
 	case EventStacksUnhealthy:
 		return "🔴"
+	case EventNewCommit:
+		return "📦"
 	case EventConfigurationUpdated:
 		return "🔄"
 	case EventPasswordUpdated:

@@ -12,7 +12,7 @@ import (
 type LoggingEventHandler struct{}
 
 // NewLoggingEventHandler creates a new logging event handler
-func NewLoggingEventHandler() EventHandler {
+func NewLoggingEventHandler() Handler {
 	return &LoggingEventHandler{}
 }
 
