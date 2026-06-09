@@ -3,9 +3,11 @@ export * from './deployment';
 export * from './deployments-page';
 export * from './init-page';
 export * from './login-page';
+export * from './logs-page';
 export * from './navbar';
 export * from './register-page';
 export * from './status';
 export * from './status-page';
 export * from './topbar';
 export * from './view';
+

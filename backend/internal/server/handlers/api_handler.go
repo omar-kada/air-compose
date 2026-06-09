@@ -2,6 +2,8 @@
 package handlers
 
 import (
+	"context"
+	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
@@ -63,6 +65,11 @@ func NewBusinessHandler(
 			featuresMapper: mappers.FeaturesMapper{},
 		},
 	}
+}
+
+// WebSocketConnect handles WebSocket connection requests, should be handeled in middleware.
+func (*BusinessHandler) WebSocketConnect(_ context.Context, _ api.WebSocketConnectRequestObject) (api.WebSocketConnectResponseObject, error) {
+	return api.WebSocketConnect401Response{}, errShouldntReach
 }
 
 func validateCursorOffset(offsetStr *string) (uint64, error) {

@@ -29,16 +29,12 @@ type Server interface {
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	websocketHandler *WebsocketHandler
-
 	server *http.Server
 }
 
 // NewServer creates a new http server
 func NewServer() Server {
-	return &HTTPServer{
-		websocketHandler: newWebsocketHandler(),
-	}
+	return &HTTPServer{}
 }
 
 // Serve initializes routes from generated api and serves on the given port
@@ -47,22 +43,25 @@ func (s *HTTPServer) Serve(
 	businessHandler api.StrictServerInterface,
 	userSvc users.Service,
 	oidcSvc users.OidcService,
+	// add clientEventsService
 ) error {
 	// Create a new serve mux
 	mux := http.NewServeMux()
 
-	// Add frontend file server
-	mux.HandleFunc("/ws", s.websocketHandler.handle)
-	mux.HandleFunc("/", spaHandler)
-
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
 	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
+	// add websocket middleware
+	// Add frontend file server
+	mux.HandleFunc("/api/ws", webSocketHandler)
+	mux.Handle("/api/", api.Handler(strict))
+	mux.HandleFunc("/", spaHandler)
 
 	// get an `http.Handler` that we can use
-	h := api.HandlerFromMux(strict, mux)
+	//h := api.HandlerFromMux(strict, mux)
+	h := middlewares.AuthnMiddleware(mux, userSvc)
 	h = middlewares.AuthorizationMiddleware(h)
-	h = middlewares.AuthnMiddleware(h, userSvc)
 	h = middlewares.OidcMiddleware(h, oidcSvc)
+
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
@@ -73,17 +72,10 @@ func (s *HTTPServer) Serve(
 
 	// Use the CORS filter as a middleware
 	h = c.Handler(h)
+	h = middlewares.LoggingMiddleware(h)
 
-	// api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
-	// 	BaseRouter: mux,
-	// 	Middlewares: []api.MiddlewareFunc{
-	// 		s.checkUsersMiddleware,
-	// 		c.Handler,
-	// 		loggingMiddleware,
-	// 	},
-	// })
 	s.server = &http.Server{
-		Handler:           middlewares.LoggingMiddleware(h),
+		Handler:           h,
 		Addr:              ":" + strconv.Itoa(params.Port),
 		ReadHeaderTimeout: 3 * time.Second,
 	}

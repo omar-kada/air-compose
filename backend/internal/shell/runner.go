@@ -42,7 +42,7 @@ func (e cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 
 	out, err := c.Output()
 	if e.showLogs {
-		slog.Debug("[CMD] "+cmd, "out", out)
+		slog.Debug("[CMD] "+cmd, "out", string(out))
 	}
 	return out, err
 }

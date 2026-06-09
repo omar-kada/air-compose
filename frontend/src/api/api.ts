@@ -34,6 +34,38 @@ export interface BooleanResponse {
   success: boolean;
 }
 
+export type ClientMessageStartLogsKind = typeof ClientMessageStartLogsKind[keyof typeof ClientMessageStartLogsKind];
+
+
+export const ClientMessageStartLogsKind = {
+  startLogs: 'startLogs',
+} as const;
+
+export interface StartLogsMessage {
+  previousLines: number;
+}
+
+export interface ClientMessageStartLogs {
+  kind: ClientMessageStartLogsKind;
+  value: StartLogsMessage;
+}
+
+export type ClientMessageEndLogsKind = typeof ClientMessageEndLogsKind[keyof typeof ClientMessageEndLogsKind];
+
+
+export const ClientMessageEndLogsKind = {
+  endLogs: 'endLogs',
+} as const;
+
+export interface EndLogsMessage { [key: string]: unknown }
+
+export interface ClientMessageEndLogs {
+  kind: ClientMessageEndLogsKind;
+  value: EndLogsMessage;
+}
+
+export type ClientMessage = ClientMessageStartLogs | ClientMessageEndLogs;
+
 export type ConfigGlobalVariables = {[key: string]: string};
 
 export type ConfigServices = {[key: string]: {[key: string]: string}};
@@ -177,6 +209,14 @@ export interface GitCredentials {
   token?: string;
 }
 
+export interface LogLine {
+  msg: string;
+  time: string;
+  level: string;
+}
+
+export type LogMessages = LogLine[];
+
 export interface OidcSettings {
   issuerURL: string;
   clientID: string;
@@ -192,6 +232,63 @@ export interface RegistrationInfo {
   registered: boolean;
   oidc: boolean;
 }
+
+export type ServerMessageStateKind = typeof ServerMessageStateKind[keyof typeof ServerMessageStateKind];
+
+
+export const ServerMessageStateKind = {
+  state: 'state',
+} as const;
+
+export interface StateMessage {
+  nextDeploy: string;
+  status: DeploymentStatus;
+  health: ContainerHealth;
+  deployment: Deployment;
+}
+
+export interface ServerMessageState {
+  kind: ServerMessageStateKind;
+  value: StateMessage;
+}
+
+export type ServerMessageLogKind = typeof ServerMessageLogKind[keyof typeof ServerMessageLogKind];
+
+
+export const ServerMessageLogKind = {
+  log: 'log',
+} as const;
+
+export interface ServerMessageLog {
+  kind: ServerMessageLogKind;
+  value: LogLine;
+}
+
+export type ServerMessagePreviousLogsKind = typeof ServerMessagePreviousLogsKind[keyof typeof ServerMessagePreviousLogsKind];
+
+
+export const ServerMessagePreviousLogsKind = {
+  previousLogs: 'previousLogs',
+} as const;
+
+export interface ServerMessagePreviousLogs {
+  kind: ServerMessagePreviousLogsKind;
+  value: LogMessages;
+}
+
+export type ServerMessageNewDeploymentKind = typeof ServerMessageNewDeploymentKind[keyof typeof ServerMessageNewDeploymentKind];
+
+
+export const ServerMessageNewDeploymentKind = {
+  newDeployment: 'newDeployment',
+} as const;
+
+export interface ServerMessageNewDeployment {
+  kind: ServerMessageNewDeploymentKind;
+  value: Deployment;
+}
+
+export type ServerMessage = ServerMessageState | ServerMessageLog | ServerMessagePreviousLogs | ServerMessageNewDeployment;
 
 export interface Settings {
   repo: string;
@@ -1929,3 +2026,82 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       > => {
       return useMutation(getUserAPIChangePasswordMutationOptions(options), queryClient);
     }
+
+export const webSocketConnect = (
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+
+
+    return axios.default.get(
+      `/api/ws`,options
+    );
+  }
+
+
+
+
+export const getWebSocketConnectQueryKey = () => {
+    return [
+    `/api/ws`
+    ] as const;
+    }
+
+
+export const getWebSocketConnectQueryOptions = <TData = Awaited<ReturnType<typeof webSocketConnect>>, TError = AxiosError<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getWebSocketConnectQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof webSocketConnect>>> = ({ signal }) => webSocketConnect({ signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type WebSocketConnectQueryResult = NonNullable<Awaited<ReturnType<typeof webSocketConnect>>>
+export type WebSocketConnectQueryError = AxiosError<void>
+
+
+export function useWebSocketConnect<TData = Awaited<ReturnType<typeof webSocketConnect>>, TError = AxiosError<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof webSocketConnect>>,
+          TError,
+          Awaited<ReturnType<typeof webSocketConnect>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useWebSocketConnect<TData = Awaited<ReturnType<typeof webSocketConnect>>, TError = AxiosError<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof webSocketConnect>>,
+          TError,
+          Awaited<ReturnType<typeof webSocketConnect>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useWebSocketConnect<TData = Awaited<ReturnType<typeof webSocketConnect>>, TError = AxiosError<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useWebSocketConnect<TData = Awaited<ReturnType<typeof webSocketConnect>>, TError = AxiosError<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof webSocketConnect>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getWebSocketConnectQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
