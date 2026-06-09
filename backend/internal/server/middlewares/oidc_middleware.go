@@ -42,6 +42,13 @@ func OidcMiddleware(next http.Handler, oidcService users.OidcService) http.Handl
 	})
 }
 
+// OidcMiddlewareFunc returns an OIDC middleware function.
+func OidcMiddlewareFunc(oidcService users.OidcService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return OidcMiddleware(next, oidcService)
+	}
+}
+
 func oidcCallbackHandler(w http.ResponseWriter, r *http.Request, oidcService users.OidcService) {
 	if r.Method != http.MethodGet {
 		sendError(w, api.ErrorCodeNOTALLOWED)

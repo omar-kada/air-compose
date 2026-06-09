@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,7 +22,18 @@ import (
 )
 
 const (
-	BearerAuthScopes = "BearerAuth.Scopes"
+	BearerAuthScopes        = "BearerAuth.Scopes"
+	OpenIdConnectAuthScopes = "OpenIdConnectAuth.Scopes"
+)
+
+// Defines values for ClientMessageEndLogsKind.
+const (
+	ClientMessageEndLogsKindEndLogs ClientMessageEndLogsKind = "endLogs"
+)
+
+// Defines values for ClientMessageStartLogsKind.
+const (
+	ClientMessageStartLogsKindStartLogs ClientMessageStartLogsKind = "startLogs"
 )
 
 // Defines values for ContainerHealth.
@@ -76,6 +88,26 @@ const (
 	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 )
 
+// Defines values for ServerMessageLogKind.
+const (
+	ServerMessageLogKindLog ServerMessageLogKind = "log"
+)
+
+// Defines values for ServerMessageNewDeploymentKind.
+const (
+	ServerMessageNewDeploymentKindNewDeployment ServerMessageNewDeploymentKind = "newDeployment"
+)
+
+// Defines values for ServerMessagePreviousLogsKind.
+const (
+	ServerMessagePreviousLogsKindPreviousLogs ServerMessagePreviousLogsKind = "previousLogs"
+)
+
+// Defines values for ServerMessageStateKind.
+const (
+	ServerMessageStateKindState ServerMessageStateKind = "state"
+)
+
 // Defines values for UserType.
 const (
 	UserTypeLOCAL UserType = "LOCAL"
@@ -91,6 +123,29 @@ const (
 type BooleanResponse struct {
 	Success bool `json:"success"`
 }
+
+// ClientMessage defines model for ClientMessage.
+type ClientMessage struct {
+	union json.RawMessage
+}
+
+// ClientMessageEndLogs defines model for ClientMessageEndLogs.
+type ClientMessageEndLogs struct {
+	Kind  ClientMessageEndLogsKind `json:"kind"`
+	Value EndLogsMessage           `json:"value"`
+}
+
+// ClientMessageEndLogsKind defines model for ClientMessageEndLogs.Kind.
+type ClientMessageEndLogsKind string
+
+// ClientMessageStartLogs defines model for ClientMessageStartLogs.
+type ClientMessageStartLogs struct {
+	Kind  ClientMessageStartLogsKind `json:"kind"`
+	Value StartLogsMessage           `json:"value"`
+}
+
+// ClientMessageStartLogsKind defines model for ClientMessageStartLogs.Kind.
+type ClientMessageStartLogsKind string
 
 // Config defines model for Config.
 type Config struct {
@@ -149,6 +204,9 @@ type DeploymentWithDetails struct {
 	Title   string           `json:"title"`
 }
 
+// EndLogsMessage defines model for EndLogsMessage.
+type EndLogsMessage = map[string]interface{}
+
 // Error defines model for Error.
 type Error struct {
 	Code    ErrorCode `json:"code"`
@@ -194,6 +252,16 @@ type GitCredentials struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// LogLine defines model for LogLine.
+type LogLine struct {
+	Level string    `json:"level"`
+	Msg   string    `json:"msg"`
+	Time  time.Time `json:"time"`
+}
+
+// LogMessages defines model for LogMessages.
+type LogMessages = []LogLine
+
 // OidcSettings defines model for OidcSettings.
 type OidcSettings struct {
 	ClientID     string `json:"clientID"`
@@ -213,6 +281,47 @@ type RegistrationInfo struct {
 	Registered bool `json:"registered"`
 }
 
+// ServerMessage defines model for ServerMessage.
+type ServerMessage struct {
+	union json.RawMessage
+}
+
+// ServerMessageLog defines model for ServerMessageLog.
+type ServerMessageLog struct {
+	Kind  ServerMessageLogKind `json:"kind"`
+	Value LogLine              `json:"value"`
+}
+
+// ServerMessageLogKind defines model for ServerMessageLog.Kind.
+type ServerMessageLogKind string
+
+// ServerMessageNewDeployment defines model for ServerMessageNewDeployment.
+type ServerMessageNewDeployment struct {
+	Kind  ServerMessageNewDeploymentKind `json:"kind"`
+	Value Deployment                     `json:"value"`
+}
+
+// ServerMessageNewDeploymentKind defines model for ServerMessageNewDeployment.Kind.
+type ServerMessageNewDeploymentKind string
+
+// ServerMessagePreviousLogs defines model for ServerMessagePreviousLogs.
+type ServerMessagePreviousLogs struct {
+	Kind  ServerMessagePreviousLogsKind `json:"kind"`
+	Value LogMessages                   `json:"value"`
+}
+
+// ServerMessagePreviousLogsKind defines model for ServerMessagePreviousLogs.Kind.
+type ServerMessagePreviousLogsKind string
+
+// ServerMessageState defines model for ServerMessageState.
+type ServerMessageState struct {
+	Kind  ServerMessageStateKind `json:"kind"`
+	Value StateMessage           `json:"value"`
+}
+
+// ServerMessageStateKind defines model for ServerMessageState.Kind.
+type ServerMessageStateKind string
+
 // Settings defines model for Settings.
 type Settings struct {
 	Branch             *string       `json:"branch,omitempty"`
@@ -229,12 +338,25 @@ type Settings struct {
 // StackStatus defines model for StackStatus.
 type StackStatus map[string]map[string]ContainerStatus
 
+// StartLogsMessage defines model for StartLogsMessage.
+type StartLogsMessage struct {
+	PreviousLines int32 `json:"previousLines"`
+}
+
 // State defines model for State.
 type State struct {
 	Health      ContainerHealth  `json:"health"`
 	Initialized bool             `json:"initialized"`
 	NextDeploy  time.Time        `json:"nextDeploy"`
 	Status      DeploymentStatus `json:"status"`
+}
+
+// StateMessage defines model for StateMessage.
+type StateMessage struct {
+	Deployment Deployment       `json:"deployment"`
+	Health     ContainerHealth  `json:"health"`
+	NextDeploy time.Time        `json:"nextDeploy"`
+	Status     DeploymentStatus `json:"status"`
 }
 
 // User defines model for User.
@@ -290,6 +412,244 @@ type SettingsAPITestGitConnectionJSONRequestBody = GitCredentials
 
 // UserAPIChangePasswordJSONRequestBody defines body for UserAPIChangePassword for application/json ContentType.
 type UserAPIChangePasswordJSONRequestBody UserAPIChangePasswordJSONBody
+
+// AsClientMessageStartLogs returns the union data inside the ClientMessage as a ClientMessageStartLogs
+func (t ClientMessage) AsClientMessageStartLogs() (ClientMessageStartLogs, error) {
+	var body ClientMessageStartLogs
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClientMessageStartLogs overwrites any union data inside the ClientMessage as the provided ClientMessageStartLogs
+func (t *ClientMessage) FromClientMessageStartLogs(v ClientMessageStartLogs) error {
+	v.Kind = "startLogs"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClientMessageStartLogs performs a merge with any union data inside the ClientMessage, using the provided ClientMessageStartLogs
+func (t *ClientMessage) MergeClientMessageStartLogs(v ClientMessageStartLogs) error {
+	v.Kind = "startLogs"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClientMessageEndLogs returns the union data inside the ClientMessage as a ClientMessageEndLogs
+func (t ClientMessage) AsClientMessageEndLogs() (ClientMessageEndLogs, error) {
+	var body ClientMessageEndLogs
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClientMessageEndLogs overwrites any union data inside the ClientMessage as the provided ClientMessageEndLogs
+func (t *ClientMessage) FromClientMessageEndLogs(v ClientMessageEndLogs) error {
+	v.Kind = "endLogs"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClientMessageEndLogs performs a merge with any union data inside the ClientMessage, using the provided ClientMessageEndLogs
+func (t *ClientMessage) MergeClientMessageEndLogs(v ClientMessageEndLogs) error {
+	v.Kind = "endLogs"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ClientMessage) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"kind"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t ClientMessage) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "endLogs":
+		return t.AsClientMessageEndLogs()
+	case "startLogs":
+		return t.AsClientMessageStartLogs()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t ClientMessage) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ClientMessage) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsServerMessageState returns the union data inside the ServerMessage as a ServerMessageState
+func (t ServerMessage) AsServerMessageState() (ServerMessageState, error) {
+	var body ServerMessageState
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessageState overwrites any union data inside the ServerMessage as the provided ServerMessageState
+func (t *ServerMessage) FromServerMessageState(v ServerMessageState) error {
+	v.Kind = "state"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessageState performs a merge with any union data inside the ServerMessage, using the provided ServerMessageState
+func (t *ServerMessage) MergeServerMessageState(v ServerMessageState) error {
+	v.Kind = "state"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsServerMessageLog returns the union data inside the ServerMessage as a ServerMessageLog
+func (t ServerMessage) AsServerMessageLog() (ServerMessageLog, error) {
+	var body ServerMessageLog
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessageLog overwrites any union data inside the ServerMessage as the provided ServerMessageLog
+func (t *ServerMessage) FromServerMessageLog(v ServerMessageLog) error {
+	v.Kind = "log"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessageLog performs a merge with any union data inside the ServerMessage, using the provided ServerMessageLog
+func (t *ServerMessage) MergeServerMessageLog(v ServerMessageLog) error {
+	v.Kind = "log"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsServerMessagePreviousLogs returns the union data inside the ServerMessage as a ServerMessagePreviousLogs
+func (t ServerMessage) AsServerMessagePreviousLogs() (ServerMessagePreviousLogs, error) {
+	var body ServerMessagePreviousLogs
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessagePreviousLogs overwrites any union data inside the ServerMessage as the provided ServerMessagePreviousLogs
+func (t *ServerMessage) FromServerMessagePreviousLogs(v ServerMessagePreviousLogs) error {
+	v.Kind = "previousLogs"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessagePreviousLogs performs a merge with any union data inside the ServerMessage, using the provided ServerMessagePreviousLogs
+func (t *ServerMessage) MergeServerMessagePreviousLogs(v ServerMessagePreviousLogs) error {
+	v.Kind = "previousLogs"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsServerMessageNewDeployment returns the union data inside the ServerMessage as a ServerMessageNewDeployment
+func (t ServerMessage) AsServerMessageNewDeployment() (ServerMessageNewDeployment, error) {
+	var body ServerMessageNewDeployment
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessageNewDeployment overwrites any union data inside the ServerMessage as the provided ServerMessageNewDeployment
+func (t *ServerMessage) FromServerMessageNewDeployment(v ServerMessageNewDeployment) error {
+	v.Kind = "newDeployment"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessageNewDeployment performs a merge with any union data inside the ServerMessage, using the provided ServerMessageNewDeployment
+func (t *ServerMessage) MergeServerMessageNewDeployment(v ServerMessageNewDeployment) error {
+	v.Kind = "newDeployment"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ServerMessage) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"kind"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t ServerMessage) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "log":
+		return t.AsServerMessageLog()
+	case "newDeployment":
+		return t.AsServerMessageNewDeployment()
+	case "previousLogs":
+		return t.AsServerMessagePreviousLogs()
+	case "state":
+		return t.AsServerMessageState()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t ServerMessage) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ServerMessage) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -444,6 +804,9 @@ type ClientInterface interface {
 	UserAPIChangePasswordWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UserAPIChangePassword(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WebSocketConnect request
+	WebSocketConnect(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) AuthAPILoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -784,6 +1147,18 @@ func (c *Client) UserAPIChangePasswordWithBody(ctx context.Context, contentType 
 
 func (c *Client) UserAPIChangePassword(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUserAPIChangePasswordRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) WebSocketConnect(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWebSocketConnectRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1598,6 +1973,33 @@ func NewUserAPIChangePasswordRequestWithBody(server string, contentType string, 
 	return req, nil
 }
 
+// NewWebSocketConnectRequest generates requests for WebSocketConnect
+func NewWebSocketConnectRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/ws")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1721,6 +2123,9 @@ type ClientWithResponsesInterface interface {
 	UserAPIChangePasswordWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
 
 	UserAPIChangePasswordWithResponse(ctx context.Context, body UserAPIChangePasswordJSONRequestBody, reqEditors ...RequestEditorFn) (*UserAPIChangePasswordResponse, error)
+
+	// WebSocketConnectWithResponse request
+	WebSocketConnectWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WebSocketConnectResponse, error)
 }
 
 type AuthAPILoginResponse struct {
@@ -2256,6 +2661,27 @@ func (r UserAPIChangePasswordResponse) StatusCode() int {
 	return 0
 }
 
+type WebSocketConnectResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r WebSocketConnectResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WebSocketConnectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // AuthAPILoginWithBodyWithResponse request with arbitrary body returning *AuthAPILoginResponse
 func (c *ClientWithResponses) AuthAPILoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AuthAPILoginResponse, error) {
 	rsp, err := c.AuthAPILoginWithBody(ctx, contentType, body, reqEditors...)
@@ -2509,6 +2935,15 @@ func (c *ClientWithResponses) UserAPIChangePasswordWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseUserAPIChangePasswordResponse(rsp)
+}
+
+// WebSocketConnectWithResponse request returning *WebSocketConnectResponse
+func (c *ClientWithResponses) WebSocketConnectWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*WebSocketConnectResponse, error) {
+	rsp, err := c.WebSocketConnect(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWebSocketConnectResponse(rsp)
 }
 
 // ParseAuthAPILoginResponse parses an HTTP response from a AuthAPILoginWithResponse call
@@ -3262,6 +3697,22 @@ func ParseUserAPIChangePasswordResponse(rsp *http.Response) (*UserAPIChangePassw
 	return response, nil
 }
 
+// ParseWebSocketConnectResponse parses an HTTP response from a WebSocketConnectWithResponse call
+func ParseWebSocketConnectResponse(rsp *http.Response) (*WebSocketConnectResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WebSocketConnectResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -3333,6 +3784,9 @@ type ServerInterface interface {
 
 	// (POST /api/user/change-password)
 	UserAPIChangePassword(w http.ResponseWriter, r *http.Request)
+
+	// (GET /api/ws)
+	WebSocketConnect(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -3365,6 +3819,8 @@ func (siw *ServerInterfaceWrapper) AuthAPILogout(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3384,6 +3840,8 @@ func (siw *ServerInterfaceWrapper) AuthAPIRefresh(w http.ResponseWriter, r *http
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3433,6 +3891,8 @@ func (siw *ServerInterfaceWrapper) ConfigAPIGet(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3452,6 +3912,8 @@ func (siw *ServerInterfaceWrapper) ConfigAPISet(w http.ResponseWriter, r *http.R
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3474,6 +3936,8 @@ func (siw *ServerInterfaceWrapper) DeployementAPIList(w http.ResponseWriter, r *
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3521,6 +3985,8 @@ func (siw *ServerInterfaceWrapper) DeployementAPISync(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3552,6 +4018,8 @@ func (siw *ServerInterfaceWrapper) DeployementAPIRead(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3572,6 +4040,8 @@ func (siw *ServerInterfaceWrapper) DiffAPIGet(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3591,6 +4061,8 @@ func (siw *ServerInterfaceWrapper) FeaturesAPIGet(w http.ResponseWriter, r *http
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3613,6 +4085,8 @@ func (siw *ServerInterfaceWrapper) NotificationsAPIList(w http.ResponseWriter, r
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3723,6 +4197,8 @@ func (siw *ServerInterfaceWrapper) SettingsAPIGet(w http.ResponseWriter, r *http
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3742,6 +4218,8 @@ func (siw *ServerInterfaceWrapper) SettingsAPISet(w http.ResponseWriter, r *http
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3763,6 +4241,8 @@ func (siw *ServerInterfaceWrapper) SettingsAPITestGitConnection(w http.ResponseW
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3782,6 +4262,8 @@ func (siw *ServerInterfaceWrapper) StateAPIGet(w http.ResponseWriter, r *http.Re
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3803,6 +4285,8 @@ func (siw *ServerInterfaceWrapper) StatusAPIGet(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3822,6 +4306,8 @@ func (siw *ServerInterfaceWrapper) UserAPIDelete(w http.ResponseWriter, r *http.
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -3843,6 +4329,8 @@ func (siw *ServerInterfaceWrapper) UserAPIGet(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -3863,10 +4351,34 @@ func (siw *ServerInterfaceWrapper) UserAPIChangePassword(w http.ResponseWriter, 
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UserAPIChangePassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WebSocketConnect operation middleware
+func (siw *ServerInterfaceWrapper) WebSocketConnect(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, OpenIdConnectAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WebSocketConnect(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4019,6 +4531,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/user", wrapper.UserAPIDelete)
 	m.HandleFunc("GET "+options.BaseURL+"/api/user", wrapper.UserAPIGet)
 	m.HandleFunc("POST "+options.BaseURL+"/api/user/change-password", wrapper.UserAPIChangePassword)
+	m.HandleFunc("GET "+options.BaseURL+"/api/ws", wrapper.WebSocketConnect)
 
 	return m
 }
@@ -4689,6 +5202,29 @@ func (response UserAPIChangePassworddefaultJSONResponse) VisitUserAPIChangePassw
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type WebSocketConnectRequestObject struct {
+}
+
+type WebSocketConnectResponseObject interface {
+	VisitWebSocketConnectResponse(w http.ResponseWriter) error
+}
+
+type WebSocketConnect101Response struct {
+}
+
+func (response WebSocketConnect101Response) VisitWebSocketConnectResponse(w http.ResponseWriter) error {
+	w.WriteHeader(101)
+	return nil
+}
+
+type WebSocketConnect401Response struct {
+}
+
+func (response WebSocketConnect401Response) VisitWebSocketConnectResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -4760,6 +5296,9 @@ type StrictServerInterface interface {
 
 	// (POST /api/user/change-password)
 	UserAPIChangePassword(ctx context.Context, request UserAPIChangePasswordRequestObject) (UserAPIChangePasswordResponseObject, error)
+
+	// (GET /api/ws)
+	WebSocketConnect(ctx context.Context, request WebSocketConnectRequestObject) (WebSocketConnectResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -5386,6 +5925,30 @@ func (sh *strictHandler) UserAPIChangePassword(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UserAPIChangePasswordResponseObject); ok {
 		if err := validResponse.VisitUserAPIChangePasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WebSocketConnect operation middleware
+func (sh *strictHandler) WebSocketConnect(w http.ResponseWriter, r *http.Request) {
+	var request WebSocketConnectRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WebSocketConnect(ctx, request.(WebSocketConnectRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WebSocketConnect")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WebSocketConnectResponseObject); ok {
+		if err := validResponse.VisitWebSocketConnectResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

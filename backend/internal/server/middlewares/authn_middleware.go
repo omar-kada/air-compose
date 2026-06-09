@@ -83,6 +83,13 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Hand
 	})
 }
 
+// AuthnMiddlewareFunc returns an authentication middleware function.
+func AuthnMiddlewareFunc(authService users.AuthService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return AuthnMiddleware(next, authService)
+	}
+}
+
 var _whitelisted = map[string][]string{
 	"user": {"GET"},
 }
