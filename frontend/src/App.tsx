@@ -8,12 +8,13 @@ import {
   ErrorAlert,
   InitPage,
   LoginPage,
+  LogsPage,
   NavBar,
   RegisterPage,
   StatusPage,
   Topbar,
 } from './components';
-import { getStateQueryOptions, useRegisteration, useUser } from './hooks';
+import { getStateQueryOptions, useRegisteration, useUser, WebSocketProvider } from './hooks';
 import { cn, ROUTES } from './lib';
 
 function RouteBasedTopBar({ children }: { children: ReactNode }) {
@@ -78,21 +79,29 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  const { data: user, isPending: userPending } = useUser();
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProtocol}//${window.location.host}/api/ws`;
+  const wsEnabled = !userPending && !!user;
+
   return (
     <BrowserRouter>
-      <RouteBasedTopBar>
-        <Routes>
-          <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.DEPLOYMENTS}></Navigate>} />
-          <Route path={ROUTES.INIT} element={<InitPage />} />
-          <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-          <Route path={ROUTES.DEPLOYMENTS} element={<DeploymentsPage />} />
-          <Route path={ROUTES.DEPLOYMENT(':id')} element={<DeploymentsPage />} />
-          <Route path={ROUTES.STATUS} element={<StatusPage />} />
-          <Route path={ROUTES.LOGS} element={<div> logs </div>} />
-          <Route path={ROUTES.CONFIG} element={<ConfigPage />} />
-        </Routes>
-      </RouteBasedTopBar>
+      <WebSocketProvider url={wsUrl} enabled={wsEnabled}>
+        <RouteBasedTopBar>
+          <Routes>
+            <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.DEPLOYMENTS}></Navigate>} />
+            <Route path={ROUTES.INIT} element={<InitPage />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.DEPLOYMENTS} element={<DeploymentsPage />} />
+            <Route path={ROUTES.DEPLOYMENT(':id')} element={<DeploymentsPage />} />
+            <Route path={ROUTES.STATUS} element={<StatusPage />} />
+            <Route path={ROUTES.LOGS} element={<LogsPage />} />
+            <Route path={ROUTES.CONFIG} element={<ConfigPage />} />
+            <Route path="*" element={<Navigate to={ROUTES.ROOT} />} />
+          </Routes>
+        </RouteBasedTopBar>
+      </WebSocketProvider>
     </BrowserRouter>
   );
 }

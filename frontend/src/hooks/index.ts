@@ -1,4 +1,5 @@
 export * from './settings';
+export * from './socket';
 export * from './stacks';
 export * from './theme-provider';
 export * from './use-filtered-error';

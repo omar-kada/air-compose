@@ -29,16 +29,20 @@ type Server interface {
 
 // HTTPServer is responsible for listening and mapping http requests
 type HTTPServer struct {
-	websocketHandler *WebsocketHandler
-
 	server *http.Server
 }
 
 // NewServer creates a new http server
 func NewServer() Server {
-	return &HTTPServer{
-		websocketHandler: newWebsocketHandler(),
+	return &HTTPServer{}
+}
+
+// applyMiddlewares applies a list of middlewares to a handler
+func applyMiddlewares(h http.Handler, mws ...func(http.Handler) http.Handler) http.Handler {
+	for i := len(mws) - 1; i >= 0; i-- {
+		h = mws[i](h)
 	}
+	return h
 }
 
 // Serve initializes routes from generated api and serves on the given port
@@ -47,22 +51,16 @@ func (s *HTTPServer) Serve(
 	businessHandler api.StrictServerInterface,
 	userSvc users.Service,
 	oidcSvc users.OidcService,
+	// add clientEventsService
 ) error {
 	// Create a new serve mux
 	mux := http.NewServeMux()
 
-	// Add frontend file server
-	mux.HandleFunc("/ws", s.websocketHandler.handle)
+	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
+	mux.HandleFunc("/api/ws", webSocketHandler)
+	mux.Handle("/api/", api.Handler(strict))
 	mux.HandleFunc("/", spaHandler)
 
-	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
-
-	// get an `http.Handler` that we can use
-	h := api.HandlerFromMux(strict, mux)
-	h = middlewares.AuthorizationMiddleware(h)
-	h = middlewares.AuthnMiddleware(h, userSvc)
-	h = middlewares.OidcMiddleware(h, oidcSvc)
 	// Set up the CORS filter
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
@@ -71,19 +69,14 @@ func (s *HTTPServer) Serve(
 		AllowCredentials: true,
 	})
 
-	// Use the CORS filter as a middleware
-	h = c.Handler(h)
-
-	// api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
-	// 	BaseRouter: mux,
-	// 	Middlewares: []api.MiddlewareFunc{
-	// 		s.checkUsersMiddleware,
-	// 		c.Handler,
-	// 		loggingMiddleware,
-	// 	},
-	// })
 	s.server = &http.Server{
-		Handler:           middlewares.LoggingMiddleware(h),
+		Handler: applyMiddlewares(mux,
+			middlewares.LoggingMiddleware,
+			c.Handler,
+			middlewares.OidcMiddlewareFunc(oidcSvc),
+			middlewares.AuthnMiddlewareFunc(userSvc),
+			middlewares.AuthorizationMiddleware,
+		),
 		Addr:              ":" + strconv.Itoa(params.Port),
 		ReadHeaderTimeout: 3 * time.Second,
 	}

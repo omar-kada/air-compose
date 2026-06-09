@@ -9,6 +9,7 @@ import "./features/settings.tsp";
 import "./features/state.tsp";
 import "./features/status.tsp";
 import "./features/user.tsp";
+import "./features/socket.tsp";
 
 using Http;
 using Versioning;
@@ -16,7 +17,7 @@ using Versioning;
 @service(#{ title: "AirCompose API" })
 @versioned(Versions)
 @route("/api")
-@useAuth(BearerAuth /*| OpenIdConnectAuth<"">*/)
+@useAuth(BearerAuth | OpenIdConnectAuth<"*">)
 namespace AirComposeService;
 
 enum Versions {
