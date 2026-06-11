@@ -11,6 +11,7 @@ import (
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/middlewares"
+	"omar-kada/air-compose/internal/server/socket"
 	"omar-kada/air-compose/internal/users"
 
 	"github.com/rs/cors"
@@ -57,7 +58,7 @@ func (s *HTTPServer) Serve(
 	mux := http.NewServeMux()
 
 	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
-	mux.HandleFunc("/api/ws", webSocketHandler)
+	mux.HandleFunc("/api/ws", socket.WebSocketHandler)
 	mux.Handle("/api/", api.Handler(strict))
 	mux.HandleFunc("/", spaHandler)
 

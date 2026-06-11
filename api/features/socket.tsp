@@ -54,4 +54,5 @@ union ServerMessage {
     log: LogLine,
     previousLogs: LogMessages,
     newDeployment: Deployment,
+    error: Error,
 }

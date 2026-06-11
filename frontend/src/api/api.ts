@@ -288,7 +288,19 @@ export interface ServerMessageNewDeployment {
   value: Deployment;
 }
 
-export type ServerMessage = ServerMessageState | ServerMessageLog | ServerMessagePreviousLogs | ServerMessageNewDeployment;
+export type ServerMessageErrorKind = typeof ServerMessageErrorKind[keyof typeof ServerMessageErrorKind];
+
+
+export const ServerMessageErrorKind = {
+  error: 'error',
+} as const;
+
+export interface ServerMessageError {
+  kind: ServerMessageErrorKind;
+  value: Error;
+}
+
+export type ServerMessage = ServerMessageState | ServerMessageLog | ServerMessagePreviousLogs | ServerMessageNewDeployment | ServerMessageError;
 
 export interface Settings {
   repo: string;
