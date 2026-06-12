@@ -1,10 +1,11 @@
-package server
+package socket
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"omar-kada/air-compose/api"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,7 @@ import (
 
 func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	// Convert http:// to ws://
@@ -32,7 +33,7 @@ func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 }
 
 func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -75,7 +76,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 
 func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -85,9 +86,9 @@ func TestWebSocketHandlerMessageParsing(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	// Send a test message with envelope structure
-	testMsg := map[string]interface{}{
+	testMsg := map[string]any{
 		"kind":  "unknown_type",
-		"value": map[string]interface{}{},
+		"value": map[string]any{},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -95,11 +96,17 @@ func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
 	err = wsjson.Write(ctx, conn, testMsg)
 	assert.NoError(t, err)
+
+	var msg api.ServerMessage
+	err = wsjson.Read(ctx, conn, &msg)
+	assert.NoError(t, err)
+	kind, _ := msg.Discriminator()
+	assert.Equal(t, string(api.ServerMessageErrorKindError), kind)
 }
 
 func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -115,14 +122,14 @@ func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	var msg interface{}
+	var msg any
 	err = wsjson.Read(ctx, conn, &msg)
 	assert.Error(t, err)
 }
 
 func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -132,9 +139,9 @@ func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	// Send a properly structured message
-	testMsg := map[string]interface{}{
+	testMsg := map[string]any{
 		"kind": "startLogs",
-		"value": map[string]interface{}{
+		"value": map[string]any{
 			"previousLines": 10,
 		},
 	}
@@ -148,7 +155,7 @@ func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
 func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -168,7 +175,7 @@ func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 	// Connection should close due to invalid envelope
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel2()
-	var msg interface{}
+	var msg any
 	err = wsjson.Read(ctx2, conn, &msg)
 	// Should eventually get an error as connection closes
 	assert.Error(t, err)
@@ -176,7 +183,7 @@ func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
 func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -186,7 +193,7 @@ func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	// Send an unproperly structured message
-	testMsg := map[string]interface{}{
+	testMsg := map[string]any{
 		"invalid": "invalid",
 		"value":   "",
 	}
@@ -199,15 +206,17 @@ func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 	// Connection should close due to invalid envelope
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel2()
-	var msg interface{}
+
+	var msg api.ServerMessage
 	err = wsjson.Read(ctx2, conn, &msg)
-	// Should eventually get an error as connection closes
-	assert.Error(t, err)
+	assert.NoError(t, err)
+	kind, _ := msg.Discriminator()
+	assert.Equal(t, string(api.ServerMessageErrorKindError), kind)
 }
 
 func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -217,7 +226,7 @@ func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	// Send endLogs message
-	testMsg := map[string]interface{}{
+	testMsg := map[string]any{
 		"kind":  "endLogs",
 		"value": "",
 	}
@@ -231,7 +240,7 @@ func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
 func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -262,7 +271,7 @@ func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
 func TestWebSocketHandlerMultipleMessages(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -272,18 +281,18 @@ func TestWebSocketHandlerMultipleMessages(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
 	// Send multiple messages
-	messages := []map[string]interface{}{
+	messages := []map[string]any{
 		{
 			"kind":  "unknown1",
-			"value": map[string]interface{}{},
+			"value": map[string]any{},
 		},
 		{
 			"kind":  "unknown2",
-			"value": map[string]interface{}{},
+			"value": map[string]any{},
 		},
 		{
 			"kind":  "endLogs",
-			"value": map[string]interface{}{},
+			"value": map[string]any{},
 		},
 	}
 
@@ -321,7 +330,7 @@ func TestWebSocketHandlerMessageEnvelopeStructure(t *testing.T) {
 
 func TestWebSocketHandlerContextCancellation(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(webSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -337,7 +346,7 @@ func TestWebSocketHandlerContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	var msg interface{}
+	var msg any
 	err = wsjson.Read(ctx, conn, &msg)
 	assert.Error(t, err)
 }

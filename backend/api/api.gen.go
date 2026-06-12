@@ -88,6 +88,11 @@ const (
 	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 )
 
+// Defines values for ServerMessageErrorKind.
+const (
+	ServerMessageErrorKindError ServerMessageErrorKind = "error"
+)
+
 // Defines values for ServerMessageLogKind.
 const (
 	ServerMessageLogKindLog ServerMessageLogKind = "log"
@@ -285,6 +290,15 @@ type RegistrationInfo struct {
 type ServerMessage struct {
 	union json.RawMessage
 }
+
+// ServerMessageError defines model for ServerMessageError.
+type ServerMessageError struct {
+	Kind  ServerMessageErrorKind `json:"kind"`
+	Value Error                  `json:"value"`
+}
+
+// ServerMessageErrorKind defines model for ServerMessageError.Kind.
+type ServerMessageErrorKind string
 
 // ServerMessageLog defines model for ServerMessageLog.
 type ServerMessageLog struct {
@@ -614,6 +628,34 @@ func (t *ServerMessage) MergeServerMessageNewDeployment(v ServerMessageNewDeploy
 	return err
 }
 
+// AsServerMessageError returns the union data inside the ServerMessage as a ServerMessageError
+func (t ServerMessage) AsServerMessageError() (ServerMessageError, error) {
+	var body ServerMessageError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessageError overwrites any union data inside the ServerMessage as the provided ServerMessageError
+func (t *ServerMessage) FromServerMessageError(v ServerMessageError) error {
+	v.Kind = "error"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessageError performs a merge with any union data inside the ServerMessage, using the provided ServerMessageError
+func (t *ServerMessage) MergeServerMessageError(v ServerMessageError) error {
+	v.Kind = "error"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 func (t ServerMessage) Discriminator() (string, error) {
 	var discriminator struct {
 		Discriminator string `json:"kind"`
@@ -628,6 +670,8 @@ func (t ServerMessage) ValueByDiscriminator() (interface{}, error) {
 		return nil, err
 	}
 	switch discriminator {
+	case "error":
+		return t.AsServerMessageError()
 	case "log":
 		return t.AsServerMessageLog()
 	case "newDeployment":
