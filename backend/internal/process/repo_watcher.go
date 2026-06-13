@@ -23,7 +23,7 @@ type watcher struct {
 	fetcher           git.Fetcher
 	configStore       config.Store
 	deploymentService DeploymentService
-	dispatcher        events.Dispatcher
+	eventPublisher    events.Publisher
 
 	scheduler CronScheduler
 }
@@ -33,14 +33,14 @@ func NewRepoWatcher(
 	fetcher git.Fetcher,
 	configStore config.Store,
 	deploymentService DeploymentService,
-	dispatcher events.Dispatcher,
+	eventPublisher events.Publisher,
 	scheduler CronScheduler,
 ) RepoWatcher {
 	return &watcher{
 		fetcher:           fetcher,
 		configStore:       configStore,
 		deploymentService: deploymentService,
-		dispatcher:        dispatcher,
+		eventPublisher:    eventPublisher,
 		scheduler:         scheduler,
 	}
 }
@@ -60,7 +60,7 @@ func (w *watcher) DeployOnChange() {
 		slog.Debug("Configuration and repository are up to date. No changes detected.")
 		return
 	}
-	w.dispatcher.Dispatch(context.Background(), models.EventNewCommit, patch.Title)
+	w.eventPublisher.Publish(context.Background(), models.NewNewCommitEvent(patch))
 	_, err = w.deploymentService.DoDeploy(DeploymentTriggerRepoUpdated, patch)
 	if err != nil {
 		slog.Error("error deploying on new commit", "err", err)

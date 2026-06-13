@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/testutil"
 	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/moby/moby/api/types/container"
@@ -16,18 +16,12 @@ import (
 )
 
 func newInspectorWithMock(t *testing.T, client Client, mockExec shell.Executor, servicesDir string) *inspector {
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
-	if err != nil {
-		t.Fatal("error creating config store ", err)
-	}
-	err = configStore.Update(models.Config{
+	t.Helper()
+	configStore := testutil.NewConfigGetter(models.Config{
 		Services: map[string]models.ServiceConfig{
 			"service1": {},
 		},
 	})
-	if err != nil {
-		t.Fatal("error updating config", err)
-	}
 	return &inspector{
 		dockerClient: client,
 		executor:     mockExec,
@@ -248,4 +242,75 @@ func TestGetCurrentStacksState(t *testing.T) {
 		assert.NotContains(t, result["service3"], "container1")
 	})
 
+}
+
+func TestParseHealthStatus(t *testing.T) {
+	testCases := []struct {
+		name           string
+		status         string
+		state          models.ContainerState
+		expectedHealth models.ContainerHealth
+	}{
+		{
+			name:           "healthy container",
+			status:         "Up 1 hour (healthy)",
+			state:          models.StateRunning,
+			expectedHealth: models.ContainerHealthy,
+		},
+		{
+			name:           "unhealthy container",
+			status:         "Up 1 hour (unhealthy)",
+			state:          models.StateRunning,
+			expectedHealth: models.ContainerUnhealthy,
+		},
+		{
+			name:           "starting container",
+			status:         "Up 1 hour (health: starting)",
+			state:          models.StateRunning,
+			expectedHealth: models.ContainerStarting,
+		},
+		{
+			name:           "dead container",
+			status:         "Exited (0) 2 hours ago",
+			state:          models.StateDead,
+			expectedHealth: models.ContainerUnhealthy,
+		},
+		{
+			name:           "exited container",
+			status:         "Exited (0) 2 hours ago",
+			state:          models.StateExited,
+			expectedHealth: models.ContainerUnhealthy,
+		},
+		{
+			name:           "removing container",
+			status:         "Removing",
+			state:          models.StateRemoving,
+			expectedHealth: models.ContainerUnhealthy,
+		},
+		{
+			name:           "paused container",
+			status:         "Paused",
+			state:          models.StatePaused,
+			expectedHealth: models.ContainerUnhealthy,
+		},
+		{
+			name:           "running container with no health status",
+			status:         "Up 1 hour",
+			state:          models.StateRunning,
+			expectedHealth: models.ContainerNoHealth,
+		},
+		{
+			name:           "created container",
+			status:         "Created",
+			state:          models.StateCreated,
+			expectedHealth: models.ContainerNoHealth,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			health := parseHealthStatus(tc.status, tc.state)
+			assert.Equal(t, tc.expectedHealth, health)
+		})
+	}
 }

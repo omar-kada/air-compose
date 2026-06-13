@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sync"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
@@ -49,15 +48,15 @@ func NewDeploymentService(
 	containersDeployer docker.Deployer,
 	fetcher git.Fetcher,
 	store deployments.DeploymentStorage,
-	configStore config.Store,
-	dispatcher events.Dispatcher,
+	configStore models.ConfigGetter,
+	eventPublisher events.Publisher,
 ) DeploymentService {
 	return &service{
 		containersDeployer: containersDeployer,
 		fetcher:            fetcher,
 		store:              store,
 		configStore:        configStore,
-		dispatcher:         dispatcher,
+		eventPublisher:     eventPublisher,
 		params:             deployParams,
 		currentCfg:         configStore.Get(),
 	}
@@ -68,8 +67,8 @@ type service struct {
 	containersDeployer docker.Deployer
 	fetcher            git.Fetcher
 	store              deployments.DeploymentStorage
-	configStore        config.Store
-	dispatcher         events.Dispatcher
+	configStore        models.ConfigGetter
+	eventPublisher     events.Publisher
 	params             models.DeploymentParams
 
 	currentCfg models.Config
@@ -90,31 +89,35 @@ func (s *service) DoDeploy(trigger DeploymentTrigger, patch models.Patch) (model
 
 	deployment, err := s.store.InitDeployment(title, patch, newCfg.Settings.Git)
 	if err != nil {
-		s.dispatcher.Dispatch(context.Background(), models.EventError, err.Error())
+		s.eventPublisher.Publish(context.Background(),
+			models.SourceEvent{Type: models.EventError, Msg: err.Error()})
 		return deployment, err
 	}
 	go func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-
-		ctx := events.GetDeploymentContext(context.Background(), deployment)
-		s.dispatcher.Dispatch(ctx, models.EventDeploymentStarted, "")
-		err := s.fetcher.PullBranch(WorkingBranch, "")
-		if err != nil {
+		ctx := models.GetDeploymentContext(context.Background(), deployment)
+		var err error
+		defer func() {
+			// always update the deployment to success or error
 			s.updateDeploymentStatus(ctx, deployment, err)
+		}()
+
+		s.eventPublisher.Publish(ctx, models.SourceEvent{Type: models.EventDeploymentStarted})
+		err = s.fetcher.PullBranch(WorkingBranch, "")
+		if err != nil {
 			return
 		}
-		s.dispatcher.Dispatch(ctx, models.EventMisc, "Pulled new changes into working branch")
+		s.eventPublisher.Publish(ctx,
+			models.SourceEvent{Type: models.EventMisc, Msg: "Pulled new changes into working branch"})
 
 		err = s.containersDeployer.WithCtx(ctx).RemoveAndDeployStacks(s.currentCfg, newCfg, s.params)
 		if err != nil {
-			s.updateDeploymentStatus(ctx, deployment, err)
 			return
 		}
 		s.currentCfg = newCfg
 
 		err = s.fetcher.PullBranch(newCfg.GetBranch(), patch.CommitHash)
-		s.updateDeploymentStatus(ctx, deployment, err)
 	}()
 	return deployment, err
 }
@@ -136,10 +139,10 @@ func getTitleFromTrigger(trigger DeploymentTrigger) string {
 
 func (s *service) updateDeploymentStatus(ctx context.Context, deployment models.Deployment, err error) {
 	if err != nil {
-		s.dispatcher.Dispatch(ctx, models.EventDeploymentError, err.Error())
+		s.eventPublisher.Publish(ctx, models.SourceEvent{Type: models.EventDeploymentError, Msg: err.Error()})
 		s.store.EndDeployment(deployment.ID, models.DeploymentStatusError)
 	} else {
-		s.dispatcher.Dispatch(ctx, models.EventDeploymentSuccess, "")
+		s.eventPublisher.Publish(ctx, models.SourceEvent{Type: models.EventDeploymentSuccess})
 		s.store.EndDeployment(deployment.ID, models.DeploymentStatusSuccess)
 	}
 }

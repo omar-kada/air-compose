@@ -1,8 +1,8 @@
 package process
 
 import (
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/testutil"
 	"testing"
 	"time"
 
@@ -21,18 +21,6 @@ func (m *MockDeploymentService) DoDeploy(trigger DeploymentTrigger, patch models
 	return args.Get(0).(models.Deployment), args.Error(1)
 }
 
-func newConfigStore(t *testing.T, cfg models.Config) config.Store {
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
-	if err != nil {
-		t.Fatal("error while creating configStore", err)
-	}
-	err = configStore.Update(cfg)
-	if err != nil {
-		t.Fatal("error updating config", err)
-	}
-	return configStore
-}
-
 func TestHandleHealthCheck_Unhealthy(t *testing.T) {
 	// Set up the mock config
 	mockConfig := models.Config{
@@ -43,7 +31,7 @@ func TestHandleHealthCheck_Unhealthy(t *testing.T) {
 		},
 	}
 	// Create mocks
-	configStore := newConfigStore(t, mockConfig)
+	configStore := testutil.NewConfigGetter(mockConfig)
 	mockDeploymentService := new(MockDeploymentService)
 	// Create a channel for health checks
 	healthCheckChan := make(chan models.ContainerHealth)
@@ -77,7 +65,7 @@ func TestHandleHealthCheck_MaxRetriesReached(t *testing.T) {
 		},
 	}
 	// Create mocks
-	configStore := newConfigStore(t, mockConfig)
+	configStore := testutil.NewConfigGetter(mockConfig)
 	mockDeploymentService := new(MockDeploymentService)
 
 	// Create a channel for health checks
@@ -107,7 +95,7 @@ func TestHandleHealthCheck_MaxRetriesReached(t *testing.T) {
 
 func TestHandleHealthCheck_Healthy(t *testing.T) {
 	// Create mocks
-	configStore := newConfigStore(t, models.Config{})
+	configStore := testutil.NewConfigGetter(models.Config{})
 	mockDeploymentService := new(MockDeploymentService)
 
 	// Create a channel for health checks
@@ -132,7 +120,7 @@ func TestHandleHealthCheck_Healthy(t *testing.T) {
 
 func TestResetRetries(t *testing.T) {
 	// Create mocks
-	configStore := newConfigStore(t, models.Config{})
+	configStore := testutil.NewConfigGetter(models.Config{})
 	mockDeploymentService := new(MockDeploymentService)
 
 	// Create a channel for health checks

@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
@@ -25,7 +24,7 @@ type DeploymentHandler struct {
 	processService  process.DeploymentService
 	deploymentStore deployments.DeploymentStorage
 	eventStore      events.EventStorage
-	configStore     config.Store
+	configStore     models.ConfigGetter
 	fetcher         git.Fetcher
 	inspector       docker.Inspector
 	watcher         process.RepoWatcher

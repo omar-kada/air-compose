@@ -37,7 +37,7 @@ func (e cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 	slog.Debug("[CMD] " + fullCmd)
 	c := execCommand(path, args...)
 	if e.showLogs {
-		c.Stderr = events.NewSlogWriter(slog.LevelDebug, cmd+"(error)")
+		c.Stderr = events.NewSlogWriter(slog.LevelDebug, "[CMD] "+cmd+"(error)")
 	}
 
 	out, err := c.Output()

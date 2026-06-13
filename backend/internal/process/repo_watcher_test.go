@@ -1,13 +1,11 @@
 package process
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"omar-kada/air-compose/internal/config"
-	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil/mocks"
 
@@ -19,9 +17,9 @@ import (
 type Mock struct {
 	mock.Mock
 	mocks.Fetcher
+	mocks.EventPublisher
 	config.Store
 	DeploymentService
-	events.Dispatcher
 	CronScheduler
 }
 
@@ -33,10 +31,6 @@ func (m *Mock) Get() models.Config {
 func (m *Mock) DoDeploy(trigger DeploymentTrigger, patch models.Patch) (models.Deployment, error) {
 	args := m.Called(trigger, patch)
 	return args.Get(0).(models.Deployment), args.Error(1)
-}
-
-func (m *Mock) Dispatch(ctx context.Context, event models.EventType, payload string) {
-	m.Called(ctx, event, payload)
 }
 
 func (m *Mock) Schedule(fn func(), spec string) (*cron.Cron, error) {
@@ -59,7 +53,7 @@ func TestDeployOnChange_Success(t *testing.T) {
 	}
 	m.Fetcher.On("IsRemoteSameAsConfig").Return(true, nil)
 	m.Fetcher.On("DiffWithRemote").Return(patch, nil)
-	m.On("Dispatch", mock.Anything, models.EventNewCommit, patch.Title).Return(nil)
+	m.EventPublisher.On("Publish", mock.Anything, models.NewNewCommitEvent(patch)).Return()
 	m.On("DoDeploy", DeploymentTriggerRepoUpdated, patch).Return(models.Deployment{}, nil)
 
 	w.DeployOnChange()
@@ -76,7 +70,7 @@ func TestDeployOnChange_NoRepo(t *testing.T) {
 	}
 	m.Fetcher.On("IsRemoteSameAsConfig").Return(false, nil)
 	m.Fetcher.On("DiffWithRemote").Return(patch, nil)
-	m.On("Dispatch", mock.Anything, models.EventNewCommit, patch.Title).Return(nil)
+	m.EventPublisher.On("Publish", mock.Anything, models.NewNewCommitEvent(patch)).Return()
 	m.On("DoDeploy", DeploymentTriggerRepoUpdated, patch).Return(models.Deployment{}, nil)
 
 	w.DeployOnChange()
@@ -122,7 +116,7 @@ func TestDeployOnChange_DeployError(t *testing.T) {
 	}
 	m.Fetcher.On("IsRemoteSameAsConfig").Return(true, nil)
 	m.Fetcher.On("DiffWithRemote").Return(patch, nil)
-	m.On("Dispatch", mock.Anything, models.EventNewCommit, patch.Title).Return(nil)
+	m.EventPublisher.On("Publish", mock.Anything, models.NewNewCommitEvent(patch)).Return()
 	errDeploy := errors.New("deploy error")
 	m.On("DoDeploy", DeploymentTriggerRepoUpdated, patch).Return(models.Deployment{}, errDeploy)
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil"
 
@@ -22,19 +21,6 @@ var mockConfig = models.Config{
 			Branch: "main",
 		},
 	},
-}
-
-func configStoreWith(t *testing.T, cfg models.Config) config.Store {
-	t.Helper()
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
-	if err != nil {
-		t.Fatal("error while creating config store", err)
-	}
-	err = configStore.Update(cfg)
-	if err != nil {
-		t.Fatal("error while updating config", err)
-	}
-	return configStore
 }
 
 var (
@@ -64,7 +50,7 @@ func assertFileContent(t *testing.T, filePath string, wantContent string) {
 }
 
 func TestClearRepo(t *testing.T) {
-	fetcher := NewFetcher(os.FileMode(0o000), t.TempDir()+"/clone-repo", configStoreWith(t, mockConfig))
+	fetcher := NewFetcher(os.FileMode(0o000), t.TempDir()+"/clone-repo", testutil.NewConfigGetter(mockConfig))
 
 	err := fetcher.ClearRepo()
 	assert.NoError(t, err)
@@ -80,7 +66,7 @@ func TestPullBranch(t *testing.T) {
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Git.Repo = remoteRepoPath
 	clonePath := t.TempDir() + "/clone-repo"
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 
@@ -95,7 +81,7 @@ func TestDiffWithRemote(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Git.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
 
 	// Initial pull to set up the repo
 	err := fetcher.PullBranch("main", "")
@@ -125,7 +111,7 @@ func TestDiffWithRemote_NoChanges(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Git.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, mockConfig))
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
 
 	err := fetcher.PullBranch("main", "")
 	assert.NoError(t, err)
@@ -139,7 +125,7 @@ func TestDiffWithRemote_NoChanges(t *testing.T) {
 func TestPullBranch_NonExistentRepo(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 
-	fetcher := NewFetcher(os.FileMode(0o000), clonePath, configStoreWith(t, models.Config{
+	fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(models.Config{
 		Settings: models.Settings{
 			Git: models.GitConfig{
 				Repo:   "/path/does/not/exist",
@@ -155,7 +141,7 @@ func TestFetch_WithAddPermissions(t *testing.T) {
 	clonePath := t.TempDir() + "/clone-repo"
 	remoteRepoPath := testutil.SetupRemoteRepo(t)
 	mockConfig.Settings.Git.Repo = remoteRepoPath
-	fetcher := NewFetcher(os.FileMode(0o755), clonePath, configStoreWith(t, mockConfig))
+	fetcher := NewFetcher(os.FileMode(0o755), clonePath, testutil.NewConfigGetter(mockConfig))
 
 	testutil.AddCommitToRepo(t, remoteRepoPath, "README.md", []byte("dummy readme"))
 
@@ -173,7 +159,7 @@ func TestFetch_WithAddPermissions(t *testing.T) {
 func TestTestGitConnection(t *testing.T) {
 	t.Run("successful connection", func(t *testing.T) {
 		remoteRepoPath := testutil.SetupRemoteRepo(t)
-		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), testutil.NewConfigGetter(mockConfig))
 
 		success, err := fetcher.TestGitConnection(remoteRepoPath, "main", "", "")
 		assert.NoError(t, err)
@@ -181,7 +167,7 @@ func TestTestGitConnection(t *testing.T) {
 	})
 
 	t.Run("failed connection", func(t *testing.T) {
-		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), testutil.NewConfigGetter(mockConfig))
 
 		success, err := fetcher.TestGitConnection("invalid-repo-url", "main", "", "")
 		assert.Error(t, err)
@@ -192,10 +178,71 @@ func TestTestGitConnection(t *testing.T) {
 		remoteRepoPath := testutil.SetupRemoteRepo(t)
 		mockConfig.Settings.Git.Username = "testuser"
 		mockConfig.Settings.Git.Token = "testtoken"
-		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), configStoreWith(t, mockConfig))
+		fetcher := NewFetcher(os.FileMode(0o000), t.TempDir(), testutil.NewConfigGetter(mockConfig))
 
 		success, err := fetcher.TestGitConnection(remoteRepoPath, "main", "testuser", "testtoken")
 		assert.NoError(t, err)
 		assert.True(t, success)
+	})
+}
+func TestIsRemoteSameAsConfig(t *testing.T) {
+	t.Run("repo does not exist", func(t *testing.T) {
+		clonePath := t.TempDir() + "/clone-repo"
+		fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
+
+		same, err := fetcher.IsRemoteSameAsConfig()
+		assert.NoError(t, err)
+		assert.False(t, same)
+	})
+
+	t.Run("repo exists with matching remote", func(t *testing.T) {
+		remoteRepoPath := testutil.SetupRemoteRepo(t)
+		clonePath := t.TempDir() + "/clone-repo"
+		mockConfig.Settings.Git.Repo = remoteRepoPath
+		fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
+
+		// Clone the repo first
+		_, err := git.PlainClone(clonePath, &git.CloneOptions{
+			URL: remoteRepoPath,
+		})
+		require.NoError(t, err)
+
+		same, err := fetcher.IsRemoteSameAsConfig()
+		assert.NoError(t, err)
+		assert.True(t, same)
+	})
+
+	t.Run("repo exists with different remote", func(t *testing.T) {
+		remoteRepoPath := testutil.SetupRemoteRepo(t)
+		clonePath := t.TempDir() + "/clone-repo"
+		mockConfig.Settings.Git.Repo = "https://github.com/different/repo.git"
+		fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
+
+		// Clone the repo first
+		_, err := git.PlainClone(clonePath, &git.CloneOptions{
+			URL: remoteRepoPath,
+		})
+		require.NoError(t, err)
+
+		same, err := fetcher.IsRemoteSameAsConfig()
+		assert.NoError(t, err)
+		assert.False(t, same)
+	})
+
+	t.Run("repo exists with no remote URLs", func(t *testing.T) {
+		clonePath := t.TempDir() + "/clone-repo"
+		// Create a bare repo without any remotes
+		_, err := git.PlainInit(clonePath, true)
+		require.NoError(t, err)
+
+		// Create .git folder
+		err = os.MkdirAll(clonePath+"/.git", 0o700)
+		require.NoError(t, err)
+		mockConfig.Settings.Git.Repo = ""
+		fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
+
+		same, err := fetcher.IsRemoteSameAsConfig()
+		assert.Error(t, err)
+		assert.False(t, same)
 	})
 }

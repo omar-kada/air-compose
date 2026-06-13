@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os/signal"
+	"syscall"
 
 	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
@@ -63,6 +65,9 @@ func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*g
 }
 
 func (run *runCommand) doRun() error {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	params := getParamsWithDefaults(run.params)
 	slog.Debug("running params : ", "params", params)
 
@@ -92,18 +97,11 @@ func (run *runCommand) doRun() error {
 		return fmt.Errorf("couldn't init AuthStorage %w", err)
 	}
 
-	configStore, err := config.NewConfigStore(params.ConfigFile)
+	eventBus := events.NewBus(10)
+	configStore, err := config.NewConfigStore(params.ConfigFile, eventBus)
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
 	}
-	err = configStore.WatchFile()
-	if err != nil {
-		slog.Error("error watching config file", "err", err)
-	}
-	dispatcher := events.NewDefaultDispatcher([]events.Handler{
-		events.NewLoggingEventHandler(),
-		events.NewNotificationEventHandler(configStore, eventStore),
-	})
 
 	inspector, err := docker.NewInspector(params.ServicesDir, configStore)
 	if err != nil {
@@ -113,41 +111,64 @@ func (run *runCommand) doRun() error {
 	fetcher := git.NewFetcher(params.GetAddWritePerm(), params.GetRepoDir(), configStore)
 	deploymentService := process.NewDeploymentService(
 		params.DeploymentParams,
-		docker.NewDeployer(dispatcher, run.executor),
+		docker.NewDeployer(eventBus, run.executor),
 		fetcher,
 		deploymentStore,
 		configStore,
-		dispatcher)
-	dispatcher.AddHandler(process.NewConfigurationUpdatedHandler(deploymentService))
-	watcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, dispatcher, process.NewCronScheduler())
-	go func() {
-		_, err := watcher.Schedule()
-		if err != nil {
-			slog.Error("error scheduling polling job", "err", err)
-			dispatcher.Dispatch(context.Background(), models.EventError,
-				fmt.Sprintf("failed to schedule repo polling %v", err))
-		}
-	}()
+		eventBus)
+	eventBus.Register(process.NewConfigurationUpdatedHandler(deploymentService))
 
-	healthChecker := docker.NewHealthChecker(configStore, inspector, dispatcher)
-	go healthChecker.ScheduleStateRefresh(context.Background())
-	healthHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
+	repoWatcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, eventBus, process.NewCronScheduler())
+	healthChecker := docker.NewHealthChecker(configStore, inspector, eventBus)
+	healthTransitionHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
 
 	oidcService := users.NewOidcService(configStore, authStore)
 	userService := users.NewService(authStore)
 
-	configStore.SetOnChange(func(oldCfg, cfg models.Config) {
-		dispatcher.Dispatch(context.Background(), models.EventConfigurationUpdated, "")
-		if oldCfg.Settings.Schedule.Cron != cfg.Settings.Schedule.Cron {
-			slog.Debug("Rescheduling after cron changed", "oldCron", oldCfg.Settings.Schedule.Cron, "newCron", cfg.Settings.Schedule.Cron)
-			watcher.Schedule()
+	// register events consumers
+	eventBus.Register(
+		events.NewLoggingEventHandler(),
+		events.NewNotificationEventHandler(configStore, eventStore),
+		events.HandlerFunc(func(_ context.Context, event models.Event) {
+			if event.Type == models.EventConfigurationUpdated {
+				data, ok := event.Data.(models.ConfigChangedData)
+				if !ok {
+					slog.Error("issue with event data type ", "event", event)
+				} else if data.Old.Settings.Schedule.Cron != data.New.Settings.Schedule.Cron {
+					slog.Debug("Rescheduling after cron changed",
+						"oldCron", data.Old.Settings.Schedule.Cron,
+						"newCron", data.New.Settings.Schedule.Cron)
+					repoWatcher.Schedule()
+				}
+				healthTransitionHandler.ResetRetries()
+			}
+		}),
+	)
+
+	go eventBus.Run(ctx)
+
+	// launch event publishers
+	err = configStore.WatchFile()
+	if err != nil {
+		slog.Error("error watching config file", "err", err)
+	}
+	go func() {
+		_, err := repoWatcher.Schedule()
+		if err != nil {
+			slog.Error("error scheduling polling job", "err", err)
+			eventBus.Publish(ctx, models.SourceEvent{
+				Type: models.EventError,
+				Msg:  fmt.Sprintf("failed to schedule repo polling %v", err),
+			})
 		}
-		healthHandler.ResetRetries()
-	})
+	}()
+	go healthChecker.ScheduleStateRefresh(ctx)
+
+	// launch server
 
 	businessHandler := handlers.NewBusinessHandler(
 		configStore, deploymentService, userService,
-		fetcher, inspector, watcher,
+		fetcher, inspector, repoWatcher,
 		eventStore, deploymentStore)
 	server := server.NewServer()
 	return server.Serve(params.ServerParams, businessHandler, userService, oidcService)

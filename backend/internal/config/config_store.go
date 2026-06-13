@@ -2,12 +2,14 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"sync"
 
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 
 	"github.com/fsnotify/fsnotify"
@@ -20,12 +22,12 @@ type Store interface {
 	Update(cfg models.Config) error
 	Get() models.Config
 	ToYaml(cfg models.Config) ([]byte, error)
-	SetOnChange(fn func(oldConfig, newConfig models.Config))
 	WatchFile() error
 }
 
 type configStore struct {
-	onConfigUpdate func(oldConfig, newConfig models.Config)
+	eventPublisher events.Publisher
+
 	configFilePath string
 	cfg            models.Config
 	mu             sync.RWMutex
@@ -34,7 +36,7 @@ type configStore struct {
 }
 
 // NewConfigStore creates a new config file storage
-func NewConfigStore(filePath string) (Store, error) {
+func NewConfigStore(filePath string, eventPublisher events.Publisher) (Store, error) {
 	cfg, err := readConfig(filePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -46,6 +48,7 @@ func NewConfigStore(filePath string) (Store, error) {
 		}
 	}
 	configStore := &configStore{
+		eventPublisher: eventPublisher,
 		configFilePath: filePath,
 		cfg:            cfg,
 	}
@@ -72,14 +75,13 @@ func (s *configStore) Update(cfg models.Config) (err error) {
 		cfg.Settings.Oidc.ClientSecret = oldCfg.Settings.Oidc.ClientSecret // keep old client secret when obfuscated
 	}
 
-	if s.onConfigUpdate != nil {
-		defer func() {
-			if err != nil { // check no error occurred when updating the config
-				return
-			}
-			go s.onConfigUpdate(oldCfg, cfg)
-		}()
-	}
+	defer func() {
+		if err != nil { // check no error occurred when updating the config
+			return
+		}
+		go s.onConfigUpdate(oldCfg, cfg)
+
+	}()
 
 	bs, err := s.ToYaml(cfg)
 	if err != nil {
@@ -123,9 +125,9 @@ func (*configStore) ToYaml(cfg models.Config) ([]byte, error) {
 	return bs, nil
 }
 
-func (s *configStore) SetOnChange(fn func(oldConfig, newConfig models.Config)) {
-	slog.Debug("setting OnConfigUpdate")
-	s.onConfigUpdate = fn
+func (s *configStore) onConfigUpdate(oldConfig, newConfig models.Config) {
+	s.eventPublisher.Publish(context.Background(),
+		models.NewConfigChangedEvent(oldConfig, newConfig))
 }
 
 // readConfig reads the configuration from the config file
@@ -184,9 +186,8 @@ func (s *configStore) WatchFile() error {
 						defer s.mu.Unlock()
 						oldCfg := s.cfg
 						s.cfg = newCfg
-						if s.onConfigUpdate != nil {
-							go s.onConfigUpdate(oldCfg, newCfg)
-						}
+						go s.onConfigUpdate(oldCfg, newCfg)
+
 					}
 				}
 

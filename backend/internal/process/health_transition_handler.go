@@ -2,7 +2,6 @@ package process
 
 import (
 	"log/slog"
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
 	"sync"
 )
@@ -10,7 +9,7 @@ import (
 // HealthTransitionHandler processes container health transitions and handles redeployment
 // when containers become unhealthy.
 type HealthTransitionHandler struct {
-	configStore       config.Store
+	configStore       models.ConfigGetter
 	deploymentService DeploymentService
 
 	retries       int
@@ -19,7 +18,7 @@ type HealthTransitionHandler struct {
 }
 
 // NewHealthTransitionHandler creates a new HealthTransitionHandler that processes container health transitions.
-func NewHealthTransitionHandler(configStore config.Store,
+func NewHealthTransitionHandler(configStore models.ConfigGetter,
 	deploymentService DeploymentService,
 	healthCheckChan <-chan models.ContainerHealth) *HealthTransitionHandler {
 

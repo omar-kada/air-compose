@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
 	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
@@ -107,15 +106,8 @@ func initStore(t *testing.T) deployments.DeploymentStorage {
 	return depStore
 }
 
-func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) *service {
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
-	if err != nil {
-		t.Fatal("error while creating configStore", err)
-	}
-	err = configStore.Update(currentCfg)
-	if err != nil {
-		t.Fatal("error updating config", err)
-	}
+func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.DeploymentParams, currentCfg models.Config) (*service, *testutil.ConfigGetter) {
+	configStore := testutil.NewConfigGetter(currentCfg)
 	depStore := initStore(t)
 	svc := NewDeploymentService(
 		params,
@@ -123,13 +115,13 @@ func newServiceWithCurrentConfig(t *testing.T, mocker *Mocker, params models.Dep
 		mocker,
 		depStore,
 		configStore,
-		events.NewVoidDispatcher(),
+		events.NewBus(1),
 	).(*service)
 	svc.currentCfg = currentCfg
-	return svc
+	return svc, configStore
 }
 
-func newServiceWithMocks(t *testing.T, mocker *Mocker, params models.DeploymentParams) *service {
+func newServiceWithMocks(t *testing.T, mocker *Mocker, params models.DeploymentParams) (*service, *testutil.ConfigGetter) {
 	return newServiceWithCurrentConfig(t, mocker, params, models.Config{})
 }
 
@@ -142,14 +134,13 @@ var (
 
 func TestSync_Success(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithMocks(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithMocks(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	})
 
 	wantCfg := mockConfigOld
-	err := service.configStore.Update(wantCfg)
-	assert.NoError(t, err)
+	configStore.Set(wantCfg)
 	patch := models.Patch{Diff: "test", Author: "author", CommitHash: "commit"}
 	mocker.Fetcher.On("PullBranch", WorkingBranch, "").Once().Return(nil)
 	mockState := models.NewStacksState()
@@ -190,14 +181,14 @@ func TestSync_Success(t *testing.T) {
 
 func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
 	wantCfg := mockConfigNew
-	err := service.configStore.Update(wantCfg)
-	assert.NoError(t, err)
+	configStore.Set(wantCfg)
+
 	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -233,13 +224,13 @@ func TestSync_Success_RedploymentWithChangedConfig(t *testing.T) {
 
 func TestSync_ErrorsOnPullbranch(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
-	err := service.configStore.Update(wantCfg)
-	assert.NoError(t, err)
+	configStore.Set(wantCfg)
+
 	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -268,13 +259,13 @@ func TestSync_ErrorsOnPullbranch(t *testing.T) {
 
 func TestSync_Errors(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 	wantCfg := mockConfigNew
-	err := service.configStore.Update(wantCfg)
-	assert.NoError(t, err)
+	configStore.Set(wantCfg)
+
 	patch := models.Patch{Diff: "test"}
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
@@ -306,7 +297,7 @@ func TestSync_Errors(t *testing.T) {
 
 func TestSync_ErrorGettingConfig(t *testing.T) {
 	mocker := &Mocker{}
-	svc := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	svc, _ := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
@@ -335,13 +326,13 @@ func TestSync_ErrorGettingConfig(t *testing.T) {
 
 func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	err := service.configStore.Update(mockConfigOld)
-	assert.NoError(t, err)
+	configStore.Set(mockConfigOld)
+
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -376,13 +367,13 @@ func TestSync_ConfigNotChanged_StacksHealthy(t *testing.T) {
 
 func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	err := service.configStore.Update(mockConfigOld)
-	assert.NoError(t, err)
+	configStore.Set(mockConfigOld)
+
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{
@@ -417,13 +408,13 @@ func TestSync_ConfigNotChanged_StacksUnhealthy(t *testing.T) {
 
 func TestSync_NoStacksRunning(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	err := service.configStore.Update(mockConfigOld)
-	assert.NoError(t, err)
+	configStore.Set(mockConfigOld)
+
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.NewStacksState(), nil)
 	patch := models.Patch{Diff: ""}
 	done := make(chan struct{})
@@ -449,13 +440,13 @@ func TestSync_NoStacksRunning(t *testing.T) {
 
 func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
-	err := service.configStore.Update(mockConfigOld)
-	assert.NoError(t, err)
+	configStore.Set(mockConfigOld)
+
 	mocker.Inspector.On("GetCurrentStacks", mock.Anything).Return(models.StacksState{}, errors.New("failed to get stacks"))
 	patch := models.Patch{Diff: ""}
 	done := make(chan struct{})
@@ -482,14 +473,14 @@ func TestSync_ErrorCheckingStackHealth(t *testing.T) {
 
 func TestSync_RepositoryAlreadyUpToDate(t *testing.T) {
 	mocker := &Mocker{}
-	service := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
+	service, configStore := newServiceWithCurrentConfig(t, mocker, models.DeploymentParams{
 		ServicesDir: "/services",
 		WorkingDir:  ".",
 	}, mockConfigOld)
 
 	wantCfg := mockConfigOld
-	err := service.configStore.Update(wantCfg)
-	assert.NoError(t, err)
+	configStore.Set(wantCfg)
+
 	mockState := models.NewStacksState()
 	mockState.SetContainerStatus("service",
 		models.ContainerSummary{

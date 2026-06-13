@@ -88,7 +88,8 @@ func (m *Mock) IsRegistered() (bool, error) {
 
 func TestDeployementAPIList_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
 
@@ -115,7 +116,8 @@ func TestDeployementAPIList_Success(t *testing.T) {
 
 func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -129,7 +131,8 @@ func TestDeployementAPIList_InvalidOffset(t *testing.T) {
 
 func TestDeployementAPIRead_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -153,7 +156,8 @@ func TestDeployementAPIRead_Success(t *testing.T) {
 
 func TestDeployementAPIRead_InvalidID(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -166,7 +170,8 @@ func TestDeployementAPIRead_InvalidID(t *testing.T) {
 
 func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -198,7 +203,8 @@ func TestDeployementAPISync_SuccessAndError(t *testing.T) {
 
 func TestStatusAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -230,7 +236,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 
 func TestStateAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -259,7 +265,8 @@ func TestStateAPIGet_Success(t *testing.T) {
 
 func TestDiffAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -285,7 +292,8 @@ func TestDiffAPIGet_Success(t *testing.T) {
 
 func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -310,7 +318,8 @@ func TestDeployementAPIList_GetDeploymentsError(t *testing.T) {
 
 func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -323,7 +332,8 @@ func TestDeployementAPIList_InvalidLimit(t *testing.T) {
 
 func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -341,7 +351,8 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 
 func TestStatusAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -358,7 +369,8 @@ func TestStatusAPIGet_Error(t *testing.T) {
 
 func TestStateAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -384,7 +396,8 @@ func TestStateAPIGet_Error(t *testing.T) {
 
 func TestDiffAPIGet_Error(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -403,7 +416,8 @@ func TestDiffAPIGet_Error(t *testing.T) {
 
 func TestConfigAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -429,7 +443,8 @@ func TestConfigAPIGet_Success(t *testing.T) {
 
 func TestFeaturesAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	t.Setenv("AIR_COMPOSE_DISPLAY_CONFIG", "true")
@@ -457,7 +472,8 @@ func TestFeaturesAPIGet_Success(t *testing.T) {
 
 func TestSettingsAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -497,7 +513,8 @@ func TestSettingsAPIGet_Success(t *testing.T) {
 
 func TestSettingsAPISet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -576,7 +593,8 @@ func TestSettingsAPISet_Success(t *testing.T) {
 
 func TestSettingsAPISet_UpdateToken(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -632,7 +650,7 @@ func TestSettingsAPISet_UpdateToken(t *testing.T) {
 func TestSettingsAPISet_Error(t *testing.T) {
 	m := &Mock{}
 	configFilePath := filepath.Join(t.TempDir(), "config.yaml")
-	store, err := config.NewConfigStore(configFilePath)
+	store, err := config.NewConfigStore(configFilePath, events.NewBus(1))
 	assert.NoError(t, err)
 	// Write some data to the file
 	err = os.WriteFile(configFilePath, []byte{}, 0744)
@@ -660,7 +678,8 @@ func TestSettingsAPISet_Error(t *testing.T) {
 
 func TestConfigAPISet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -719,7 +738,7 @@ func TestConfigAPISet_Success(t *testing.T) {
 func TestConfigAPISet_Error(t *testing.T) {
 	m := &Mock{}
 	configFilePath := filepath.Join(t.TempDir(), "config.yaml")
-	store, err := config.NewConfigStore(configFilePath)
+	store, err := config.NewConfigStore(configFilePath, events.NewBus(1))
 	assert.NoError(t, err)
 	// Update file permissions to read-only
 	err = os.Chmod(configFilePath, 0400)
@@ -745,7 +764,8 @@ func TestConfigAPISet_Error(t *testing.T) {
 
 func TestUserAPIGet_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -768,7 +788,8 @@ func TestUserAPIGet_Success(t *testing.T) {
 
 func TestUserAPIGet_NoUser(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -780,7 +801,8 @@ func TestUserAPIGet_NoUser(t *testing.T) {
 
 func TestUserAPIDelete_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -804,7 +826,8 @@ func TestUserAPIDelete_Success(t *testing.T) {
 
 func TestUserAPIDelete_NoUser(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -823,7 +846,8 @@ func TestUserAPIDelete_NoUser(t *testing.T) {
 
 func TestUserAPIDelete_Error(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -849,7 +873,8 @@ func TestUserAPIDelete_Error(t *testing.T) {
 
 func TestAuthAPIRegistered(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -880,7 +905,8 @@ func TestAuthAPIRegistered(t *testing.T) {
 
 func TestAuthAPILogout(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -899,7 +925,8 @@ func TestAuthAPILogout(t *testing.T) {
 
 func TestAuthAPILogin(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -918,7 +945,8 @@ func TestAuthAPILogin(t *testing.T) {
 
 func TestAuthAPIRegister(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -937,7 +965,8 @@ func TestAuthAPIRegister(t *testing.T) {
 
 func TestUserAPIChangePassword_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -969,7 +998,8 @@ func TestUserAPIChangePassword_Success(t *testing.T) {
 
 func TestUserAPIChangePassword_NoUser(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -995,7 +1025,8 @@ func TestUserAPIChangePassword_NoUser(t *testing.T) {
 
 func TestUserAPIChangePassword_Error(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -1029,7 +1060,8 @@ func TestUserAPIChangePassword_Error(t *testing.T) {
 
 func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
@@ -1060,7 +1092,8 @@ func TestSettingsAPITestGitConnection_Success(t *testing.T) {
 
 func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
+
 	assert.NoError(t, err)
 
 	h := NewBusinessHandler(store, m, m, m, m, m, m, m)

@@ -30,7 +30,7 @@ type Client interface {
 
 // inspector implements information retrieval about docker stacks
 type inspector struct {
-	configStore  config.Store
+	configStore  models.ConfigGetter
 	executor     shell.Executor
 	dockerClient Client
 	servicesDir  string
