@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 
@@ -38,13 +37,13 @@ type fetcher struct {
 	parser         PatchParser
 	addPermissions os.FileMode
 	repoDir        string
-	cfgStore       config.Store
+	cfgStore       models.ConfigGetter
 
 	_auth *http.BasicAuth
 }
 
 // NewFetcher creates a new Fetcher and returns it
-func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore config.Store) Fetcher {
+func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore models.ConfigGetter) Fetcher {
 	return &fetcher{
 		parser:         NewPatchParser(),
 		addPermissions: addPermissions,
@@ -54,13 +53,12 @@ func NewFetcher(addPermissions os.FileMode, repoDir string, cfgStore config.Stor
 }
 
 // setConfig sets the configuration for the fetcher
-func (f *fetcher) setConfig() error {
+func (f *fetcher) setConfig() {
 	cfg := f.cfgStore.Get()
 	f._auth = &http.BasicAuth{
 		Username: cfg.Settings.Git.Username,
 		Password: cfg.Settings.Git.Token,
 	}
-	return nil
 }
 
 func (f *fetcher) addPerm() error {
@@ -84,10 +82,7 @@ func (f *fetcher) ClearRepo() error {
 // PullBranch pulls changes for a local target branch from the remote branch
 // (optionally resetting to a provided commit SHA).
 func (f *fetcher) PullBranch(branch string, commitHash string) error {
-	err := f.setConfig()
-	if err != nil {
-		return err
-	}
+	f.setConfig()
 	repo, err := f.openRepo(branch)
 	if err != nil {
 		return err
@@ -103,7 +98,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 			URL:           f.cfgStore.Get().Settings.Git.Repo,
 			ReferenceName: plumbing.NewBranchReferenceName(f.cfgStore.Get().GetBranch()),
 			SingleBranch:  true,
-			Progress:      events.NewSlogWriter(slog.LevelDebug, "git clone "+branch),
+			Progress:      events.NewSlogWriter(slog.LevelDebug, "[GIT] clone "+branch),
 			ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
 		})
 	} else {
@@ -134,10 +129,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 }
 
 func (f *fetcher) DiffWithRemote() (models.Patch, error) {
-	err := f.setConfig()
-	if err != nil {
-		return models.Patch{}, err
-	}
+	f.setConfig()
 	repo, err := f.openRepo(f.cfgStore.Get().GetBranch())
 	if err != nil {
 		return models.Patch{}, err
@@ -214,10 +206,7 @@ func (f *fetcher) IsRemoteSameAsConfig() (bool, error) {
 	if !f.repoExists() {
 		return false, nil
 	}
-	err := f.setConfig()
-	if err != nil {
-		return false, err
-	}
+	f.setConfig()
 
 	repo, err := git.PlainOpen(f.repoDir)
 	if err != nil {

@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/testutil/mocks"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -62,10 +64,12 @@ func TestDecodeConfig(t *testing.T) {
 }
 
 func TestUpdateConfig(t *testing.T) {
+	mockEventPublisher := mocks.EventPublisher{}
+	mockEventPublisher.On("Publish", mock.Anything, mock.Anything).Return()
 	t.Run("successful update", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store, err := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath, &mockEventPublisher)
 		assert.NoError(t, err)
 
 		input := models.Config{
@@ -107,9 +111,6 @@ func TestUpdateConfig(t *testing.T) {
 	t.Run("on config update callback", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store, err := NewConfigStore(filePath)
-		assert.NoError(t, err)
-
 		// Initial config
 		initialCfg := models.Config{
 			Environment: models.Environment{
@@ -122,18 +123,13 @@ func TestUpdateConfig(t *testing.T) {
 				},
 			},
 		}
-		err = store.Update(initialCfg)
+		bs, err := yaml.Marshal(initialCfg)
+		assert.NoError(t, err)
+		err = os.WriteFile(filePath, bs, 0o644)
 		assert.NoError(t, err)
 
-		// Set up the callback
-		done := make(chan []models.Config, 1)
-
-		store.SetOnChange(func(oldCfg, newCfg models.Config) {
-			select {
-			case done <- []models.Config{oldCfg, newCfg}:
-			default:
-			}
-		})
+		store, err := NewConfigStore(filePath, &mockEventPublisher)
+		assert.NoError(t, err)
 
 		// Update the config
 		updatedCfg := models.Config{
@@ -149,13 +145,12 @@ func TestUpdateConfig(t *testing.T) {
 		err = store.Update(updatedCfg)
 		assert.NoError(t, err)
 
-		select {
-		case cfgs := <-done:
-			assert.Equal(t, initialCfg, cfgs[0])
-			assert.Equal(t, updatedCfg, cfgs[1])
-		case <-time.After(1 * time.Second):
-			t.Fatal("timeout waiting for callback")
-		}
+		time.Sleep(100 * time.Millisecond)
+
+		mockEventPublisher.AssertCalled(t, "Publish", mock.Anything, mock.MatchedBy(func(srcEvent models.SourceEvent) bool {
+			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.ConfigChangedData).Old.Environment) &&
+				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.ConfigChangedData).New.Environment)
+		}))
 
 	})
 
@@ -167,14 +162,14 @@ func TestUpdateConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		filePath := filepath.Join(readOnlyDir, "config.yaml")
-		_, err = NewConfigStore(filePath)
+		_, err = NewConfigStore(filePath, &mockEventPublisher)
 		assert.Error(t, err)
 	})
 
 	t.Run("obfuscate token on update", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store, err := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath, &mockEventPublisher)
 		assert.NoError(t, err)
 
 		input := models.Config{
@@ -243,9 +238,11 @@ func TestUpdateConfig(t *testing.T) {
 }
 
 func TestLoadConfig_FileError(t *testing.T) {
+	mockEventPublisher := mocks.EventPublisher{}
+	mockEventPublisher.On("Publish", mock.Anything, mock.Anything).Return()
 	t.Run("missing file", func(t *testing.T) {
 		tmp := t.TempDir()
-		configStore, err := NewConfigStore(filepath.Join(tmp, "non-existant.yaml"))
+		configStore, err := NewConfigStore(filepath.Join(tmp, "non-existant.yaml"), &mockEventPublisher)
 		assert.NoError(t, err)
 		assert.Equal(t, models.Config{}, configStore.Get())
 	})
@@ -258,22 +255,17 @@ func TestLoadConfig_FileError(t *testing.T) {
 		err := os.WriteFile(f, invalid, 0o644)
 		assert.NoError(t, err)
 
-		_, err = NewConfigStore(f)
+		_, err = NewConfigStore(f, &mockEventPublisher)
 		assert.Error(t, err)
 	})
 }
 
 func TestUpdateConfig_DirectFileUpdate(t *testing.T) {
+	mockEventPublisher := mocks.EventPublisher{}
+	mockEventPublisher.On("Publish", mock.Anything, mock.Anything).Return()
 	t.Run("direct file update triggers callback", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store, err := NewConfigStore(filePath)
-		assert.NoError(t, err)
-
-		// Start watching the file
-		err = store.WatchFile()
-		assert.NoError(t, err)
-
 		// Initial config
 		initialCfg := models.Config{
 			Environment: models.Environment{
@@ -286,18 +278,16 @@ func TestUpdateConfig_DirectFileUpdate(t *testing.T) {
 				},
 			},
 		}
-		err = store.Update(initialCfg)
+		bs, err := yaml.Marshal(initialCfg)
+		assert.NoError(t, err)
+		err = os.WriteFile(filePath, bs, 0o644)
+		assert.NoError(t, err)
+		store, err := NewConfigStore(filePath, &mockEventPublisher)
 		assert.NoError(t, err)
 
-		// Set up the callback
-		done := make(chan []models.Config, 1)
-
-		store.SetOnChange(func(oldCfg, newCfg models.Config) {
-			select {
-			case done <- []models.Config{oldCfg, newCfg}:
-			default:
-			}
-		})
+		// Start watching the file
+		err = store.WatchFile()
+		assert.NoError(t, err)
 
 		// Update the config file directly
 		updatedCfg := models.Config{
@@ -312,24 +302,24 @@ func TestUpdateConfig_DirectFileUpdate(t *testing.T) {
 				},
 			},
 		}
-		bs, err := yaml.Marshal(updatedCfg)
+		bs, err = yaml.Marshal(updatedCfg)
 		assert.NoError(t, err)
 		err = os.WriteFile(filePath, bs, 0o644)
 		assert.NoError(t, err)
 
-		select {
-		case cfgs := <-done:
-			assert.Equal(t, initialCfg, cfgs[0])
-			assert.Equal(t, updatedCfg, cfgs[1])
-		case <-time.After(1 * time.Second):
-			t.Fatal("timeout waiting for callback")
-		}
+		time.Sleep(100 * time.Millisecond)
+
+		mockEventPublisher.AssertCalled(t, "Publish", mock.Anything, mock.MatchedBy(func(srcEvent models.SourceEvent) bool {
+			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.ConfigChangedData).Old.Environment) &&
+				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.ConfigChangedData).New.Environment)
+		}))
+
 	})
 
 	t.Run("direct file update with invalid yaml", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "config.yaml")
-		store, err := NewConfigStore(filePath)
+		store, err := NewConfigStore(filePath, &mockEventPublisher)
 		assert.NoError(t, err)
 
 		// Initial config

@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // EventType represents the type of event
 type EventType string
@@ -107,4 +109,5 @@ type Event struct {
 	ObjectID       uint64    `gorm:"index"`
 	ObjectName     string
 	IsNotification bool
+	Data           any `gorm:"-"`
 }

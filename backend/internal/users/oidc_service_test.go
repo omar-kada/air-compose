@@ -3,6 +3,7 @@ package users
 import (
 	"net/url"
 	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil"
 	"testing"
@@ -12,7 +13,7 @@ import (
 
 func setupOidcTest(t *testing.T) (*testutil.MockOIDCServer, OidcService, UserStorage) {
 	mockServer := testutil.NewOidcTestServerWithToken(t)
-	configStore, err := config.NewConfigStore(t.TempDir() + "/config.yaml")
+	configStore, err := config.NewConfigStore(t.TempDir()+"/config.yaml", events.NewBus(1))
 	if err != nil {
 		t.Fatal(err)
 	}

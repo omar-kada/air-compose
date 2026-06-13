@@ -19,6 +19,6 @@ func NewSlogWriter(level slog.Level, id string) *SlogWriter {
 
 // Write implements the io.Writer interface.
 func (sw *SlogWriter) Write(p []byte) (n int, err error) {
-	sw.logger.Log(context.Background(), sw.level, string(p), slog.String("id", sw.id))
+	sw.logger.Log(context.Background(), sw.level, sw.id, slog.String("msg", string(p)))
 	return len(p), nil
 }

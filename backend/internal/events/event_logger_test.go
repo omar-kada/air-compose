@@ -10,33 +10,48 @@ import (
 )
 
 func TestLoggingEventHandler_HandleEvent(t *testing.T) {
-	handler := NewLoggingEventHandler()
-	// Create a mock logger
-	mockLogger := &mockLogger{}
-	slog.SetDefault(slog.New(mockLogger))
-
-	event := models.Event{
-		Type:       "test",
-		ObjectID:   123,
-		ObjectName: "testObject",
-		Msg:        "testMessage",
+	tests := []struct {
+		name     string
+		event    models.Event
+		expected string
+	}{
+		{
+			name: "basic event",
+			event: models.Event{
+				Type: "test",
+				Msg:  "testMessage",
+			},
+			expected: "[EVENT] test: testMessage",
+		},
+		{
+			name: "object event",
+			event: models.Event{
+				Type:       "test",
+				ObjectID:   123,
+				ObjectName: "testObject",
+				Msg:        "testMessage",
+			},
+			expected: "[EVENT] #123 - test: testMessage",
+		},
 	}
 
-	handler.HandleEvent(context.Background(), event)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewLoggingEventHandler()
+			mockLogger := &mockLogger{}
+			slog.SetDefault(slog.New(mockLogger))
 
-	// Assert that the logger was called with the right parameters
-	if len(mockLogger.loggedEvents) != 1 {
-		t.Errorf("expected 1 logged event, got %d", len(mockLogger.loggedEvents))
-	}
+			handler.HandleEvent(context.Background(), tt.event)
 
-	expectedLog := slog.Record{
-		Level:   slog.LevelInfo,
-		Message: "[EVENT] #123 - test: testMessage",
-	}
+			if len(mockLogger.loggedEvents) != 1 {
+				t.Errorf("expected 1 logged event, got %d", len(mockLogger.loggedEvents))
+			}
 
-	if !reflect.DeepEqual(mockLogger.loggedEvents[0], expectedLog) {
-		t.Errorf("logged event doesn't match expected:\nExpected: %+v\nActual: %+v",
-			expectedLog, mockLogger.loggedEvents[0])
+			if !reflect.DeepEqual(mockLogger.loggedEvents[0].Message, tt.expected) {
+				t.Errorf("logged event doesn't match expected:\nExpected: %+v\nActual: %+v",
+					tt.expected, mockLogger.loggedEvents[0])
+			}
+		})
 	}
 }
 

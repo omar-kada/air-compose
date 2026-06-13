@@ -12,6 +12,11 @@ import (
 // DefaultBranch is the default branch name used when no branch is specified in the configuration.
 const DefaultBranch = "main"
 
+// ConfigGetter is an interface for retrieving configuration.
+type ConfigGetter interface {
+	Get() Config
+}
+
 // GitConfig represents the configuration for Git-related settings.
 type GitConfig struct {
 	Repo     string `mapstructure:"repo"`

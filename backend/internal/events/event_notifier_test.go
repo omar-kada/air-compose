@@ -2,14 +2,12 @@ package events
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/testutil"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -36,10 +34,9 @@ func (m *MockEventStore) StoreEvent(event models.Event) error {
 }
 
 func TestNotificationEventHandler_HandleEvent(t *testing.T) {
-	mockSend := new(MockSend)
-	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
-	assert.NoError(t, err)
 	mockEventStore := new(MockEventStore)
+	mockSend := new(MockSend)
+	configStore := testutil.NewConfigGetter(models.Config{})
 
 	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
 	handler.Send = mockSend.Send
@@ -61,7 +58,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 		}
 
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
-		assert.NoError(t, configStore.Update(cfg))
+		configStore.Set(cfg)
 		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
@@ -85,7 +82,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			Msg:        "Test Message",
 		}
 
-		assert.NoError(t, configStore.Update(cfg))
+		configStore.Set(cfg)
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
@@ -96,8 +93,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 
 func TestStoringEventHandler_HandleEvent(t *testing.T) {
 	mockSend := new(MockSend)
-	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
-	assert.NoError(t, err)
+	configStore := testutil.NewConfigGetter(models.Config{})
 	mockEventStore := new(MockEventStore)
 
 	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
@@ -112,7 +108,7 @@ func TestStoringEventHandler_HandleEvent(t *testing.T) {
 		ObjectName: "Test object",
 	}
 
-	assert.NoError(t, configStore.Update(models.Config{}))
+	configStore.Set(models.Config{})
 	mockEventStore.On("StoreEvent", event).Return(nil).Once()
 
 	// Call the HandleEvent method with the event
@@ -124,8 +120,7 @@ func TestStoringEventHandler_HandleEvent(t *testing.T) {
 
 func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testing.T) {
 	mockSend := new(MockSend)
-	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
-	assert.NoError(t, err)
+	configStore := testutil.NewConfigGetter(models.Config{})
 	mockEventStore := new(MockEventStore)
 
 	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
@@ -146,7 +141,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 		Msg:        "Test Message",
 	}
 
-	assert.NoError(t, configStore.Update(cfg))
+	configStore.Set(cfg)
 	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
 		return e.ObjectID == 1 && e.IsNotification == true
 	})).Return(nil)
@@ -159,8 +154,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 
 func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testing.T) {
 	mockSend := new(MockSend)
-	configStore, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"))
-	assert.NoError(t, err)
+	configStore := testutil.NewConfigGetter(models.Config{})
 	mockEventStore := new(MockEventStore)
 
 	handler := NewNotificationEventHandler(configStore, mockEventStore).(*NotificationEventHandler)
@@ -180,7 +174,7 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Disabled(t *testi
 		Msg:        "Test Message",
 	}
 
-	assert.NoError(t, configStore.Update(cfg))
+	configStore.Set(cfg)
 	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
 		return e.ObjectID == 2 && e.IsNotification == false
 	})).Return(nil)

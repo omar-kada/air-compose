@@ -122,7 +122,7 @@ func TestFileGeneration(t *testing.T) {
 
 	t.Cleanup(func() {
 		/// cleanup homepage container after test finishes
-		dockerDeployer := docker.NewDeployer(events.NewVoidDispatcher(), shell.NewExecutor())
+		dockerDeployer := docker.NewDeployer(events.NewBus(1), shell.NewExecutor())
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
 	})
 }

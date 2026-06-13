@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"omar-kada/air-compose/api"
-	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/server/mappers"
 	"omar-kada/air-compose/internal/server/middlewares"
 	"omar-kada/air-compose/internal/users"
@@ -19,7 +19,7 @@ var (
 // AuthUserHandler handles authentication and user-related operations.
 type AuthUserHandler struct {
 	accountService users.AccountService
-	configStore    config.Store
+	configStore    models.ConfigGetter
 	userMapper     mappers.UserMapper
 }
 
