@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"errors"
+	"reflect"
 	"sync"
 
 	"omar-kada/air-compose/internal/deployments"
@@ -82,9 +83,20 @@ func (s *service) DoDeploy(trigger DeploymentTrigger, patch models.Patch) (model
 	if newCfg.Settings.Git.Repo == "" {
 		return models.Deployment{}, ErrRepoNotDefined
 	}
+	if !reflect.DeepEqual(newCfg.Settings.Git, s.currentCfg.Settings.Git) {
+		err := s.fetcher.ClearRepo()
+		if err != nil {
+			return models.Deployment{}, err
+		}
+		err = s.fetcher.PullBranch(newCfg.GetBranch(), "")
+		if err != nil {
+			return models.Deployment{}, err
+		}
+	}
 	title := patch.Title
 	if title == "" {
 		title = getTitleFromTrigger(trigger)
+		patch, _ = s.fetcher.DiffWithRemote()
 	}
 
 	deployment, err := s.store.InitDeployment(title, patch, newCfg.Settings.Git)

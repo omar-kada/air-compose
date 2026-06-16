@@ -93,6 +93,11 @@ const (
 	ServerMessageErrorKindError ServerMessageErrorKind = "error"
 )
 
+// Defines values for ServerMessageEventKind.
+const (
+	ServerMessageEventKindEvent ServerMessageEventKind = "event"
+)
+
 // Defines values for ServerMessageLogKind.
 const (
 	ServerMessageLogKindLog ServerMessageLogKind = "log"
@@ -106,11 +111,6 @@ const (
 // Defines values for ServerMessagePreviousLogsKind.
 const (
 	ServerMessagePreviousLogsKindPreviousLogs ServerMessagePreviousLogsKind = "previousLogs"
-)
-
-// Defines values for ServerMessageStateKind.
-const (
-	ServerMessageStateKindState ServerMessageStateKind = "state"
 )
 
 // Defines values for UserType.
@@ -231,6 +231,13 @@ type Event struct {
 	Type       EventType `json:"type"`
 }
 
+// EventMessage defines model for EventMessage.
+type EventMessage struct {
+	DeploymentId *uint64   `json:"deploymentId,omitempty"`
+	Msg          string    `json:"msg"`
+	Type         EventType `json:"type"`
+}
+
 // EventType defines model for EventType.
 type EventType string
 
@@ -300,6 +307,15 @@ type ServerMessageError struct {
 // ServerMessageErrorKind defines model for ServerMessageError.Kind.
 type ServerMessageErrorKind string
 
+// ServerMessageEvent defines model for ServerMessageEvent.
+type ServerMessageEvent struct {
+	Kind  ServerMessageEventKind `json:"kind"`
+	Value EventMessage           `json:"value"`
+}
+
+// ServerMessageEventKind defines model for ServerMessageEvent.Kind.
+type ServerMessageEventKind string
+
 // ServerMessageLog defines model for ServerMessageLog.
 type ServerMessageLog struct {
 	Kind  ServerMessageLogKind `json:"kind"`
@@ -326,15 +342,6 @@ type ServerMessagePreviousLogs struct {
 
 // ServerMessagePreviousLogsKind defines model for ServerMessagePreviousLogs.Kind.
 type ServerMessagePreviousLogsKind string
-
-// ServerMessageState defines model for ServerMessageState.
-type ServerMessageState struct {
-	Kind  ServerMessageStateKind `json:"kind"`
-	Value StateMessage           `json:"value"`
-}
-
-// ServerMessageStateKind defines model for ServerMessageState.Kind.
-type ServerMessageStateKind string
 
 // Settings defines model for Settings.
 type Settings struct {
@@ -363,14 +370,6 @@ type State struct {
 	Initialized bool             `json:"initialized"`
 	NextDeploy  time.Time        `json:"nextDeploy"`
 	Status      DeploymentStatus `json:"status"`
-}
-
-// StateMessage defines model for StateMessage.
-type StateMessage struct {
-	Deployment Deployment       `json:"deployment"`
-	Health     ContainerHealth  `json:"health"`
-	NextDeploy time.Time        `json:"nextDeploy"`
-	Status     DeploymentStatus `json:"status"`
 }
 
 // User defines model for User.
@@ -516,34 +515,6 @@ func (t *ClientMessage) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsServerMessageState returns the union data inside the ServerMessage as a ServerMessageState
-func (t ServerMessage) AsServerMessageState() (ServerMessageState, error) {
-	var body ServerMessageState
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromServerMessageState overwrites any union data inside the ServerMessage as the provided ServerMessageState
-func (t *ServerMessage) FromServerMessageState(v ServerMessageState) error {
-	v.Kind = "state"
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeServerMessageState performs a merge with any union data inside the ServerMessage, using the provided ServerMessageState
-func (t *ServerMessage) MergeServerMessageState(v ServerMessageState) error {
-	v.Kind = "state"
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
 // AsServerMessageLog returns the union data inside the ServerMessage as a ServerMessageLog
 func (t ServerMessage) AsServerMessageLog() (ServerMessageLog, error) {
 	var body ServerMessageLog
@@ -628,6 +599,34 @@ func (t *ServerMessage) MergeServerMessageNewDeployment(v ServerMessageNewDeploy
 	return err
 }
 
+// AsServerMessageEvent returns the union data inside the ServerMessage as a ServerMessageEvent
+func (t ServerMessage) AsServerMessageEvent() (ServerMessageEvent, error) {
+	var body ServerMessageEvent
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServerMessageEvent overwrites any union data inside the ServerMessage as the provided ServerMessageEvent
+func (t *ServerMessage) FromServerMessageEvent(v ServerMessageEvent) error {
+	v.Kind = "event"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServerMessageEvent performs a merge with any union data inside the ServerMessage, using the provided ServerMessageEvent
+func (t *ServerMessage) MergeServerMessageEvent(v ServerMessageEvent) error {
+	v.Kind = "event"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
 // AsServerMessageError returns the union data inside the ServerMessage as a ServerMessageError
 func (t ServerMessage) AsServerMessageError() (ServerMessageError, error) {
 	var body ServerMessageError
@@ -672,14 +671,14 @@ func (t ServerMessage) ValueByDiscriminator() (interface{}, error) {
 	switch discriminator {
 	case "error":
 		return t.AsServerMessageError()
+	case "event":
+		return t.AsServerMessageEvent()
 	case "log":
 		return t.AsServerMessageLog()
 	case "newDeployment":
 		return t.AsServerMessageNewDeployment()
 	case "previousLogs":
 		return t.AsServerMessagePreviousLogs()
-	case "state":
-		return t.AsServerMessageState()
 	default:
 		return nil, errors.New("unknown discriminator value: " + discriminator)
 	}
@@ -2409,6 +2408,7 @@ type DiffAPIGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]FileDiff
+	JSON404      *Error
 	JSONDefault  *Error
 }
 
@@ -3343,6 +3343,13 @@ func ParseDiffAPIGetResponse(rsp *http.Response) (*DiffAPIGetResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error
@@ -4888,6 +4895,15 @@ type DiffAPIGet200JSONResponse []FileDiff
 func (response DiffAPIGet200JSONResponse) VisitDiffAPIGetResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DiffAPIGet404JSONResponse Error
+
+func (response DiffAPIGet404JSONResponse) VisitDiffAPIGetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }

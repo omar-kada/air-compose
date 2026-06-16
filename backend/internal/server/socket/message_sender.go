@@ -10,9 +10,9 @@ import (
 
 // MessageSender defines an interface for sending messages
 type MessageSender interface {
-	SendStateMessage(ctx context.Context, state api.StateMessage) error
 	SendPreviousLogs(ctx context.Context, logs api.LogMessages) error
 	SendLog(ctx context.Context, log api.LogLine) error
+	SendEvent(ctx context.Context, event api.EventMessage) error
 	SendError(ctx context.Context, err api.Error) error
 }
 
@@ -24,14 +24,6 @@ type WebSocketMessageSender struct {
 // NewWebSocketMessageSender creates a new WebSocketMessageSender instance
 func NewWebSocketMessageSender(conn *websocket.Conn) *WebSocketMessageSender {
 	return &WebSocketMessageSender{conn: conn}
-}
-
-// SendStateMessage sends a state message
-func (ws *WebSocketMessageSender) SendStateMessage(ctx context.Context, state api.StateMessage) error {
-	return wsjson.Write(ctx, ws.conn, api.ServerMessageState{
-		Kind:  api.ServerMessageStateKindState,
-		Value: state,
-	})
 }
 
 // SendPreviousLogs sends previous logs
@@ -47,6 +39,14 @@ func (ws *WebSocketMessageSender) SendLog(ctx context.Context, log api.LogLine) 
 	return wsjson.Write(ctx, ws.conn, api.ServerMessageLog{
 		Kind:  api.ServerMessageLogKindLog,
 		Value: log,
+	})
+}
+
+// SendEvent sends an event message
+func (ws *WebSocketMessageSender) SendEvent(ctx context.Context, event api.EventMessage) error {
+	return wsjson.Write(ctx, ws.conn, api.ServerMessageEvent{
+		Kind:  api.ServerMessageEventKindEvent,
+		Value: event,
 	})
 }
 

@@ -11,7 +11,7 @@ export function StatusPage() {
   return (
     <HeaderLayout header={<h2 className="text-2xl font-bold">{t('STATUS.STATUS')}</h2>}>
       <ScrollArea className="space-y-2 min-h-0 flex-1">
-        <ErrorAlert title={error && 'ALERT.LOAD_STATUS_ERROR'} details={error?.message} />
+        <ErrorAlert title="ALERT.LOAD_STATUS_ERROR" error={error} />
 
         {isPending ? (
           Array(3)

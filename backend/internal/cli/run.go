@@ -16,6 +16,7 @@ import (
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server"
 	"omar-kada/air-compose/internal/server/handlers"
+	"omar-kada/air-compose/internal/server/socket"
 	"omar-kada/air-compose/internal/shell"
 	"omar-kada/air-compose/internal/users"
 
@@ -116,7 +117,6 @@ func (run *runCommand) doRun() error {
 		deploymentStore,
 		configStore,
 		eventBus)
-	eventBus.Register(process.NewConfigurationUpdatedHandler(deploymentService))
 
 	repoWatcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, eventBus, process.NewCronScheduler())
 	healthChecker := docker.NewHealthChecker(configStore, inspector, eventBus)
@@ -127,6 +127,7 @@ func (run *runCommand) doRun() error {
 
 	// register events consumers
 	eventBus.Register(
+		process.NewConfigurationUpdatedHandler(deploymentService, eventBus),
 		events.NewLoggingEventHandler(),
 		events.NewNotificationEventHandler(configStore, eventStore),
 		events.HandlerFunc(func(_ context.Context, event models.Event) {
@@ -152,16 +153,7 @@ func (run *runCommand) doRun() error {
 	if err != nil {
 		slog.Error("error watching config file", "err", err)
 	}
-	go func() {
-		_, err := repoWatcher.Schedule()
-		if err != nil {
-			slog.Error("error scheduling polling job", "err", err)
-			eventBus.Publish(ctx, models.SourceEvent{
-				Type: models.EventError,
-				Msg:  fmt.Sprintf("failed to schedule repo polling %v", err),
-			})
-		}
-	}()
+	go repoWatcher.Schedule()
 	go healthChecker.ScheduleStateRefresh(ctx)
 
 	// launch server
@@ -170,6 +162,12 @@ func (run *runCommand) doRun() error {
 		configStore, deploymentService, userService,
 		fetcher, inspector, repoWatcher,
 		eventStore, deploymentStore)
+
+	socketHandler := socket.NewWebSocketHandler()
+
+	eventBus.Register(events.HandlerFunc(socketHandler.BroadcastEvent))
+
+	// create websocket handler and then register consumer of events to send to client
 	server := server.NewServer()
-	return server.Serve(params.ServerParams, businessHandler, userService, oidcService)
+	return server.Serve(params.ServerParams, businessHandler, socketHandler, userService, oidcService)
 }

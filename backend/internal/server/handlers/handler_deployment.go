@@ -126,7 +126,10 @@ func (h *DeploymentHandler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequ
 func (h *DeploymentHandler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
 	diff, err := h.fetcher.DiffWithRemote()
 	if err != nil {
-		return nil, err
+		return api.DiffAPIGet404JSONResponse{
+			Code:    "REPO_NOT_FOUND",
+			Message: err.Error(),
+		}, nil
 	}
 	return api.DiffAPIGet200JSONResponse(models.ListMapper(h.diffMapper.Map)(diff.Files)), nil
 }

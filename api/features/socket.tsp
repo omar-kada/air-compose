@@ -33,11 +33,10 @@ union ClientMessage {
 
 // ── Server → Client ──────────────────────────────────────
 
-model StateMessage {
-    nextDeploy: utcDateTime;
-    status: DeploymentStatus;
-    health: ContainerHealth;
-    deployment: Deployment;
+model EventMessage {
+    type: EventType;
+    msg: string;
+    deploymentId?: uint64;
 }
 
 model LogLine {
@@ -50,9 +49,9 @@ model LogMessages is Array<LogLine>;
 
 @discriminated
 union ServerMessage {
-    state: StateMessage,
     log: LogLine,
     previousLogs: LogMessages,
     newDeployment: Deployment,
+    event: EventMessage,
     error: Error,
 }

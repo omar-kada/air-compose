@@ -36,11 +36,8 @@ export function DeploymentDetail({ id, className }: { id: string; className?: st
   }
   return (
     <div className={cn('flex flex-col', className)}>
-      <ErrorAlert
-        className="mx-4 mt-4"
-        title={error && 'ALERT.LOAD_DEPLOYMENT_ERROR'}
-        details={error?.message}
-      />
+      <ErrorAlert className="mx-4 mt-4" title="ALERT.LOAD_DEPLOYMENT_ERROR" error={error} />
+
       {deployment && (
         <>
           <div className="flex justify-between items-center-safe m-4">

@@ -178,6 +178,8 @@
   "ALERT": {
     "SUCCESS": "Success",
     "ERROR": "Error",
+    "SERVER_ERROR": "Server error",
+    "CONNECTION_ERROR": "Error connecting to the server",
     "SYNCHRONIZING": "Synchronizing",
     "SYNC_SUCCESS": "Success, Deployment is running",
     "SYNC_NO_CHANGES": "No changes to synchronize",
@@ -200,6 +202,21 @@
     "USER_CREATION_ERROR": "register error",
     "CHANGE_PASS_ERROR": "Error while changing password",
     "DELETE_ACCOUNT_ERROR": "Error while deleting your account"
+  },
+  "SOCKET": {
+    "CONNECTED": {
+      "TITLE": "Server reconnected",
+      "DESCRIPTION": ""
+    },
+    "RECONNECTING": {
+      "TITLE": "Server connection lost",
+      "DESCRIPTION": "Trying to reconnect ({{attempt}}/{{max}})"
+    },
+    "FAILED": {
+      "TITLE": "Server connection lost",
+      "DESCRIPTION": "Reload when connection is established",
+      "ACTION": "Reload"
+    }
   },
   "EVENT_TYPE": {
     "GENERAL": "General",

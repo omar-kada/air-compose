@@ -3,6 +3,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/events"
@@ -69,7 +70,15 @@ func (w *watcher) DeployOnChange() {
 
 // Schedule stops the old cron when it exists, and runs a new cron job
 func (w *watcher) Schedule() (*cron.Cron, error) {
-	return w.scheduler.Schedule(w.DeployOnChange, w.configStore.Get().Settings.Schedule.Cron)
+	cron, err := w.scheduler.Schedule(w.DeployOnChange, w.configStore.Get().Settings.Schedule.Cron)
+	if err != nil {
+		slog.Error("[REPO WATCHER] error scheduling polling job", "err", err)
+		w.eventPublisher.Publish(context.Background(), models.SourceEvent{
+			Type: models.EventError,
+			Msg:  fmt.Sprintf("failed to schedule repo polling: %v", err),
+		})
+	}
+	return cron, err
 }
 
 // GetNext returns the next scheduled time of the cron job.

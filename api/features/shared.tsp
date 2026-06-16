@@ -1,3 +1,6 @@
+import "@typespec/http";
+using TypeSpec.Http;
+
 model BooleanResponse {
   success: boolean;
 }
@@ -6,6 +9,11 @@ model BooleanResponse {
 model Error {
   code: ErrorCode;
   message: string;
+}
+
+@error
+model NotFoundError is Error {
+  @statusCode statusCode: 404;
 }
 
 enum ErrorCode {

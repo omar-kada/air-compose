@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/models"
 	"strings"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ import (
 
 func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	// Convert http:// to ws://
@@ -33,7 +34,8 @@ func TestWebSocketHandlerConnectionAcceptance(t *testing.T) {
 }
 
 func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	socketHandler := NewWebSocketHandler().(*websocketHandler)
+	server := httptest.NewServer(http.HandlerFunc(socketHandler.Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -53,6 +55,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 			}
 		})
 		sessions[i] = conn
+		ids[i] = socketHandler.sessionIDCounter.Load()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		// Send a test message to make sure the conn is working
@@ -65,7 +68,6 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		ids[i] = sessionIDCounter.Load()
 	}
 
 	// Verify IDs are incrementing
@@ -76,7 +78,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 
 func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -106,7 +108,7 @@ func TestWebSocketHandlerMessageParsing(t *testing.T) {
 
 func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -129,7 +131,7 @@ func TestWebSocketHandlerSessionCleanup(t *testing.T) {
 
 func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -155,7 +157,7 @@ func TestWebSocketHandlerEnvelopeUnmarshal(t *testing.T) {
 
 func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -183,7 +185,7 @@ func TestWebSocketHandlerInvalidJsonHandling(t *testing.T) {
 
 func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -216,7 +218,7 @@ func TestWebSocketHandlerInvalidEnvelopeHandling(t *testing.T) {
 
 func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -240,7 +242,7 @@ func TestWebSocketHandlerCancelLogsMessage(t *testing.T) {
 
 func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -271,7 +273,7 @@ func TestWebSocketHandlerConcurrentConnections(t *testing.T) {
 
 func TestWebSocketHandlerMultipleMessages(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -330,7 +332,7 @@ func TestWebSocketHandlerMessageEnvelopeStructure(t *testing.T) {
 
 func TestWebSocketHandlerContextCancellation(t *testing.T) {
 
-	server := httptest.NewServer(http.HandlerFunc(WebSocketHandler))
+	server := httptest.NewServer(http.HandlerFunc(NewWebSocketHandler().Handle))
 	defer server.Close()
 
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
@@ -349,4 +351,52 @@ func TestWebSocketHandlerContextCancellation(t *testing.T) {
 	var msg any
 	err = wsjson.Read(ctx, conn, &msg)
 	assert.Error(t, err)
+}
+
+func TestWebSocketHandlerBroadcastEvent(t *testing.T) {
+	handler := NewWebSocketHandler()
+	server := httptest.NewServer(http.HandlerFunc(handler.Handle))
+	defer server.Close()
+
+	url := "ws" + strings.TrimPrefix(server.URL, "http")
+
+	// Create multiple connections
+	const numConnections = 3
+	connections := make([]*websocket.Conn, numConnections)
+	for i := range numConnections {
+		conn, _, err := websocket.Dial(context.Background(), url, nil)
+		assert.NoError(t, err)
+		connections[i] = conn
+		defer conn.Close(websocket.StatusNormalClosure, "")
+	}
+
+	// Create a test event
+	testEvent := models.Event{
+		Msg:      "test event",
+		Type:     models.EventConfigurationUpdated,
+		ObjectID: 123,
+	}
+	// Broadcast the event
+	go handler.BroadcastEvent(context.Background(), testEvent)
+
+	// Verify each connection received the event
+	for i, conn := range connections {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+
+		var msg api.ServerMessage
+		err := wsjson.Read(ctx, conn, &msg)
+		assert.NoError(t, err, "failed to read message from connection %d", i)
+
+		kind, _ := msg.Discriminator()
+		assert.Equal(t, string(api.ServerMessageEventKindEvent), kind, "connection %d received wrong message kind", i)
+
+		msgValue, err := msg.ValueByDiscriminator()
+		assert.NoError(t, err)
+
+		eventMsg := msgValue.(api.ServerMessageEvent).Value
+		assert.Equal(t, testEvent.Msg, eventMsg.Msg, "connection %d received wrong event message", i)
+		assert.Equal(t, api.EventType(testEvent.Type), eventMsg.Type, "connection %d received wrong event type", i)
+		assert.Equal(t, testEvent.ObjectID, *eventMsg.DeploymentId, "connection %d received wrong deployment ID", i)
+	}
 }

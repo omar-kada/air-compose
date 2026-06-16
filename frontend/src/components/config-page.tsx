@@ -126,11 +126,8 @@ export function ConfigPage() {
         </div>
       }
     >
-      <ErrorAlert
-        title={mergedError && 'ALERT.LOAD_CONFIGURATION_ERROR'}
-        details={mergedError?.message}
-        className="m-4"
-      />
+      <ErrorAlert title="ALERT.LOAD_CONFIGURATION_ERROR" error={mergedError} className="m-4" />
+
       <ScrollArea className="h-full flex-1">
         {disabled && !featuresError && (
           <Alert variant="default" className="w-auto m-4">

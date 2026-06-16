@@ -95,7 +95,6 @@ func (b *Bus) Run(ctx context.Context) {
 
 func (b *Bus) dispatch(ctx context.Context, event models.Event) {
 	for _, h := range b.handlers {
-		h := h // capture for goroutine
 		b.wg.Add(1)
 		go func() {
 			defer b.wg.Done()

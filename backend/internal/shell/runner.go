@@ -13,6 +13,7 @@ import (
 // Executor abstracts writing content to a file
 type Executor interface {
 	Exec(cmd string, args ...string) ([]byte, error)
+	NoLogs() Executor
 }
 
 type cmdExecuter struct {
@@ -27,6 +28,13 @@ func NewExecutor() Executor {
 	}
 }
 
+// NoLogs returns a new Executor that won't log command execution.
+func (cmdExecuter) NoLogs() Executor {
+	return cmdExecuter{
+		showLogs: false,
+	}
+}
+
 // Run runs a shell command and returns error if any
 func (e cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 	path, err := exec.LookPath(cmd)
@@ -34,7 +42,9 @@ func (e cmdExecuter) Exec(cmd string, args ...string) ([]byte, error) {
 		return nil, fmt.Errorf("executable not found: %w", err)
 	}
 	fullCmd := cmd + " " + strings.Join(args, " ")
-	slog.Debug("[CMD] " + fullCmd)
+	if e.showLogs {
+		slog.Debug("[CMD] " + fullCmd)
+	}
 	c := execCommand(path, args...)
 	if e.showLogs {
 		c.Stderr = events.NewSlogWriter(slog.LevelDebug, "[CMD] "+cmd+"(error)")

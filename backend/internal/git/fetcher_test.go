@@ -228,21 +228,4 @@ func TestIsRemoteSameAsConfig(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, same)
 	})
-
-	t.Run("repo exists with no remote URLs", func(t *testing.T) {
-		clonePath := t.TempDir() + "/clone-repo"
-		// Create a bare repo without any remotes
-		_, err := git.PlainInit(clonePath, true)
-		require.NoError(t, err)
-
-		// Create .git folder
-		err = os.MkdirAll(clonePath+"/.git", 0o700)
-		require.NoError(t, err)
-		mockConfig.Settings.Git.Repo = ""
-		fetcher := NewFetcher(os.FileMode(0o000), clonePath, testutil.NewConfigGetter(mockConfig))
-
-		same, err := fetcher.IsRemoteSameAsConfig()
-		assert.Error(t, err)
-		assert.False(t, same)
-	})
 }

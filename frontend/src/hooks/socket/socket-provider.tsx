@@ -1,14 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
-import {
-  createSocketEmitter,
-  type SocketBusinessEmitter,
-  type SocketEmitterActions,
-} from './socket-emitter';
+import { createContext, useEffect, useMemo, useRef } from 'react';
+import { createSocketEmitter, type SocketBusinessEmitter } from './socket-emitter';
 import { createSocketReceiver } from './socket-receiver';
+import { useWsRetry, useWsStatus } from './use-ws';
 
-const WsContext = createContext<SocketBusinessEmitter | null>(null);
+export type WsStatus = 'off' | 'connected' | 'reconnecting' | 'failed';
 
+export const WsContext = createContext<SocketBusinessEmitter | null>(null);
+
+export const BASE_DELAY = 500;
+export const MAX_DELAY = 30_000;
+export const MAX_RETRIES = 10;
+
+// WebSocketProvider.tsx
 export function WebSocketProvider({
   url,
   enabled = true,
@@ -20,32 +24,52 @@ export function WebSocketProvider({
 }) {
   const queryClient = useQueryClient();
   const socketRef = useRef<WebSocket | null>(null);
+  const isManuallyClosed = useRef(false);
+  const emitter = useMemo(() => createSocketEmitter(socketRef), []);
 
-  const emitter = useMemo(() => createSocketEmitter(socketRef), [socketRef]);
+  const { updateStatus } = useWsStatus(enabled);
+  const { attempt, scheduleRetry, reset, cancel, retriesRef } = useWsRetry();
 
   useEffect(() => {
     if (!enabled) {
-      return;
+      updateStatus('off');
+      return () => {};
     }
 
+    isManuallyClosed.current = false;
     const socket = new WebSocket(url);
     socketRef.current = socket;
 
-    // Flush any queued events once connection opens
-    socket.onopen = emitter.onOpen;
+    socket.onclose = (event) => {
+      socketRef.current = null;
+      if (isManuallyClosed.current || event.code === 1000) return;
+      const retried = scheduleRetry();
+      updateStatus(retried ? 'reconnecting' : 'failed', retriesRef.current);
+    };
+
+    socket.onopen = () => {
+      reset();
+      updateStatus('connected');
+      emitter.onOpen();
+    };
+
     socket.onmessage = createSocketReceiver(queryClient);
 
+    socket.onerror = () => socket.close();
+
     return () => {
-      socket.close();
+      isManuallyClosed.current = true;
+      cancel();
+      socketRef.current?.close(1000, 'unmount');
       socketRef.current = null;
     };
-  }, [enabled, queryClient, url]);
+  }, [enabled, url, queryClient, emitter, attempt]);
 
-  return <WsContext.Provider value={emitter}>{children}</WsContext.Provider>;
+  return (
+    <WsContext.Provider value={useMemo(() => ({ ...emitter }), [emitter])}>
+      {children}
+    </WsContext.Provider>
+  );
 }
 
-export function useWs(): SocketEmitterActions {
-  const ctx = useContext(WsContext);
-  if (!ctx) throw new Error('useWs must be used inside <WebSocketProvider>');
-  return ctx;
-}
+// --- Hooks ---

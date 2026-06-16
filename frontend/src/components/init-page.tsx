@@ -39,14 +39,15 @@ export function InitPage() {
             <>
               <ErrorAlert
                 className="mx-4 mt-4"
-                title={settingsError && 'ALERT.LOAD_SETTINGS_ERROR'}
-                details={settingsError?.message}
+                title="ALERT.LOAD_SETTINGS_ERROR"
+                error={settingsError}
               />
+
               {!settingsError && (
                 <ErrorAlert
                   className="mx-4 mt-4"
-                  title={stateError && 'ALERT.LOAD_SETTINGS_ERROR'}
-                  details={stateError?.message}
+                  title="ALERT.LOAD_SETTINGS_ERROR"
+                  error={stateError}
                 />
               )}
               {settings && <OnboardingForm settings={settings} onSubmit={updateSettings} />}

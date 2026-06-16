@@ -48,7 +48,7 @@ export function NotificationList({
   return (
     <>
       {isPending && <NotificationSkeleton />}
-      {error && <ErrorAlert title="ALERT.LOAD_NOTIFICATIONS_ERROR" details={error.message} />}
+      <ErrorAlert title="ALERT.LOAD_NOTIFICATIONS_ERROR" error={error} />
       {filteredNotifications && (
         <ItemGroup className="grid auto-rows-min px-4 mb-10">
           {filteredNotifications.map((notification) => (

@@ -46,7 +46,7 @@ func TestRunCommand_CmdParams(t *testing.T) {
 
 	mocker.On(
 		"Exec", "docker",
-		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
 	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)
@@ -104,7 +104,7 @@ func TestRunCommand_EnvParams(t *testing.T) {
 
 	mocker.On(
 		"Exec", "docker",
-		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "up", "-d"},
+		[]string{"compose", "--project-directory", filepath.Join(servicesDir, "homepage"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
 	).Return([]byte{}, nil)
 
 	remoteRepoPath := initConfigRepo(t)

@@ -65,6 +65,8 @@ func TestGetManagedStacks(t *testing.T) {
 	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).
 		Return([]byte("container1 container2"), nil)
 
+	mockExec.On("NoLogs").Return(mockExec)
+
 	servicesDir := "/services"
 	inspector := newInspectorWithMock(t, mockClient, mockExec, servicesDir)
 	result, err := inspector.GetManagedStacks()
@@ -126,6 +128,7 @@ func TestGetServiceContainers(t *testing.T) {
 
 	// Test successful case
 	mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).Once().Return([]byte("service1 service2"), nil)
+	mockExec.On("NoLogs").Return(mockExec)
 
 	servicesDir := "/services"
 	serviceName := "service1"
@@ -171,6 +174,7 @@ func TestGetCurrentStacksState(t *testing.T) {
 		}, nil)
 
 		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service1", "config", "--services"}).Once().Return([]byte("container1"), nil)
+		mockExec.On("NoLogs").Return(mockExec)
 
 		cfg := models.Config{
 			Services: map[string]models.ServiceConfig{
@@ -199,6 +203,7 @@ func TestGetCurrentStacksState(t *testing.T) {
 		}, nil)
 
 		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service2", "config", "--services"}).Once().Return([]byte("container2"), nil)
+		mockExec.On("NoLogs").Return(mockExec)
 
 		cfg := models.Config{
 			Services: map[string]models.ServiceConfig{
@@ -226,6 +231,7 @@ func TestGetCurrentStacksState(t *testing.T) {
 		mockExec.On("Exec", "docker", []string{"compose", "--project-directory", "/services/service3", "config", "--services"}).
 			Once().
 			Return([]byte{}, errors.New("failed to get services"))
+		mockExec.On("NoLogs").Return(mockExec)
 
 		cfg := models.Config{
 			Services: map[string]models.ServiceConfig{

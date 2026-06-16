@@ -4,13 +4,24 @@ import {
   type DeployementAPIList200,
   type DeployementAPIListParams,
   type Deployment,
+  type Error,
 } from '@/api/api';
-import { type InfiniteData, type QueryClient } from '@tanstack/react-query';
-import type { AxiosResponse } from 'axios';
+import {
+  type InfiniteData,
+  type QueryClient,
+  type UseInfiniteQueryOptions,
+} from '@tanstack/react-query';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 const initialParams = { limit: 10, offset: '' } as DeployementAPIListParams;
 
-export function getDeploymentsQueryOptions() {
+export function getDeploymentsQueryOptions(): UseInfiniteQueryOptions<
+  AxiosResponse<DeployementAPIList200>,
+  AxiosError<Error>,
+  Deployment[],
+  readonly ['/api/deployment', ...DeployementAPIListParams[]],
+  DeployementAPIListParams
+> {
   return {
     queryKey: getDeployementAPIListQueryKey(initialParams),
     queryFn: ({ pageParam = initialParams }: { pageParam: DeployementAPIListParams }) =>

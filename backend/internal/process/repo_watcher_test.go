@@ -158,6 +158,10 @@ func TestSchedule_Error(t *testing.T) {
 			},
 		},
 	})
+	m.EventPublisher.On("Publish", mock.Anything, models.SourceEvent{
+		Type: models.EventError,
+		Msg:  "failed to schedule repo polling: schedule error",
+	}).Return()
 
 	_, err := w.Schedule()
 	assert.Error(t, err)
