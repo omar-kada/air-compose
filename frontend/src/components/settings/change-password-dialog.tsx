@@ -59,7 +59,7 @@ export function ChangePasswordDialog({ children }: { children: ReactNode }) {
       <DialogContent className="w-full max-w-4xl">
         <DialogTitle>{t('SETTINGS.CHANGE_PASS_DIALOG.TITLE')}</DialogTitle>
         <DialogDescription>{t('SETTINGS.CHANGE_PASS_DIALOG.DESCRIPTION')}</DialogDescription>
-        <ErrorAlert title={error && t('ALERT.CHANGE_PASS_ERROR')} />
+        <ErrorAlert title="ALERT.CHANGE_PASS_ERROR" error={error} />
         <form className="space-y-4">
           <FieldSet>
             <PasswordField control={control} name="oldPass" />

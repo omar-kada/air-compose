@@ -10,27 +10,27 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockHandler is a mock implementation of slog.Handler using testify.
-type MockHandler struct {
+// MockLogHandler is a mock implementation of slog.Handler using testify.
+type MockLogHandler struct {
 	mock.Mock
 }
 
-func (m *MockHandler) Enabled(ctx context.Context, level slog.Level) bool {
+func (m *MockLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	args := m.Called(ctx, level)
 	return args.Bool(0)
 }
 
-func (m *MockHandler) Handle(ctx context.Context, record slog.Record) error {
+func (m *MockLogHandler) Handle(ctx context.Context, record slog.Record) error {
 	args := m.Called(ctx, record)
 	return args.Error(0)
 }
 
-func (m *MockHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (m *MockLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	args := m.Called(attrs)
 	return args.Get(0).(slog.Handler)
 }
 
-func (m *MockHandler) WithGroup(name string) slog.Handler {
+func (m *MockLogHandler) WithGroup(name string) slog.Handler {
 	args := m.Called(name)
 	return args.Get(0).(slog.Handler)
 }
@@ -47,7 +47,7 @@ func TestWrite(t *testing.T) {
 	var buf bytes.Buffer
 
 	// Create a mock handler
-	mockHandler := new(MockHandler)
+	mockHandler := new(MockLogHandler)
 
 	// Set up expectations
 	mockHandler.On("Enabled", mock.Anything, slog.LevelInfo).Return(true)
@@ -99,7 +99,7 @@ func TestWriteWithDifferentLevels(t *testing.T) {
 
 	for _, tc := range testCases {
 		// Create a mock handler
-		mockHandler := new(MockHandler)
+		mockHandler := new(MockLogHandler)
 
 		// Set up expectations
 		mockHandler.On("Enabled", mock.Anything, tc.expected).Return(true)

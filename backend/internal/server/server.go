@@ -22,6 +22,7 @@ type Server interface {
 	Serve(
 		params models.ServerParams,
 		businessHandler api.StrictServerInterface,
+		socketHandler socket.WebSocketHandler,
 		userSvc users.Service,
 		oidcSvc users.OidcService,
 	) error
@@ -50,6 +51,7 @@ func applyMiddlewares(h http.Handler, mws ...func(http.Handler) http.Handler) ht
 func (s *HTTPServer) Serve(
 	params models.ServerParams,
 	businessHandler api.StrictServerInterface,
+	socketHandler socket.WebSocketHandler,
 	userSvc users.Service,
 	oidcSvc users.OidcService,
 	// add clientEventsService
@@ -58,12 +60,12 @@ func (s *HTTPServer) Serve(
 	mux := http.NewServeMux()
 
 	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
-	mux.HandleFunc("/api/ws", socket.WebSocketHandler)
+	mux.HandleFunc("/api/ws", socketHandler.Handle)
 	mux.Handle("/api/", api.Handler(strict))
 	mux.HandleFunc("/", spaHandler)
 
 	// Set up the CORS filter
-	c := cors.New(cors.Options{
+	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"localhost:*", "127.0.0.1:*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
@@ -73,7 +75,7 @@ func (s *HTTPServer) Serve(
 	s.server = &http.Server{
 		Handler: applyMiddlewares(mux,
 			middlewares.LoggingMiddleware,
-			c.Handler,
+			corsHandler.Handler,
 			middlewares.OidcMiddlewareFunc(oidcSvc),
 			middlewares.AuthnMiddlewareFunc(userSvc),
 			middlewares.AuthorizationMiddleware,

@@ -21,7 +21,7 @@ interface DeployementAPI {
 @route("/diff")
 @tag("Diff")
 interface DiffAPI {
-  @get get(): FileDiff[] | Error;
+  @get get(): FileDiff[] | NotFoundError | Error;
 }
 
 model Deployment {

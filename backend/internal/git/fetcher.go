@@ -198,7 +198,11 @@ func (f *fetcher) checkoutOrCreate(repo *git.Repository, branch string) error {
 }
 
 func (f *fetcher) repoExists() bool {
-	_, e := os.Stat(filepath.Join(f.repoDir, ".git"))
+	_, e := git.PlainOpen(f.repoDir)
+	slog.Info("repo exists ? ", "error", e)
+	if e != nil {
+		f.ClearRepo() // clear the repo if it's not openable
+	}
 	return e == nil
 }
 
@@ -279,7 +283,7 @@ func (f *fetcher) getRemoteCommit(repo *git.Repository) (*gitObject.Commit, erro
 
 	remoteRef, err := repo.Reference(remoteRefName, true)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting remote reference: %w", err)
+		return nil, fmt.Errorf("error while getting remote reference (%v): %w", remoteRefName, err)
 	}
 
 	remoteCommit, err := repo.CommitObject(remoteRef.Hash())

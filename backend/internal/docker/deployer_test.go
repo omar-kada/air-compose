@@ -94,7 +94,7 @@ func TestDeployServices_SingleService_WithOverride(t *testing.T) {
 		mocker.On("Copy", "repo/services/svc1", serviceDir).Return(nil),
 		mocker.On("WriteToFile", envFilePath, wantEnv).Return(nil),
 		mocker.Executor.On(
-			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "up", "-d"},
+			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
 		).Return([]byte{}, nil),
 	)
 	errs := deployer.DeployServices(mockConfig, models.DeploymentParams{
@@ -113,10 +113,10 @@ func TestRemoveServices_MultipleServices(t *testing.T) {
 
 	deployer := newDeployerWithMocks(t, mocker)
 	mocker.Executor.On(
-		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "down"},
+		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc1"), "--progress", "quiet", "down"},
 	).Return([]byte{}, nil)
 	mocker.Executor.On(
-		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "down"},
+		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join(baseDir, "svc2"), "--progress", "quiet", "down"},
 	).Return([]byte{}, fmt.Errorf("mock error"))
 	errs := deployer.RemoveServices([]string{"svc1", "svc2"}, baseDir)
 
@@ -182,7 +182,7 @@ func TestRemoveAndDeployStacks_Success(t *testing.T) {
 		).Return(nil),
 		mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil),
 		mocker.Executor.On(
-			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+			"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
 		).Return([]byte{}, nil),
 	)
 
@@ -230,7 +230,7 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 			mock.InOrder(
 				mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(tc.errors.writeErr),
 				mocker.Executor.On(
-					"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "up", "-d"},
+					"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
 				).Return([]byte{}, tc.errors.runErr),
 			)
 

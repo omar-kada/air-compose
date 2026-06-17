@@ -28,11 +28,11 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showTopBar, setShowTopBar] = useState(!!user);
+  const [showNav, setShowNav] = useState(!!user);
 
   useEffect(() => {
-    setShowTopBar(!!registration?.registered && !!user && state?.initialized === true);
-  }, [setShowTopBar, registration, user, state]);
+    setShowNav(!!registration?.registered && !!user && state?.initialized === true);
+  }, [setShowNav, registration, user, state]);
 
   useEffect(() => {
     const waitAndNavigate = (pending: boolean, condition: boolean, route: string) => {
@@ -56,23 +56,29 @@ function RouteBasedTopBar({ children }: { children: ReactNode }) {
 
   const mergedError = error ?? userError;
   return (
-    <div className={cn('flex flex-col h-dvh', showTopBar ? 'pb-12 md:pb-0' : '')}>
-      {showTopBar && (
-        <>
-          <Topbar className="max-w-7xl mx-4">
-            {/* Top navigation bar, on big screens */}
+    <div className={cn('flex flex-col h-dvh', showNav ? 'pb-12 md:pb-0' : '')}>
+      <Topbar className="max-w-7xl mx-4">
+        {/* Top navigation bar, on big screens */}
+        {showNav && (
+          <>
             <div className="flex">
               <NavBar className="hidden md:flex bg-sidebar items-center flex-1" />
             </div>
             <EnvironementHealth></EnvironementHealth>
-          </Topbar>
-          {/* Bottom navigation bar, on small screens */}
-          <NavBar className="flex md:hidden bg-sidebar h-12 border-t w-full fixed items-center justify-around bottom-0 left-0 right-0 z-50" />
-        </>
+          </>
+        )}
+      </Topbar>
+      {/* Bottom navigation bar, on small screens */}
+      {showNav && (
+        <NavBar className="flex md:hidden bg-sidebar h-12 border-t w-full fixed items-center justify-around bottom-0 left-0 right-0 z-50" />
       )}
-      <ErrorAlert title={mergedError?.message ?? null} />
       <div className="w-full flex justify-around min-h-0 h-full">
-        <div className="max-w-7xl flex-1 mx-4 ">{children}</div>
+        <ErrorAlert
+          className="m-10 h-fit max-w-200"
+          title="ALERT.CONNECTION_ERROR"
+          error={mergedError}
+        />
+        {!mergedError && <div className="max-w-7xl flex-1 mx-4 ">{children}</div>}
       </div>
     </div>
   );

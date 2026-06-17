@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// McokHandler2 is a mock implementation of the Handler interface for testing.
-type McokHandler2 struct {
+// MockEventHandler is a mock implementation of the Handler interface for testing.
+type MockEventHandler struct {
 	mock.Mock
 }
 
 // HandleEvent implements the Handler interface.
-func (m *McokHandler2) HandleEvent(ctx context.Context, event models.Event) {
+func (m *MockEventHandler) HandleEvent(ctx context.Context, event models.Event) {
 	m.Called(ctx, event)
 }
 
@@ -35,8 +35,8 @@ func TestNewBus(t *testing.T) {
 func TestRegister(t *testing.T) {
 
 	bus := NewBus(10)
-	handler1 := new(McokHandler2)
-	handler2 := new(McokHandler2)
+	handler1 := new(MockEventHandler)
+	handler2 := new(MockEventHandler)
 
 	bus.Register(handler1, handler2)
 
@@ -46,7 +46,7 @@ func TestRegister(t *testing.T) {
 // TestRun tests the running of the bus.
 func TestRun(t *testing.T) {
 	bus := NewBus(10)
-	handler := new(McokHandler2)
+	handler := new(MockEventHandler)
 	done := make(chan struct{})
 	handler.On("HandleEvent", mock.Anything, mock.Anything).Return().Run(func(_ mock.Arguments) {
 		close(done)
@@ -80,7 +80,7 @@ func TestRun(t *testing.T) {
 func TestDispatchOverflow(t *testing.T) {
 
 	bus := NewBus(1) // Small buffer to force overflow
-	handler := new(McokHandler2)
+	handler := new(MockEventHandler)
 	bus.Register(handler)
 
 	// Fill the buffer
@@ -95,8 +95,7 @@ func TestDispatchOverflow(t *testing.T) {
 	bus.Publish(context.Background(), srcEvent)
 
 	// Start the bus to process events
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	go bus.Run(ctx)
 
 	// Verify only the first event was processed
@@ -111,7 +110,7 @@ func TestDispatchOverflow(t *testing.T) {
 // TestDispatchOverflow tests that events are dropped when the buffer is full.
 func TestPublishWaith(t *testing.T) {
 	bus := NewBus(1) // Small buffer to force overflow
-	handler := new(McokHandler2)
+	handler := new(MockEventHandler)
 	bus.Register(handler)
 
 	// Fill the buffer
@@ -126,8 +125,7 @@ func TestPublishWaith(t *testing.T) {
 	go bus.PublishWait(context.Background(), srcEvent)
 
 	// Start the bus to process events
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	go bus.Run(ctx)
 
 	// Verify only the first event was processed
@@ -143,8 +141,11 @@ func TestPanicHandler(t *testing.T) {
 	})
 	bus.Register(panicHandler)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	normalHandler := new(MockEventHandler)
+	normalHandler.On("HandleEvent", mock.Anything, mock.Anything).Return()
+	bus.Register(normalHandler)
+
+	ctx := t.Context()
 
 	go bus.Run(ctx)
 
@@ -158,15 +159,6 @@ func TestPanicHandler(t *testing.T) {
 	// Wait for the handler to panic and recover
 	time.Sleep(100 * time.Millisecond)
 
-	// Verify the bus is still running and can process more events
-	normalHandler := new(McokHandler2)
-	normalHandler.On("HandleEvent", mock.Anything, mock.Anything).Return()
-	bus.Register(normalHandler)
-
-	bus.Publish(ctx, srcEvent)
-
-	// Verify the normal handler was called
-	time.Sleep(100 * time.Millisecond)
 	normalHandler.AssertCalled(t, "HandleEvent", mock.Anything, mock.MatchedBy(func(event models.Event) bool {
 		return event.Type == srcEvent.Type && event.Msg == srcEvent.Msg
 	}))

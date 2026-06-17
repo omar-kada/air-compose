@@ -408,8 +408,11 @@ func TestDiffAPIGet_Error(t *testing.T) {
 	}, errDiff)
 
 	resp, err := h.DiffAPIGet(context.Background(), api.DiffAPIGetRequestObject{})
-	assert.Nil(t, resp)
-	assert.Equal(t, errDiff, err)
+	assert.Equal(t, api.DiffAPIGet404JSONResponse{
+		Code:    "REPO_NOT_FOUND",
+		Message: "diff error",
+	}, resp)
+	assert.NoError(t, err)
 
 	m.AssertExpectations(t)
 }

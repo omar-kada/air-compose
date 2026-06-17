@@ -3,20 +3,40 @@ package socket
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/models"
+	"sync"
 	"sync/atomic"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 )
 
-var sessionIDCounter atomic.Uint64
+// WebSocketHandler provides WebSocket connection handling and message processing
+type WebSocketHandler interface {
+	Handle(w http.ResponseWriter, r *http.Request)
+	BroadcastEvent(ctx context.Context, event models.Event)
+}
 
-// WebSocketHandler upgrades the request to a websocket and starts a session.
-func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
+type websocketHandler struct {
+	sessionIDCounter atomic.Uint64
+	sessions         map[uint64]*session
+	mu               sync.RWMutex
+}
+
+// NewWebSocketHandler creates a new WebSocketHandler instance.
+func NewWebSocketHandler() WebSocketHandler {
+	return &websocketHandler{
+		sessions: make(map[uint64]*session),
+	}
+}
+
+// Handle upgrades the request to a websocket and starts a session.
+func (h *websocketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
 	})
@@ -25,18 +45,51 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID := sessionIDCounter.Add(1)
+	sessionID := h.sessionIDCounter.Add(1)
 	sender := NewWebSocketMessageSender(conn)
 	logger := slog.With("session", sessionID)
+	ctx, cancel := context.WithCancel(r.Context())
 	sess := &session{
 		id:       sessionID,
 		conn:     conn,
 		logger:   logger,
 		sender:   sender,
-		handlers: []Handler{NewLogHandler(logger, sender), NewStateHandler(logger, sender)},
+		handlers: []Handler{NewLogHandler(logger, sender)},
+		ctx:      ctx,
+		cancel:   cancel,
 	}
 	slog.Info("[SOCKET] websocket upgrade succeeded", "session", sessionID, "remoteAddr", r.RemoteAddr)
-	sess.run(r.Context())
+
+	h.mu.Lock()
+	h.sessions[sessionID] = sess
+	h.mu.Unlock()
+	defer func() {
+		h.mu.Lock()
+		delete(h.sessions, sessionID)
+		h.mu.Unlock()
+	}()
+
+	sess.run()
+}
+
+func (h *websocketHandler) BroadcastEvent(_ context.Context, event models.Event) {
+	// Serialize the event to JSON
+	eventJSON, err := json.Marshal(api.ServerMessageEvent{
+		Kind: api.ServerMessageEventKindEvent,
+		Value: api.EventMessage{
+			Msg:          event.Msg,
+			Type:         api.EventType(event.Type),
+			DeploymentId: &event.ObjectID,
+		}})
+	if err != nil {
+		slog.Error("[SOCKET] failed to serialize event", "error", err)
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, session := range h.sessions {
+		go session.SendRawText(eventJSON)
+	}
 }
 
 // ─── session ──────────────────────────────────────────────────────────────────
@@ -47,22 +100,24 @@ type session struct {
 	logger   *slog.Logger
 	sender   MessageSender
 	handlers []Handler
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
-func (sess *session) run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
+func (sess *session) run() {
+
 	defer func() {
 		sess.logger.Info("[SOCKET] session closing")
-		cancel()
+		sess.cancel()
 		sess.conn.Close(websocket.StatusNormalClosure, "session ended")
 	}()
 
 	// Call OnConnect for each handler
 	for _, handler := range sess.handlers {
-		handler.OnConnect(ctx)
+		handler.OnConnect(sess.ctx)
 	}
 
-	sess.ReadLoop(ctx)
+	sess.ReadLoop(sess.ctx)
 }
 
 // ReadLoop reads messages from the websocket connection
@@ -117,4 +172,8 @@ func (sess *session) ReadMessage(ctx context.Context) (any, error) {
 	sess.logger.Info("[SOCKET] message received", "kind", kind, "value", value)
 
 	return value, nil
+}
+
+func (sess *session) SendRawText(data []byte) {
+	sess.conn.Write(sess.ctx, websocket.MessageText, data)
 }

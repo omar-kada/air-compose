@@ -39,7 +39,7 @@ export function DeploymentList({
 
   return (
     <DeploymentListContainer className={className}>
-      <ErrorAlert title={error && 'ALERT.LOAD_DEPLOYMENTS_ERROR'} details={error?.message} />
+      <ErrorAlert title="ALERT.LOAD_DEPLOYMENTS_ERROR" error={error} />
       {deployments?.map((deployment) => (
         <DeploymentListItem
           key={deployment.id}

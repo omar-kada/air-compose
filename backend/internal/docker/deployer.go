@@ -123,7 +123,7 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 }
 
 func (d deployer) composeUp(composePath string) error {
-	args := []string{"compose", "--project-directory", composePath, "up", "-d"}
+	args := []string{"compose", "--project-directory", composePath, "--progress", "quiet", "up", "-d", "--quiet-pull"}
 	if _, err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
 	}
@@ -131,7 +131,7 @@ func (d deployer) composeUp(composePath string) error {
 }
 
 func (d deployer) composeDown(composePath string) error {
-	args := []string{"compose", "--project-directory", composePath, "down"}
+	args := []string{"compose", "--project-directory", composePath, "--progress", "quiet", "down"}
 	if _, err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
 	}

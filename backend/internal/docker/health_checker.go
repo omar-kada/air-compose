@@ -35,7 +35,7 @@ func NewHealthChecker(configStore models.ConfigGetter, inspector Inspector, even
 		inspector:       inspector,
 		eventPublisher:  eventPublisher,
 		healthCheckChan: make(chan models.ContainerHealth, 1),
-		refreshDuration: 1 * time.Minute,
+		refreshDuration: 20 * time.Second,
 	}
 	return &hc
 }
@@ -64,27 +64,33 @@ func (hc *healthChecker) refreshState() {
 	cfg := hc.configStore.Get()
 	state, err := hc.inspector.GetCurrentStacks(cfg.GetEnabledServices())
 	if err != nil {
-		slog.Error("error while getting stacks state", "err", err)
+		slog.Error("error getting stacks current state", "err", err)
+		hc.eventPublisher.Publish(context.Background(), models.SourceEvent{
+			Type: models.EventError,
+			Msg:  "error getting stacks current state",
+		})
 		return
 	}
-	slog.Debug("health check result", "state", state.GetGlobalHealth())
+	slog.Debug("[HEALTH CHECK] result", "state", state.GetGlobalHealth())
 	hc.setCurrentState(state)
 }
 
 func (hc *healthChecker) setCurrentState(newState models.StacksState) {
 	var globalHealth = newState.GetGlobalHealth()
+	oldGlobalHealth := hc.currentStacksState.GetGlobalHealth()
 
 	select {
 	case hc.healthCheckChan <- globalHealth: // try to send
 	default:
 	}
-	if hc.currentStacksState.GetGlobalHealth() != globalHealth {
+	if oldGlobalHealth != globalHealth {
 		if globalHealth == models.ContainerUnhealthy {
 			hc.eventPublisher.Publish(context.Background(), models.SourceEvent{
 				Type: models.EventStacksUnhealthy,
 				Msg:  fmt.Sprintf("services : %v", strings.Join(newState.GetUnhealthyServices(), ", ")),
 			})
 		} else if globalHealth == models.ContainerHealthy && hc.currentStacksState != nil {
+			slog.Debug("[HEALTH CHECK] sending healthy event", "oldHealth", oldGlobalHealth, "newHealth", globalHealth)
 			hc.eventPublisher.Publish(context.Background(), models.SourceEvent{
 				Type: models.EventStacksHealthy,
 				Msg:  "",

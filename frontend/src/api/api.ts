@@ -195,6 +195,12 @@ export interface Error {
   message: string;
 }
 
+export interface EventMessage {
+  type: EventType;
+  msg: string;
+  deploymentId?: number;
+}
+
 export interface Features {
   displayConfig: boolean;
   editConfig: boolean;
@@ -233,25 +239,6 @@ export interface RegistrationInfo {
   oidc: boolean;
 }
 
-export type ServerMessageStateKind = typeof ServerMessageStateKind[keyof typeof ServerMessageStateKind];
-
-
-export const ServerMessageStateKind = {
-  state: 'state',
-} as const;
-
-export interface StateMessage {
-  nextDeploy: string;
-  status: DeploymentStatus;
-  health: ContainerHealth;
-  deployment: Deployment;
-}
-
-export interface ServerMessageState {
-  kind: ServerMessageStateKind;
-  value: StateMessage;
-}
-
 export type ServerMessageLogKind = typeof ServerMessageLogKind[keyof typeof ServerMessageLogKind];
 
 
@@ -288,6 +275,18 @@ export interface ServerMessageNewDeployment {
   value: Deployment;
 }
 
+export type ServerMessageEventKind = typeof ServerMessageEventKind[keyof typeof ServerMessageEventKind];
+
+
+export const ServerMessageEventKind = {
+  event: 'event',
+} as const;
+
+export interface ServerMessageEvent {
+  kind: ServerMessageEventKind;
+  value: EventMessage;
+}
+
 export type ServerMessageErrorKind = typeof ServerMessageErrorKind[keyof typeof ServerMessageErrorKind];
 
 
@@ -300,7 +299,7 @@ export interface ServerMessageError {
   value: Error;
 }
 
-export type ServerMessage = ServerMessageState | ServerMessageLog | ServerMessagePreviousLogs | ServerMessageNewDeployment | ServerMessageError;
+export type ServerMessage = ServerMessageLog | ServerMessagePreviousLogs | ServerMessageNewDeployment | ServerMessageEvent | ServerMessageError;
 
 export interface Settings {
   repo: string;

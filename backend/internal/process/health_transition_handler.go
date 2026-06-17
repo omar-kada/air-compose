@@ -42,11 +42,10 @@ func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealt
 
 	switch health {
 	case models.ContainerUnhealthy:
-
 		cfg := h.configStore.Get()
 
 		if h.retries == cfg.Settings.Schedule.RetriesOnUnhealthy {
-			slog.Error("max retries on unhealthy reached", "retries", h.retries)
+			slog.Error("[HEALTH CHECK] max retries on unhealthy reached", "retries", h.retries)
 			h.retries = h.retries + 1
 			return
 		} else if h.retries > cfg.Settings.Schedule.RetriesOnUnhealthy {
@@ -54,7 +53,7 @@ func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealt
 		}
 
 		h.retries = h.retries + 1
-		slog.Debug("incrementing number of retries", "retries", h.retries)
+		slog.Debug("[HEALTH CHECK] incrementing number of retries", "retries", h.retries)
 
 		_, err := h.deploymentService.DoDeploy(DeploymentTriggerUnhealthyStacks, models.Patch{})
 		if err != nil {
@@ -65,8 +64,10 @@ func (h *HealthTransitionHandler) handleHealthCheck(health models.ContainerHealt
 		if h.currentHealth == models.ContainerHealthy {
 			return
 		}
-		h.retries = 0
-		slog.Debug("resetting number of retries to 0")
+		if h.retries != 0 {
+			slog.Debug("[HEALTH CHECK] resetting number of retries to 0")
+			h.retries = 0
+		}
 	default:
 		return
 	}

@@ -141,6 +141,6 @@ func parseHealthStatus(status string, state models.ContainerState) models.Contai
 }
 
 func (i *inspector) getExpectedServiceContainers(serviceName string) ([]string, error) {
-	result, err := i.executor.Exec("docker", "compose", "--project-directory", filepath.Join(i.servicesDir, serviceName), "config", "--services")
+	result, err := i.executor.NoLogs().Exec("docker", "compose", "--project-directory", filepath.Join(i.servicesDir, serviceName), "config", "--services")
 	return strings.Fields(string(result)), err
 }
