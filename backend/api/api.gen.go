@@ -232,9 +232,10 @@ type Event struct {
 
 // EventMessage defines model for EventMessage.
 type EventMessage struct {
-	DeploymentId *uint64   `json:"deploymentId,omitempty"`
-	Msg          string    `json:"msg"`
-	Type         EventType `json:"type"`
+	DeploymentId   *uint64   `json:"deploymentId,omitempty"`
+	IsNotification bool      `json:"isNotification"`
+	Msg            string    `json:"msg"`
+	Type           EventType `json:"type"`
 }
 
 // EventType defines model for EventType.

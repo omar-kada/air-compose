@@ -2,11 +2,12 @@
 package users
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 )
 
@@ -51,13 +52,15 @@ type AccountService interface {
 }
 
 type service struct {
-	authStore AuthStore
+	authStore      AuthStore
+	eventPublisher events.Publisher
 }
 
 // NewService creates a new userService
-func NewService(authStore AuthStore) Service {
+func NewService(authStore AuthStore, eventPublisher events.Publisher) Service {
 	return &service{
-		authStore: authStore,
+		authStore:      authStore,
+		eventPublisher: eventPublisher,
 	}
 }
 
@@ -127,10 +130,15 @@ func (a *service) RefreshToken(token models.Token) (models.Token, error) {
 	}
 	valid := !session.Revoked && session.RefreshExpires.After(time.Now())
 	if !valid {
-		slog.Warn("invalid session", "session", session)
-		err = a.authStore.RevokeAllTokens(session.Username)
-		if err != nil {
-			return models.Token{}, err
+		if session.Revoked {
+			a.eventPublisher.Publish(context.Background(), models.SourceEvent{
+				Type: models.EventSessionReused,
+				Data: session,
+			})
+			err = a.authStore.RevokeAllTokens(session.Username)
+			if err != nil {
+				return models.Token{}, err
+			}
 		}
 		return models.Token{}, ErrInvalidRefreshToken
 	}
@@ -197,6 +205,9 @@ func (a *service) ChangePassword(username string, oldPass string, newPass string
 	if _, err := a.authStore.UpsertUser(user); err != nil {
 		return false, fmt.Errorf("error updating user: %w", err)
 	}
+	a.eventPublisher.Publish(context.Background(), models.SourceEvent{
+		Type: models.EventPasswordUpdated,
+	})
 
 	return true, nil
 }

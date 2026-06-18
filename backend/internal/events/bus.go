@@ -12,6 +12,9 @@ type Publisher interface {
 	Publish(ctx context.Context, event models.SourceEvent)
 }
 
+// TransformerFunc transforms a source event into an event.
+type TransformerFunc func(context.Context, models.SourceEvent) models.Event
+
 // Handler processes a single event. Implementations must be safe for concurrent use.
 type Handler interface {
 	HandleEvent(ctx context.Context, event models.Event)
@@ -28,7 +31,9 @@ func (f HandlerFunc) HandleEvent(ctx context.Context, event models.Event) {
 // Bus is a fan-out event bus. Publish is non-blocking (up to buffer capacity).
 // All registered handlers receive every event concurrently.
 type Bus struct {
-	ch       chan models.Event
+	ch        chan models.Event
+	transform TransformerFunc
+
 	handlers []Handler
 	wg       sync.WaitGroup
 }
@@ -36,8 +41,14 @@ type Bus struct {
 // NewBus creates a new event bus with the given buffer size and config store.
 func NewBus(bufferSize int) *Bus {
 	return &Bus{
-		ch: make(chan models.Event, bufferSize),
+		ch:        make(chan models.Event, bufferSize),
+		transform: models.FromSourceEvent,
 	}
+}
+
+// SetTransform sets the transformer function for the bus.
+func (b *Bus) SetTransform(transform TransformerFunc) {
+	b.transform = transform
 }
 
 // Register adds a handler. Must be called before Run.
@@ -48,7 +59,7 @@ func (b *Bus) Register(h ...Handler) {
 // Publish enqueues an event. Non-blocking: drops the event if the buffer is full.
 // Use PublishWait if you need backpressure.
 func (b *Bus) Publish(ctx context.Context, srcEvent models.SourceEvent) {
-	event := models.FromSourceEvent(ctx, srcEvent)
+	event := b.transform(ctx, srcEvent)
 
 	select {
 	case b.ch <- event:
@@ -59,7 +70,7 @@ func (b *Bus) Publish(ctx context.Context, srcEvent models.SourceEvent) {
 
 // PublishWait enqueues an event, blocking until space is available or ctx is cancelled.
 func (b *Bus) PublishWait(ctx context.Context, srcEvent models.SourceEvent) error {
-	event := models.FromSourceEvent(ctx, srcEvent)
+	event := b.transform(ctx, srcEvent)
 	select {
 	case b.ch <- event:
 		return nil

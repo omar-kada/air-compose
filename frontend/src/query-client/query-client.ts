@@ -4,7 +4,7 @@ import { QueryCache, QueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import debounce from 'lodash.debounce';
 
-const debouncedRefreshToken = debounce(refreshToken, 5000, { leading: true }); // 5 seconds debounce
+export const debouncedRefreshToken = debounce(refreshToken, 5000, { leading: true }); // 5 seconds debounce
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
