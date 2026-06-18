@@ -6,14 +6,19 @@ import (
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/config"
 	"omar-kada/air-compose/internal/deployments"
-	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/process"
 	"omar-kada/air-compose/internal/server/mappers"
 	"omar-kada/air-compose/internal/users"
 	"strconv"
 )
+
+// StateGetter provides methods to retrieve the current state of stacks.
+type StateGetter interface {
+	Get() models.StacksState
+}
 
 // BusinessHandler implements the generated strict server interface
 type BusinessHandler struct {
@@ -28,7 +33,7 @@ func NewBusinessHandler(
 	processService process.DeploymentService,
 	userService users.AccountService,
 	fetcher git.Fetcher,
-	inspector docker.Inspector,
+	stateGetter StateGetter,
 	watcher process.RepoWatcher,
 	eventStore events.EventStorage,
 	deploymentStore deployments.DeploymentStorage,
@@ -48,7 +53,7 @@ func NewBusinessHandler(
 			eventStore:       eventStore,
 			configStore:      configStore,
 			fetcher:          fetcher,
-			inspector:        inspector,
+			stateGetter:      stateGetter,
 			watcher:          watcher,
 			depMapper:        mappers.DeploymentMapper{},
 			depDetailsMapper: mappers.NewDeploymentDetailsMapper(diffMapper, eventMapper),

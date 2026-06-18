@@ -34,7 +34,7 @@ func TestHandleEvent_ConfigurationUpdated(t *testing.T) {
 	// Create a configuration updated event
 	event := models.Event{
 		Type: models.EventConfigurationUpdated,
-		Data: models.ConfigChangedData{
+		Data: models.EventDataChange[models.Config]{
 			Old: models.Config{Settings: models.Settings{Git: models.GitConfig{Repo: "old-repo"}}},
 			New: models.Config{Settings: models.Settings{Git: models.GitConfig{Repo: "new-repo"}}},
 		},
@@ -60,7 +60,7 @@ func TestHandleEvent_ConfigurationUpdated_NoChanges(t *testing.T) {
 	// Create a configuration updated event with no changes
 	event := models.Event{
 		Type: models.EventConfigurationUpdated,
-		Data: models.ConfigChangedData{
+		Data: models.EventDataChange[models.Config]{
 			Old: models.Config{Settings: models.Settings{Git: models.GitConfig{Repo: "same-repo"}}},
 			New: models.Config{Settings: models.Settings{Git: models.GitConfig{Repo: "same-repo"}}},
 		},

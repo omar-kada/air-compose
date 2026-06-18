@@ -199,8 +199,8 @@ func (f *fetcher) checkoutOrCreate(repo *git.Repository, branch string) error {
 
 func (f *fetcher) repoExists() bool {
 	_, e := git.PlainOpen(f.repoDir)
-	slog.Info("repo exists ? ", "error", e)
 	if e != nil {
+		slog.Warn("repo inexistant or corrupted (it will be cleared)", "error", e)
 		f.ClearRepo() // clear the repo if it's not openable
 	}
 	return e == nil

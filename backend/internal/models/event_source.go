@@ -2,6 +2,8 @@ package models
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -12,19 +14,31 @@ type SourceEvent struct {
 	Data any
 }
 
-// ConfigChangedData represents the data for a configuration change event.
-type ConfigChangedData struct {
-	Old Config
-	New Config
+// EventDataChange represents the data for a change event.
+type EventDataChange[T any] struct {
+	Old T
+	New T
 }
 
 // NewConfigChangedEvent creates a new configuration change event with the old and new configurations.
 func NewConfigChangedEvent(oldConfig, newConfig Config) SourceEvent {
 	return SourceEvent{
 		Type: EventConfigurationUpdated,
-		Data: ConfigChangedData{
+		Data: EventDataChange[Config]{
 			Old: oldConfig,
 			New: newConfig,
+		},
+	}
+}
+
+// NewHealthChangedEvent creates a new health change event with the old and new health statuses.
+func NewHealthChangedEvent(oldHealth, newHealth ContainerHealth, notHealthy []string) SourceEvent {
+	return SourceEvent{
+		Type: EventHealthChange,
+		Msg:  fmt.Sprintf("(%v) %v", newHealth, strings.Join(notHealthy, ", ")),
+		Data: EventDataChange[ContainerHealth]{
+			Old: oldHealth,
+			New: newHealth,
 		},
 	}
 }

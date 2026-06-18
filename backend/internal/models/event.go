@@ -23,11 +23,8 @@ const (
 	// EventDeploymentError indicates that a deployment has failed
 	EventDeploymentError EventType = "DEPLOYMENT_ERROR"
 
-	// EventStacksUnhealthy indicates that some stacks are unhealthy
-	EventStacksUnhealthy EventType = "STACKS_UNHEALTHY"
-
-	// EventStacksHealthy indicates that all stacks are back to being healthy
-	EventStacksHealthy EventType = "STACKS_HEALTHY"
+	// EventHealthChange indicates that the health status of the stacks has changed
+	EventHealthChange EventType = "HEALTH_CHANGE"
 
 	// EventNewCommit indicates that the repo has been updated
 	EventNewCommit EventType = "NEW_COMMIT"
@@ -42,64 +39,6 @@ const (
 	EventSessionReused EventType = "SESSION_REUSED"
 )
 
-// ToText returns a human-readable string representation of the event type,
-func (e EventType) ToText() string {
-	switch e {
-	case EventMisc:
-		return "Miscellaneous event"
-	case EventError:
-		return "Error occurred"
-	case EventDeploymentStarted:
-		return "Deployment started"
-	case EventDeploymentSuccess:
-		return "Deployment succeeded"
-	case EventDeploymentError:
-		return "Deployment failed"
-	case EventStacksUnhealthy:
-		return "Some stacks are not healthy"
-	case EventStacksHealthy:
-		return "All stacks are healthy"
-	case EventNewCommit:
-		return "New commit"
-	case EventConfigurationUpdated:
-		return "Configuration updated"
-	case EventPasswordUpdated:
-		return "Password updated"
-	case EventSessionReused:
-		return "Session reused"
-	default:
-		return "Unknown event type: " + string(e)
-	}
-}
-
-// ToEmoji returns the emoji representation of the event type
-func (e EventType) ToEmoji() string {
-	switch e {
-	case EventMisc:
-		return "⚪"
-	case EventError:
-		return "❌"
-	case EventDeploymentStarted:
-		return "🚀"
-	case EventDeploymentSuccess, EventStacksHealthy:
-		return "✅"
-	case EventDeploymentError:
-		return "🔴"
-	case EventStacksUnhealthy:
-		return "🔴"
-	case EventNewCommit:
-		return "📦"
-	case EventConfigurationUpdated:
-		return "🔄"
-	case EventPasswordUpdated:
-		return "🔑"
-	case EventSessionReused:
-		return "🔐"
-	default:
-		return "❓"
-	}
-}
-
 // Event represent an event inside the deployment process
 type Event struct {
 	ID             uint64 `gorm:"primaryKey;autoIncrement:true"`
@@ -110,4 +49,75 @@ type Event struct {
 	ObjectName     string
 	IsNotification bool
 	Data           any `gorm:"-"`
+}
+
+// ToText returns a human-readable string representation of the event type,
+func (e Event) ToText() string {
+	switch e.Type {
+	case EventMisc:
+		return "Miscellaneous event"
+	case EventError:
+		return "Error occurred"
+	case EventDeploymentStarted:
+		return "Deployment started"
+	case EventDeploymentSuccess:
+		return "Deployment succeeded"
+	case EventDeploymentError:
+		return "Deployment failed"
+	case EventHealthChange:
+		return "Health status"
+	case EventNewCommit:
+		return "New commit"
+	case EventConfigurationUpdated:
+		return "Configuration updated"
+	case EventPasswordUpdated:
+		return "Password updated"
+	case EventSessionReused:
+		return "Session reused"
+	default:
+		return "Unknown event type: " + string(e.Type)
+	}
+}
+
+// ToEmoji returns the emoji representation of the event type
+func (e Event) ToEmoji() string {
+	switch e.Type {
+	case EventMisc:
+		return "⚪"
+	case EventError:
+		return "❌"
+	case EventDeploymentStarted:
+		return "⚙️"
+	case EventDeploymentSuccess:
+		return "✅"
+	case EventDeploymentError:
+		return "🔴"
+	case EventHealthChange:
+		return e.healthEmoji(e.Data.(EventDataChange[ContainerHealth]).New)
+	case EventNewCommit:
+		return "📦"
+	case EventConfigurationUpdated:
+		return "🔄"
+	case EventPasswordUpdated:
+		return "🔑"
+	case EventSessionReused:
+		return "�"
+	default:
+		return "❓"
+	}
+}
+
+func (Event) healthEmoji(health ContainerHealth) string {
+	switch health {
+	case ContainerStarting:
+		return "▶️"
+	case ContainerNoHealth:
+		return "⚠️"
+	case ContainerHealthy:
+		return "✅"
+	case ContainerUnhealthy:
+		return "🔴"
+	default:
+		return "❓"
+	}
 }

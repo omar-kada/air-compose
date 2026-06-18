@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
@@ -14,7 +13,7 @@ import (
 // HealthChecker defines the interface for checking the health of Docker stacks.
 type HealthChecker interface {
 	ScheduleStateRefresh(ctx context.Context)
-	GetChannel() <-chan models.ContainerHealth
+	Get() models.StacksState
 }
 
 type healthChecker struct {
@@ -38,10 +37,6 @@ func NewHealthChecker(configStore models.ConfigGetter, inspector Inspector, even
 		refreshDuration: 20 * time.Second,
 	}
 	return &hc
-}
-
-func (hc *healthChecker) GetChannel() <-chan models.ContainerHealth {
-	return hc.healthCheckChan
 }
 
 func (hc *healthChecker) ScheduleStateRefresh(ctx context.Context) {
@@ -71,31 +66,29 @@ func (hc *healthChecker) refreshState() {
 		})
 		return
 	}
-	slog.Debug("[HEALTH CHECK] result", "state", state.GetGlobalHealth())
 	hc.setCurrentState(state)
 }
 
 func (hc *healthChecker) setCurrentState(newState models.StacksState) {
+
+	unhealthy := newState.GetUnhealthyServices()
 	var globalHealth = newState.GetGlobalHealth()
 	oldGlobalHealth := hc.currentStacksState.GetGlobalHealth()
 
-	select {
-	case hc.healthCheckChan <- globalHealth: // try to send
-	default:
+	if len(unhealthy) > 0 {
+		slog.Debug("[HEALTH CHECK] unhealthy services", "services", strings.Join(unhealthy, ", "))
+	} else {
+		slog.Debug("[HEALTH CHECK] result", "state", globalHealth)
 	}
-	if oldGlobalHealth != globalHealth {
-		if globalHealth == models.ContainerUnhealthy {
-			hc.eventPublisher.Publish(context.Background(), models.SourceEvent{
-				Type: models.EventStacksUnhealthy,
-				Msg:  fmt.Sprintf("services : %v", strings.Join(newState.GetUnhealthyServices(), ", ")),
-			})
-		} else if globalHealth == models.ContainerHealthy && hc.currentStacksState != nil {
-			slog.Debug("[HEALTH CHECK] sending healthy event", "oldHealth", oldGlobalHealth, "newHealth", globalHealth)
-			hc.eventPublisher.Publish(context.Background(), models.SourceEvent{
-				Type: models.EventStacksHealthy,
-				Msg:  "",
-			})
-		}
+
+	if oldGlobalHealth != globalHealth && (globalHealth != models.ContainerHealthy || hc.currentStacksState != nil) {
+		hc.eventPublisher.Publish(context.Background(),
+			models.NewHealthChangedEvent(oldGlobalHealth, globalHealth, unhealthy))
 	}
+
 	hc.currentStacksState = newState
+}
+
+func (hc *healthChecker) Get() models.StacksState {
+	return hc.currentStacksState
 }

@@ -29,6 +29,7 @@ type GitConfig struct {
 type ScheduleConfig struct {
 	Cron               string `mapstructure:"cron"`
 	RetriesOnUnhealthy int    `mapstructure:"retriesOnUnhealthy"`
+	RetryDelay         int    `mapstructure:"retryDelay"`
 }
 
 // NotificationConfig represents the configuration for notification-related settings.

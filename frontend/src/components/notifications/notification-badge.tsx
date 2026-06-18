@@ -16,16 +16,15 @@ function getNotificationColor(type: EventType): string {
   switch (type) {
     case EventType.ERROR:
     case EventType.DEPLOYMENT_ERROR:
-    case EventType.STACKS_UNHEALTHY:
       return 'bg-destructive';
     case EventType.MISC:
     case EventType.DEPLOYMENT_STARTED:
       return 'bg-blue-500';
     case EventType.DEPLOYMENT_SUCCESS:
-    case EventType.STACKS_HEALTHY:
       return 'bg-green-500';
     case EventType.PASSWORD_UPDATED:
     case EventType.CONFIGURATION_UPDATED:
+    case EventType.HEALTH_CHANGE:
       return 'bg-yellow-500';
     case EventType.SESSION_REUSED:
       return 'bg-purple-500';
