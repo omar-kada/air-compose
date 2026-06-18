@@ -45,6 +45,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				Schedule: models.ScheduleConfig{
 					Cron:               cron,
 					RetriesOnUnhealthy: 3,
+					RetryDelay:         30000,
 				},
 				Notifications: models.NotificationConfig{
 					NotificationURL:   notificationURL,
@@ -62,6 +63,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				NotificationTypes:  []api.EventType{},
 				Oidc:               &oidcAPI,
 				RetriesOnUnhealthy: 3,
+				RetryDelay:         30000,
 			},
 		},
 		{
@@ -85,6 +87,7 @@ func TestSettingsMapper_Map(t *testing.T) {
 				NotificationTypes:  []api.EventType{},
 				Oidc:               &api.OidcSettings{},
 				RetriesOnUnhealthy: 0,
+				RetryDelay:         0,
 			},
 		},
 	}
@@ -133,6 +136,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				NotificationTypes:  []api.EventType{},
 				Oidc:               &oidc,
 				RetriesOnUnhealthy: 3,
+				RetryDelay:         30000,
 			},
 			want: models.Settings{
 				Git: models.GitConfig{
@@ -144,6 +148,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				Schedule: models.ScheduleConfig{
 					Cron:               cron,
 					RetriesOnUnhealthy: 3,
+					RetryDelay:         30000,
 				},
 				Notifications: models.NotificationConfig{
 					NotificationURL:   notificationURL,
@@ -164,6 +169,7 @@ func TestSettingsMapper_UnMap(t *testing.T) {
 				NotificationTypes:  []api.EventType{},
 				Oidc:               &api.OidcSettings{},
 				RetriesOnUnhealthy: 0,
+				RetryDelay:         0,
 			},
 			want: models.Settings{
 				Git: models.GitConfig{

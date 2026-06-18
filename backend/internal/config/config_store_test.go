@@ -148,8 +148,8 @@ func TestUpdateConfig(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		mockEventPublisher.AssertCalled(t, "Publish", mock.Anything, mock.MatchedBy(func(srcEvent models.SourceEvent) bool {
-			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.ConfigChangedData).Old.Environment) &&
-				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.ConfigChangedData).New.Environment)
+			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.EventDataChange[models.Config]).Old.Environment) &&
+				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.EventDataChange[models.Config]).New.Environment)
 		}))
 
 	})
@@ -310,8 +310,8 @@ func TestUpdateConfig_DirectFileUpdate(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		mockEventPublisher.AssertCalled(t, "Publish", mock.Anything, mock.MatchedBy(func(srcEvent models.SourceEvent) bool {
-			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.ConfigChangedData).Old.Environment) &&
-				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.ConfigChangedData).New.Environment)
+			return assert.ObjectsAreEqual(initialCfg.Environment, srcEvent.Data.(models.EventDataChange[models.Config]).Old.Environment) &&
+				assert.ObjectsAreEqual(updatedCfg.Environment, srcEvent.Data.(models.EventDataChange[models.Config]).New.Environment)
 		}))
 
 	})

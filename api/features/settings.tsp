@@ -24,6 +24,7 @@ model Settings {
   notificationTypes: Array<EventType>;
   oidc?: OidcSettings;
   retriesOnUnhealthy: integer;
+  retryDelay: integer;
 }
 
 model GitCredentials {

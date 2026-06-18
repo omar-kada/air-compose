@@ -81,11 +81,10 @@ const (
 	EventTypeDEPLOYMENTSTARTED    EventType = "DEPLOYMENT_STARTED"
 	EventTypeDEPLOYMENTSUCCESS    EventType = "DEPLOYMENT_SUCCESS"
 	EventTypeERROR                EventType = "ERROR"
+	EventTypeHEALTHCHANGE         EventType = "HEALTH_CHANGE"
 	EventTypeMISC                 EventType = "MISC"
 	EventTypePASSWORDUPDATED      EventType = "PASSWORD_UPDATED"
 	EventTypeSESSIONREUSED        EventType = "SESSION_REUSED"
-	EventTypeSTACKSHEALTHY        EventType = "STACKS_HEALTHY"
-	EventTypeSTACKSUNHEALTHY      EventType = "STACKS_UNHEALTHY"
 )
 
 // Defines values for ServerMessageErrorKind.
@@ -352,6 +351,7 @@ type Settings struct {
 	Oidc               *OidcSettings `json:"oidc,omitempty"`
 	Repo               string        `json:"repo"`
 	RetriesOnUnhealthy int           `json:"retriesOnUnhealthy"`
+	RetryDelay         int           `json:"retryDelay"`
 	Token              *string       `json:"token,omitempty"`
 	Username           *string       `json:"username,omitempty"`
 }

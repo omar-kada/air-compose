@@ -63,6 +63,7 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
           <FieldSet>
             <SettingsField form={form} name="cron" withDescription />
             <SettingsSliderField form={form} name="retriesOnUnhealthy" withDescription />
+            <SettingsSliderField form={form} name="retryDelay" min={1} max={30} step={1} />
           </FieldSet>
         </SettingsSection>
 
@@ -154,7 +155,7 @@ function SettingsSliderField({
   step = 1,
 }: {
   form: UseFormReturn<FormValues>;
-  name: 'retriesOnUnhealthy';
+  name: 'retriesOnUnhealthy' | 'retryDelay';
   withDescription?: boolean;
   min?: number;
   max?: number;

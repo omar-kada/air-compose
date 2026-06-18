@@ -10,7 +10,6 @@ import (
 
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/deployments"
-	"omar-kada/air-compose/internal/docker"
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/git"
 	"omar-kada/air-compose/internal/models"
@@ -26,7 +25,7 @@ type DeploymentHandler struct {
 	eventStore      events.EventStorage
 	configStore     models.ConfigGetter
 	fetcher         git.Fetcher
-	inspector       docker.Inspector
+	stateGetter     StateGetter
 	watcher         process.RepoWatcher
 
 	depMapper        mappers.PageMapper[models.Deployment, api.Deployment]
@@ -97,10 +96,7 @@ func (h *DeploymentHandler) DeployementAPISync(_ context.Context, _ api.Deployem
 
 // StatusAPIGet retrieves the status of managed stacks
 func (h *DeploymentHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
-	stacks, err := h.inspector.GetManagedStacks()
-	if err != nil {
-		return nil, err
-	}
+	stacks := h.stateGetter.Get()
 
 	result := models.MapMapper[string](
 		models.MapMapper[string](h.statusMapper.Map),
@@ -112,7 +108,7 @@ func (h *DeploymentHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRe
 func (h *DeploymentHandler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
 	dep, _ := h.deploymentStore.GetLastDeployment()
 	cfg := h.configStore.Get()
-	stackstate, _ := h.inspector.GetManagedStacks()
+	stackstate := h.stateGetter.Get()
 
 	return api.StateAPIGet200JSONResponse(h.stateMapper.Map(models.State{
 		LastStatus:  dep.Status,

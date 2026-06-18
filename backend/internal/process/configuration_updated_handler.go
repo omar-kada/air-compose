@@ -27,7 +27,7 @@ func NewConfigurationUpdatedHandler(deploymentService DeploymentService, eventPu
 // HandleEvent processes configuration update events.
 func (h *ConfigurationUpdatedHandler) HandleEvent(_ context.Context, event models.Event) {
 	if event.Type == models.EventConfigurationUpdated {
-		cfgChanges, ok := event.Data.(models.ConfigChangedData)
+		cfgChanges, ok := event.Data.(models.EventDataChange[models.Config])
 		if ok {
 			oldCfg := cfgChanges.Old
 			newCfg := cfgChanges.New

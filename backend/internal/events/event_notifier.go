@@ -39,12 +39,12 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 		return false
 	}
 	if cfg.Settings.Notifications.NotificationURL != "" {
-		message := event.Type.ToEmoji() + " " + event.Type.ToText()
+		message := event.ToEmoji() + " " + event.ToText()
 		if event.ObjectID != 0 {
 			message += fmt.Sprintf(" - [%v] %v", event.ObjectID, event.ObjectName)
 		}
 		if event.Msg != "" {
-			message += fmt.Sprintf(" :\n %v", event.Msg)
+			message += fmt.Sprintf(" : %v", event.Msg)
 		}
 
 		err := h.Send(cfg.Settings.Notifications.NotificationURL, message)

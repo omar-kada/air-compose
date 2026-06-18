@@ -146,8 +146,7 @@ export const EventType = {
   DEPLOYMENT_STARTED: 'DEPLOYMENT_STARTED',
   DEPLOYMENT_SUCCESS: 'DEPLOYMENT_SUCCESS',
   DEPLOYMENT_ERROR: 'DEPLOYMENT_ERROR',
-  STACKS_UNHEALTHY: 'STACKS_UNHEALTHY',
-  STACKS_HEALTHY: 'STACKS_HEALTHY',
+  HEALTH_CHANGE: 'HEALTH_CHANGE',
   CONFIGURATION_UPDATED: 'CONFIGURATION_UPDATED',
   PASSWORD_UPDATED: 'PASSWORD_UPDATED',
   SESSION_REUSED: 'SESSION_REUSED',
@@ -311,6 +310,7 @@ export interface Settings {
   notificationTypes: EventType[];
   oidc?: OidcSettings;
   retriesOnUnhealthy: number;
+  retryDelay: number;
 }
 
 export interface StackStatus {[key: string]: {[key: string]: ContainerStatus}}

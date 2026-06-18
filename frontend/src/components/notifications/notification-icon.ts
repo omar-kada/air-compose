@@ -1,5 +1,6 @@
 import { EventType } from '@/api/api';
 import {
+  Activity,
   Ban,
   BellIcon,
   Check,
@@ -27,11 +28,11 @@ export function getNotificaitonIcon(type: EventType | EventGroup): LucideIcon {
     case EventType.DEPLOYMENT_STARTED:
       return Clock;
     case EventType.DEPLOYMENT_SUCCESS:
-    case EventType.STACKS_HEALTHY:
       return Check;
     case EventType.DEPLOYMENT_ERROR:
-    case EventType.STACKS_UNHEALTHY:
       return X;
+    case EventType.HEALTH_CHANGE:
+      return Activity;
     case 'DEPLOYMENT':
       return Rocket;
     case EventType.PASSWORD_UPDATED:

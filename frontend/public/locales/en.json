@@ -122,8 +122,9 @@
       "cron": "Cron period",
       "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
       "cron_PLACEHOLDER": "disabled when empty",
-      "retriesOnUnhealthy": "Retries on unhealthy stacks : {{value}}",
+      "retriesOnUnhealthy": "Retries on unhealthy stacks ({{value}}) :",
       "retriesOnUnhealthy_DESCRIPTION": "(0 = disabled)",
+      "retryDelay": "Delay between retries ({{value}}m) :",
       "ACCOUNT": "Account",
       "DELETE_ACCOUNT": "Delete account",
       "CHANGE_PASSWORD": "Change password",
@@ -228,8 +229,7 @@
     "DEPLOYMENT_ERROR": "Deployment error",
     "SETTINGS": "Settings",
     "PASSWORD_UPDATED": "Password updated",
-    "STACKS_UNHEALTHY": "Unhealthy stacks",
-    "STACKS_HEALTHY": "Healthy stacks",
+    "HEALTH_CHANGE": "Health changed",
     "CONFIGURATION_UPDATED": "Configuration updated",
     "SESSION_REUSED": "Session reused"
   }

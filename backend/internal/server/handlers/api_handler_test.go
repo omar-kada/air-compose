@@ -27,8 +27,12 @@ type Mock struct {
 	mocks.Fetcher
 	events.EventStorage
 	deployments.DeploymentStorage
-	mocks.Inspector
 	process.RepoWatcher
+}
+
+func (m *Mock) Get() models.StacksState {
+	args := m.Called()
+	return args.Get(0).(models.StacksState)
 }
 
 func (m *Mock) DoDeploy(trigger process.DeploymentTrigger, patch models.Patch) (models.Deployment, error) {
@@ -214,7 +218,7 @@ func TestStatusAPIGet_Success(t *testing.T) {
 		ID: "c1", Name: "container1", Image: "img1",
 		State: models.StateRunning, Health: models.ContainerHealthy,
 	})
-	m.Inspector.On("GetManagedStacks").Return(stacks, nil)
+	m.On("Get").Return(stacks, nil)
 
 	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
 	assert.NoError(t, err)
@@ -246,7 +250,7 @@ func TestStateAPIGet_Success(t *testing.T) {
 	m.On("GetLastDeployment").Return(dep, nil)
 	stacks := models.NewStacksState()
 	stacks.SetContainerStatus("service1", models.ContainerSummary{ID: "c1", Name: "container1", Image: "img1", State: models.StateRunning, Health: models.ContainerHealthy})
-	m.Inspector.On("GetManagedStacks").Return(stacks, nil)
+	m.On("Get").Return(stacks, nil)
 	m.On("GetNext").Return(next)
 
 	req := api.StateAPIGetRequestObject{}
@@ -349,24 +353,6 @@ func TestDeployementAPIRead_GetDeploymentError(t *testing.T) {
 
 }
 
-func TestStatusAPIGet_Error(t *testing.T) {
-	m := &Mock{}
-	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
-
-	assert.NoError(t, err)
-
-	h := NewBusinessHandler(store, m, m, m, m, m, m, m)
-
-	errStacks := errors.New("failed to get stacks")
-	m.Inspector.On("GetManagedStacks").Return(models.StacksState{}, errStacks)
-
-	resp, err := h.StatusAPIGet(context.Background(), api.StatusAPIGetRequestObject{})
-	assert.Nil(t, resp)
-	assert.Equal(t, errStacks, err)
-
-	m.AssertExpectations(t)
-}
-
 func TestStateAPIGet_Error(t *testing.T) {
 	m := &Mock{}
 	store, err := config.NewConfigStore(filepath.Join(t.TempDir(), "config.yaml"), events.NewBus(1))
@@ -377,7 +363,7 @@ func TestStateAPIGet_Error(t *testing.T) {
 
 	errState := errors.New("state error")
 	m.On("GetLastDeployment").Return(models.Deployment{}, errState)
-	m.Inspector.On("GetManagedStacks").Return(models.StacksState{}, errState)
+	m.On("Get").Return(models.StacksState{}, errState)
 	m.On("GetNext").Return(time.Time{})
 
 	req := api.StateAPIGetRequestObject{}

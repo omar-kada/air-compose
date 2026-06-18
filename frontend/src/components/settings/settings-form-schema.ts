@@ -10,6 +10,7 @@ export const formSchema = z.object({
   notificationURL: z.string().optional(),
   notificationTypes: z.array(z.enum(EventType)),
   retriesOnUnhealthy: z.number().nonoptional(),
+  retryDelay: z.number().nonoptional(),
 });
 export type FormValues = z.infer<typeof formSchema>;
 
@@ -19,14 +20,19 @@ export function fromSettings(settings?: Settings): FormValues {
       repo: '',
       notificationTypes: [],
       retriesOnUnhealthy: 0,
+      retryDelay: 2 * 60 * 1000,
     };
   }
-  return settings;
+  return {
+    ...settings,
+    retryDelay: settings.retryDelay / 60000,
+  };
 }
 
 export function toSettings(formValues: FormValues): Settings {
   return {
     ...formValues,
     retriesOnUnhealthy: Number(formValues.retriesOnUnhealthy),
+    retryDelay: Number(formValues.retryDelay) * 60000,
   };
 }

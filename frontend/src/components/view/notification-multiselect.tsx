@@ -11,8 +11,7 @@ const notificationOptions = [
       { value: EventType.DEPLOYMENT_STARTED, label: 'EVENT_TYPE.DEPLOYMENT_STARTED' },
       { value: EventType.DEPLOYMENT_SUCCESS, label: 'EVENT_TYPE.DEPLOYMENT_SUCCESS' },
       { value: EventType.DEPLOYMENT_ERROR, label: 'EVENT_TYPE.DEPLOYMENT_ERROR' },
-      { value: EventType.STACKS_UNHEALTHY, label: 'EVENT_TYPE.STACKS_UNHEALTHY' },
-      { value: EventType.STACKS_HEALTHY, label: 'EVENT_TYPE.STACKS_HEALTHY' },
+      { value: EventType.HEALTH_CHANGE, label: 'EVENT_TYPE.HEALTH_CHANGE' },
     ],
   },
   {

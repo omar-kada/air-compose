@@ -59,8 +59,7 @@ function onEvent(queryClient: QueryClient, event: EventMessage) {
       queryClient.refetchQueries({ queryKey: getDeployementAPIListQueryKey() });
       queryClient.refetchQueries({ queryKey: getStateAPIGetQueryKey() });
       break;
-    case EventType.STACKS_HEALTHY:
-    case EventType.STACKS_UNHEALTHY:
+    case EventType.HEALTH_CHANGE:
       queryClient.refetchQueries({ queryKey: getStateAPIGetQueryKey() });
       queryClient.refetchQueries({ queryKey: getStatusAPIGetQueryKey() });
       break;

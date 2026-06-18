@@ -22,6 +22,7 @@ func (SettingsMapper) Map(settings models.Settings) api.Settings {
 		NotificationTypes:  mapEventTypes(settings.Notifications.NotificationTypes),
 		Oidc:               mapOidcConfig(settings.Oidc),
 		RetriesOnUnhealthy: settings.Schedule.RetriesOnUnhealthy,
+		RetryDelay:         settings.Schedule.RetryDelay,
 	}
 }
 
@@ -56,6 +57,7 @@ func (SettingsMapper) UnMap(settings api.Settings) models.Settings {
 		},
 		Schedule: models.ScheduleConfig{
 			RetriesOnUnhealthy: settings.RetriesOnUnhealthy,
+			RetryDelay:         settings.RetryDelay,
 		},
 	}
 	if settings.Branch != nil {

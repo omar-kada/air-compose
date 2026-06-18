@@ -59,7 +59,7 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
 		configStore.Set(cfg)
-		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.Type.ToEmoji()+" "+event.Type.ToText()+" - [1] Test Object :\n Test Message").Return(nil)
+		mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, event.ToEmoji()+" "+event.ToText()+" - [1] Test Object : Test Message").Return(nil)
 
 		handler.HandleEvent(context.Background(), event)
 

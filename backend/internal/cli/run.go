@@ -120,7 +120,7 @@ func (run *runCommand) doRun() error {
 
 	repoWatcher := process.NewRepoWatcher(fetcher, configStore, deploymentService, eventBus, process.NewCronScheduler())
 	healthChecker := docker.NewHealthChecker(configStore, inspector, eventBus)
-	healthTransitionHandler := process.NewHealthTransitionHandler(configStore, deploymentService, healthChecker.GetChannel())
+	healthTransitionHandler := process.NewHealthTransitionHandler(configStore, deploymentService)
 
 	oidcService := users.NewOidcService(configStore, authStore)
 	userService := users.NewService(authStore)
@@ -128,11 +128,12 @@ func (run *runCommand) doRun() error {
 	// register events consumers
 	eventBus.Register(
 		process.NewConfigurationUpdatedHandler(deploymentService, eventBus),
+		events.HandlerFunc(healthTransitionHandler.HandleHealthCheck),
 		events.NewLoggingEventHandler(),
 		events.NewNotificationEventHandler(configStore, eventStore),
 		events.HandlerFunc(func(_ context.Context, event models.Event) {
 			if event.Type == models.EventConfigurationUpdated {
-				data, ok := event.Data.(models.ConfigChangedData)
+				data, ok := event.Data.(models.EventDataChange[models.Config])
 				if !ok {
 					slog.Error("issue with event data type ", "event", event)
 				} else if data.Old.Settings.Schedule.Cron != data.New.Settings.Schedule.Cron {
@@ -160,7 +161,7 @@ func (run *runCommand) doRun() error {
 
 	businessHandler := handlers.NewBusinessHandler(
 		configStore, deploymentService, userService,
-		fetcher, inspector, repoWatcher,
+		fetcher, healthChecker, repoWatcher,
 		eventStore, deploymentStore)
 
 	socketHandler := socket.NewWebSocketHandler()
