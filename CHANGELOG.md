@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/omar-kada/air-compose/compare/v0.2.0...v0.3.0) (2026-06-18)
+
+
+### Features
+
+* add unread notification indicator ([#170](https://github.com/omar-kada/air-compose/issues/170)) ([e75ba7a](https://github.com/omar-kada/air-compose/commit/e75ba7a219610b16a06041eac671c0b38fa3b05d))
+* deployment on config updated ([#156](https://github.com/omar-kada/air-compose/issues/156)) ([1e51346](https://github.com/omar-kada/air-compose/commit/1e513468e5c91c99cbb0813081c11b5b0fa7a43e))
+* handle events in client using websockets ([#166](https://github.com/omar-kada/air-compose/issues/166)) ([9f242b0](https://github.com/omar-kada/air-compose/commit/9f242b040f38e46a7b7599e194eb205a962a8bbc))
+* redeploy on unhealthy ([#144](https://github.com/omar-kada/air-compose/issues/144)) ([b8fac76](https://github.com/omar-kada/air-compose/commit/b8fac760c77b1463eb7896e61e9b2989bc8cb7c1))
+* unhealthy stacks detection and notification ([#124](https://github.com/omar-kada/air-compose/issues/124)) ([6bb52e6](https://github.com/omar-kada/air-compose/commit/6bb52e6da6ce0549c912b4c6a9d2b749fb26ff83))
+
+
+### Bug Fixes
+
+* double override inside env file ([#115](https://github.com/omar-kada/air-compose/issues/115)) ([cdc33c1](https://github.com/omar-kada/air-compose/commit/cdc33c144d5591acdfe4e9d20e866c0f1455ce39))
+* refactor health check and state ([#137](https://github.com/omar-kada/air-compose/issues/137)) ([0fe65d4](https://github.com/omar-kada/air-compose/commit/0fe65d49a5e6f31d4b9ea84e14f4523a9a5155f5))
+* stop serving directories in spa handler ([#127](https://github.com/omar-kada/air-compose/issues/127)) ([b049789](https://github.com/omar-kada/air-compose/commit/b049789a713fb2b52843eb70681a8f3577854628))
+
 ## [0.2.0](https://github.com/omar-kada/air-compose/compare/v0.1.2...v0.2.0) (2026-05-18)
 
 
