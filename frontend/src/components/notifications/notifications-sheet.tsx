@@ -1,4 +1,4 @@
-import { EventType, type Event } from '@/api/api';
+import { type Event } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -10,12 +10,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { getNotificationsQueryOptions, useResetUnreadCount } from '@/hooks';
 import { useDeploymentNavigate } from '@/lib';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { NotificationFilter } from './notifications-filters';
 import { NotificationList } from './notifications-list';
 
 export function NotificationSheet({ children }: { children: ReactNode }) {
@@ -25,12 +26,21 @@ export function NotificationSheet({ children }: { children: ReactNode }) {
   const handleNotificationClick = useCallback(
     (event: Event) => {
       setOpen(false);
-      depNavigate(event.objectId);
+      if (event.objectId) {
+        depNavigate(event.objectId);
+      }
     },
     [setOpen, depNavigate],
   );
-  const [selectedTypes, setSelectedTypes] = useState<Array<EventType>>(Object.values(EventType));
 
+  const { data: notifications } = useInfiniteQuery(getNotificationsQueryOptions());
+
+  const resetNotifCount = useResetUnreadCount();
+  useEffect(() => {
+    if (!open && notifications?.length) {
+      resetNotifCount();
+    }
+  }, [open]);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -42,16 +52,11 @@ export function NotificationSheet({ children }: { children: ReactNode }) {
           <SheetTitle>{t('NOTIFICATIONS.NOTIFICATIONS')}</SheetTitle>
           <div className="flex flex-nowrap justify-between items-center-safe">
             <SheetDescription>{t('NOTIFICATIONS.DESCRIPTION')}</SheetDescription>
-
-            <NotificationFilter onFilterChanged={setSelectedTypes} />
           </div>
         </SheetHeader>
         <Separator></Separator>
         <ScrollArea className="h-1 flex-1 gap-2">
-          <NotificationList
-            onNotificationClick={handleNotificationClick}
-            selectedTypes={selectedTypes}
-          />
+          <NotificationList onNotificationClick={handleNotificationClick} />
         </ScrollArea>
         <SheetFooter>
           <SheetClose asChild>

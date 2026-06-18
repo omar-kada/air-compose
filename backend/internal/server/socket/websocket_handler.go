@@ -58,7 +58,7 @@ func (h *websocketHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		ctx:      ctx,
 		cancel:   cancel,
 	}
-	slog.Info("[SOCKET] websocket upgrade succeeded", "session", sessionID, "remoteAddr", r.RemoteAddr)
+	slog.Debug("[SOCKET] websocket upgrade succeeded", "session", sessionID, "remoteAddr", r.RemoteAddr)
 
 	h.mu.Lock()
 	h.sessions[sessionID] = sess
@@ -77,9 +77,10 @@ func (h *websocketHandler) BroadcastEvent(_ context.Context, event models.Event)
 	eventJSON, err := json.Marshal(api.ServerMessageEvent{
 		Kind: api.ServerMessageEventKindEvent,
 		Value: api.EventMessage{
-			Msg:          event.Msg,
-			Type:         api.EventType(event.Type),
-			DeploymentId: &event.ObjectID,
+			Msg:            event.Msg,
+			Type:           api.EventType(event.Type),
+			DeploymentId:   &event.ObjectID,
+			IsNotification: event.IsNotification,
 		}})
 	if err != nil {
 		slog.Error("[SOCKET] failed to serialize event", "error", err)
@@ -107,7 +108,7 @@ type session struct {
 func (sess *session) run() {
 
 	defer func() {
-		sess.logger.Info("[SOCKET] session closing")
+		sess.logger.Debug("[SOCKET] session closing")
 		sess.cancel()
 		sess.conn.Close(websocket.StatusNormalClosure, "session ended")
 	}()

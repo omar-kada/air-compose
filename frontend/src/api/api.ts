@@ -198,6 +198,7 @@ export interface EventMessage {
   type: EventType;
   msg: string;
   deploymentId?: number;
+  isNotification: boolean;
 }
 
 export interface Features {

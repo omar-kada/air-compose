@@ -46,7 +46,7 @@ func (a *AtomicScheduler) Schedule(fn func(), newCronPeriod string) (*cron.Cron,
 		return nil, nil
 	} else if newCronPeriod != "" && newCronPeriod != "0" {
 
-		slog.Debug("scheduling a new cron job")
+		slog.Debug("scheduling a new cron job", "period", newCronPeriod)
 		c := cron.New()
 		_, err := c.AddFunc(newCronPeriod, fn)
 		if err != nil {

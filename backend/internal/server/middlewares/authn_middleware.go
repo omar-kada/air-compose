@@ -71,7 +71,7 @@ func AuthnMiddleware(next http.Handler, authService users.AuthService) http.Hand
 
 		username, err := getUsernameFromCookies(r, authService)
 		if err != nil {
-			slog.Error(err.Error())
+			slog.Warn(err.Error())
 			if !inWhiteList {
 				sendError(w, api.ErrorCodeINVALIDTOKEN)
 				return

@@ -37,8 +37,8 @@ model EventMessage {
     type: EventType;
     msg: string;
     deploymentId?: uint64;
+    isNotification: boolean;
 }
-
 model LogLine {
     msg: string;
     time: utcDateTime;

@@ -103,6 +103,7 @@ func (run *runCommand) doRun() error {
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
 	}
+	eventBus.SetTransform(events.NewEventTransformer(configStore).HandleEvent)
 
 	inspector, err := docker.NewInspector(params.ServicesDir, configStore)
 	if err != nil {
@@ -123,7 +124,7 @@ func (run *runCommand) doRun() error {
 	healthTransitionHandler := process.NewHealthTransitionHandler(configStore, deploymentService)
 
 	oidcService := users.NewOidcService(configStore, authStore)
-	userService := users.NewService(authStore)
+	userService := users.NewService(authStore, eventBus)
 
 	// register events consumers
 	eventBus.Register(

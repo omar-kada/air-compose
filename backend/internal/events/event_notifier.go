@@ -30,15 +30,8 @@ func NewNotificationEventHandler(configStore models.ConfigGetter, eventStore Eve
 // HandleEvent sends a notification for the event
 func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.Event) {
 	cfg := h.configStore.Get()
-	event.IsNotification = h.sendNotification(cfg, event)
 	h.storeNotification(event)
-}
-
-func (h *NotificationEventHandler) sendNotification(cfg models.Config, event models.Event) bool {
-	if !cfg.IsEventNotificationEnabled(event.Type) {
-		return false
-	}
-	if cfg.Settings.Notifications.NotificationURL != "" {
+	if event.IsNotification && cfg.Settings.Notifications.NotificationURL != "" {
 		message := event.ToEmoji() + " " + event.ToText()
 		if event.ObjectID != 0 {
 			message += fmt.Sprintf(" - [%v] %v", event.ObjectID, event.ObjectName)
@@ -52,7 +45,6 @@ func (h *NotificationEventHandler) sendNotification(cfg models.Config, event mod
 			slog.Error("can't send notification", "error", err)
 		}
 	}
-	return true
 }
 
 func (h *NotificationEventHandler) storeNotification(event models.Event) {

@@ -1,5 +1,5 @@
 import type { User } from '@/api/api';
-import { useLogout, useUser } from '@/hooks';
+import { useLogout, useUnreadNotificationCount, useUser } from '@/hooks';
 import { useTheme } from '@/hooks/theme-provider';
 import { cn } from '@/lib';
 import { Bell, LogOutIcon, Moon, Settings } from 'lucide-react';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { NotificationSheet } from './notifications';
 import { SettingsSheet } from './settings';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ const gotoHome = () => (window.location.href = '/');
 
 export function Topbar({ children, className }: { children?: ReactNode; className?: string }) {
   const { data: user } = useUser();
+  const unreadCount = useUnreadNotificationCount();
 
   return (
     <header className="h-14 min-h-14 border-b w-full flex justify-around bg-sidebar sticky top-0 z-50">
@@ -40,8 +42,16 @@ export function Topbar({ children, className }: { children?: ReactNode; classNam
         {user && (
           <div className="flex items-center gap-2">
             <NotificationSheet>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}{' '}
               </Button>
             </NotificationSheet>
             <UserDropDown user={user} />

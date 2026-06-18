@@ -1,7 +1,8 @@
 import { type Event } from '@/api/api';
-import { getNotificationsQueryOptions, useRelativeTime } from '@/hooks';
+import { getNotificationsQueryOptions, useRelativeTime, useUnreadNotificationCount } from '@/hooks';
+import { cn } from '@/lib';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Fragment, useCallback, useEffect, useState, type MouseEvent } from 'react';
+import { Fragment, useCallback, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import {
@@ -19,10 +20,8 @@ import { ErrorAlert } from '../view';
 import { NotificationBadge } from './notification-badge';
 
 export function NotificationList({
-  selectedTypes,
   onNotificationClick,
 }: {
-  selectedTypes: Array<string>;
   onNotificationClick: (notif: Event) => void;
 }) {
   const {
@@ -40,21 +39,23 @@ export function NotificationList({
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, notifications?.length]);
 
-  const [filteredNotifications, setFilteredNotifications] = useState(notifications);
-  useEffect(() => {
-    setFilteredNotifications(notifications?.filter((notif) => selectedTypes.includes(notif.type)));
-  }, [notifications, selectedTypes, setFilteredNotifications]);
+  const unredNotifs = useUnreadNotificationCount();
 
   return (
     <>
       {isPending && <NotificationSkeleton />}
       <ErrorAlert title="ALERT.LOAD_NOTIFICATIONS_ERROR" error={error} />
-      {filteredNotifications && (
+      {notifications && (
         <ItemGroup className="grid auto-rows-min px-4 mb-10">
-          {filteredNotifications.map((notification) => (
+          {notifications.map((notification, index) => (
             <Fragment key={notification.ID}>
-              <Notification notification={notification} onClick={onNotificationClick} />
-              <ItemSeparator></ItemSeparator>
+              <Notification
+                notification={notification}
+                onClick={onNotificationClick}
+                unread={index < unredNotifs}
+                className="-mx-3 rounded-none"
+              />
+              <ItemSeparator className="-mx-3"></ItemSeparator>
             </Fragment>
           ))}
         </ItemGroup>
@@ -69,9 +70,13 @@ export function NotificationList({
 function Notification({
   notification,
   onClick,
+  unread,
+  className,
 }: {
   notification: Event;
   onClick: (notif: Event) => void;
+  unread: boolean;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const relativeTime = useRelativeTime(notification.time);
@@ -83,17 +88,17 @@ function Notification({
     [onClick, notification],
   );
   return (
-    <Item asChild>
+    <Item asChild className={cn(unread ? 'bg-accent ' : '', className)}>
       <a href="" onClick={handleClick}>
         <ItemMedia variant="default">
-          <NotificationBadge type={notification.type} />
+          <NotificationBadge notification={notification} />
         </ItemMedia>
         <ItemContent>
           <ItemTitle>{t(`EVENT_TYPE.${notification.type}`, { ...notification })}</ItemTitle>
           <ItemDescription>
             {getNotificationObjectTitle(notification)}
 
-            {notification.msg !== '' && `: ${notification.msg}`}
+            {notification.msg !== '' && `${notification.msg}`}
           </ItemDescription>
           <div className="text-xs text-muted-foreground self-end-safe">{relativeTime}</div>
         </ItemContent>
@@ -104,7 +109,7 @@ function Notification({
 
 function getNotificationObjectTitle(notif: Event): string {
   if (notif.objectId && notif.objectName) {
-    return `#${notif.objectId} "${notif.objectName}"`;
+    return `#${notif.objectId} "${notif.objectName}": `;
   }
   return '';
 }

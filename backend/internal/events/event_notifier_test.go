@@ -51,10 +51,11 @@ func TestNotificationEventHandler_HandleEvent(t *testing.T) {
 			},
 		}
 		event := models.Event{
-			Type:       models.EventMisc,
-			ObjectID:   1,
-			ObjectName: "Test Object",
-			Msg:        "Test Message",
+			Type:           models.EventMisc,
+			ObjectID:       1,
+			ObjectName:     "Test Object",
+			Msg:            "Test Message",
+			IsNotification: true,
 		}
 
 		mockEventStore.On("StoreEvent", mock.Anything).Return(nil)
@@ -135,16 +136,15 @@ func TestNotificationEventHandler_HandleEvent_NotificationFlag_Enabled(t *testin
 		},
 	}
 	event := models.Event{
-		Type:       models.EventMisc,
-		ObjectID:   1,
-		ObjectName: "Test Object",
-		Msg:        "Test Message",
+		Type:           models.EventMisc,
+		ObjectID:       1,
+		ObjectName:     "Test Object",
+		Msg:            "Test Message",
+		IsNotification: true,
 	}
 
 	configStore.Set(cfg)
-	mockEventStore.On("StoreEvent", mock.MatchedBy(func(e models.Event) bool {
-		return e.ObjectID == 1 && e.IsNotification == true
-	})).Return(nil)
+	mockEventStore.On("StoreEvent", event).Return(nil)
 	mockSend.On("Send", cfg.Settings.Notifications.NotificationURL, mock.Anything).Return(nil)
 
 	handler.HandleEvent(context.Background(), event)

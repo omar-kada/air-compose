@@ -17,6 +17,7 @@ import {
 import { type QueryClient } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
+import { incrementUnreadCount } from '../stacks';
 import { onLogEvent } from './use-logs';
 
 export function createSocketReceiver(queryClient: QueryClient) {
@@ -47,8 +48,10 @@ function onEvent(queryClient: QueryClient, event: EventMessage) {
       queryKey: getDeployementAPIReadQueryKey(`${event.deploymentId}`),
     });
   }
-  queryClient.invalidateQueries({ queryKey: getNotificationsAPIListQueryKey() });
-  queryClient.invalidateQueries({ queryKey: getNotificationsAPIListQueryKey() });
+  if (event.isNotification) {
+    incrementUnreadCount(queryClient);
+    queryClient.invalidateQueries({ queryKey: getNotificationsAPIListQueryKey() });
+  }
   switch (event.type) {
     case EventType.DEPLOYMENT_STARTED:
       queryClient.invalidateQueries({ queryKey: getDiffAPIGetQueryKey() });

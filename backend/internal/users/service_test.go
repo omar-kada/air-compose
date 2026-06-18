@@ -1,9 +1,11 @@
 package users
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/testutil"
 
@@ -25,7 +27,7 @@ func newMemoryAuthStore(t *testing.T) AuthStore {
 func TestLogin_Success(t *testing.T) {
 
 	store := newMemoryAuthStore(t)
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "testuser",
@@ -50,7 +52,7 @@ func TestLogin_Success(t *testing.T) {
 func TestLogin_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "nonexistentuser",
@@ -67,7 +69,7 @@ func TestLogin_UserNotFound(t *testing.T) {
 func TestLogin_InvalidPassword(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "testuser",
@@ -92,7 +94,7 @@ func TestLogin_InvalidPassword(t *testing.T) {
 func TestIsRegistered_HasUsers(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	mockUser := models.User{
 		Username: "testuser",
@@ -109,7 +111,7 @@ func TestIsRegistered_HasUsers(t *testing.T) {
 func TestIsRegistered_NoUsers(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	isRegistered, err := service.IsRegistered()
 
@@ -120,7 +122,7 @@ func TestIsRegistered_NoUsers(t *testing.T) {
 func TestRegister_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "newuser",
@@ -136,7 +138,7 @@ func TestRegister_Success(t *testing.T) {
 func TestRegister_AlreadyRegistered(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "existinguser",
@@ -159,7 +161,7 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 func TestLogout_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	pass, _ := hashPassword("password")
 	mockUser := models.User{
@@ -186,7 +188,7 @@ func TestLogout_Success(t *testing.T) {
 func TestLogout_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	err := service.Logout(models.Token{Value: "invalidtoken", RefreshToken: "invalidRefreshToken"})
 
@@ -197,7 +199,7 @@ func TestLogout_UserNotFound(t *testing.T) {
 func TestGetUserByToken_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	pass, _ := hashPassword("password")
 	mockUser := models.User{
@@ -223,7 +225,7 @@ func TestGetUserByToken_Success(t *testing.T) {
 func TestGetUserByToken_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	user, err := service.GetUsernameByToken(models.Token{Value: "invalidtoken"})
 
@@ -234,7 +236,7 @@ func TestGetUserByToken_UserNotFound(t *testing.T) {
 func TestGetUser_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "testuser"
 	mockUser := models.User{
@@ -252,7 +254,7 @@ func TestGetUser_Success(t *testing.T) {
 func TestGetUser_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "nonexistentuser"
 
@@ -265,7 +267,7 @@ func TestGetUser_UserNotFound(t *testing.T) {
 func TestDeleteUser_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "testuser"
 	mockUser := models.User{
@@ -283,7 +285,7 @@ func TestDeleteUser_Success(t *testing.T) {
 func TestDeleteUser_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "nonexistentuser"
 
@@ -295,8 +297,13 @@ func TestDeleteUser_UserNotFound(t *testing.T) {
 
 func TestChangePassword_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
-
-	service := NewService(store)
+	bus := events.NewBus(1)
+	done := make(chan bool)
+	bus.Register(events.HandlerFunc(func(_ context.Context, event models.Event) {
+		done <- event.Type == models.EventPasswordUpdated
+	}))
+	go bus.Run(context.Background())
+	service := NewService(store, bus)
 
 	username := "testuser"
 	oldPassword := "oldpassword"
@@ -316,12 +323,13 @@ func TestChangePassword_Success(t *testing.T) {
 
 	updatedUser, _ := store.UserByUsername(username)
 	assert.True(t, checkPasswordHash(newPassword, updatedUser.HashedPassword))
+	assert.True(t, <-done)
 }
 
 func TestChangePassword_UserNotFound(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "nonexistentuser"
 	oldPassword := "oldpassword"
@@ -337,7 +345,7 @@ func TestChangePassword_UserNotFound(t *testing.T) {
 func TestChangePassword_InvalidOldPassword(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	username := "testuser"
 	oldPassword := "oldpassword"
@@ -361,7 +369,7 @@ func TestChangePassword_InvalidOldPassword(t *testing.T) {
 func TestRefreshToken_Success(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	credentials := models.Credentials{
 		Username: "testuser",
@@ -403,7 +411,7 @@ func TestRefreshToken_Success(t *testing.T) {
 func TestRefreshToken_InvalidToken(t *testing.T) {
 	store := newMemoryAuthStore(t)
 
-	service := NewService(store)
+	service := NewService(store, events.NewBus(1))
 
 	// Create expired token
 	expiredToken := models.Token{
@@ -421,8 +429,13 @@ func TestRefreshToken_InvalidToken(t *testing.T) {
 
 func TestRefreshToken_RevokedToken(t *testing.T) {
 	store := newMemoryAuthStore(t)
-
-	service := NewService(store)
+	bus := events.NewBus(1)
+	done := make(chan bool)
+	bus.Register(events.HandlerFunc(func(_ context.Context, event models.Event) {
+		done <- event.Type == models.EventSessionReused
+	}))
+	go bus.Run(context.Background())
+	service := NewService(store, bus)
 
 	credentials := models.Credentials{
 		Username: "testuser",
@@ -447,6 +460,7 @@ func TestRefreshToken_RevokedToken(t *testing.T) {
 
 	// Try to refresh
 	newToken, err := service.RefreshToken(token)
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidRefreshToken)
 	assert.Zero(t, newToken)
+	assert.True(t, <-done)
 }

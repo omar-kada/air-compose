@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/models"
 	"omar-kada/air-compose/internal/users"
 	"omar-kada/air-compose/testutil"
@@ -28,7 +29,7 @@ func newUsersService(t *testing.T) users.Service {
 	store, err := users.NewAuthStorage(userStore, SessionStore, tokenHolder)
 	assert.NoError(t, err)
 
-	return users.NewService(store)
+	return users.NewService(store, events.NewBus(1))
 }
 
 func withInitUsers(t *testing.T, userService users.Service, creds models.Credentials) (users.Service, models.Token) {
