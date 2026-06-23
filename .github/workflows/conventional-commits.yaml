@@ -12,7 +12,7 @@ jobs:
       pull-requests: write # Needed to post status checks
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
         with:
           # Fetch all history so the action can check all commits in the PR
           fetch-depth: 0 [citation:4]
