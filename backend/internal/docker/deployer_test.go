@@ -250,3 +250,102 @@ func TestRemoveAndDeployStacks_Errors(t *testing.T) {
 		})
 	}
 }
+func TestRemoveAndDeployStacks_RedeployAirCompose_Success(t *testing.T) {
+	mocker := &Mocker{}
+	deployer := newDeployerWithMocks(t, mocker)
+
+	oldCfg := models.Config{
+		Services: map[string]models.ServiceConfig{
+			"svc1": {},
+		},
+	}
+
+	newCfg := models.Config{
+		Services: map[string]models.ServiceConfig{
+			"svc1":        {},
+			"air-compose": {},
+		},
+	}
+
+	params := models.DeploymentParams{
+		ServicesDir:     "/services",
+		WorkingDir:      "/working",
+		AirComposeImage: "air-compose-image",
+	}
+
+	expectedArgs := []string{
+		"run", "-d", "--rm",
+		"--name", "air-compose-updater",
+		"--pull=never",
+		"-v", "/var/run/docker.sock:/var/run/docker.sock",
+		"-v", "/services:/services",
+		"-v", "/working:/working",
+	}
+	expectedArgs = append(expectedArgs, getEnvVarsArgs()...)
+	expectedArgs = append(expectedArgs, "air-compose-image", "/app/air-compose", "redeploy")
+
+	mocker.Executor.On("Exec", "docker", expectedArgs).Return([]byte{}, nil)
+	mocker.On(
+		"Copy", "/working/repo/services/svc1", "/services/svc1",
+	).Return(nil)
+	mocker.On(
+		"Copy", "/working/repo/services/air-compose", "/services/air-compose",
+	).Return(nil)
+	mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil)
+	mocker.Executor.On(
+		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
+	).Return([]byte{}, nil)
+	err := deployer.RemoveAndDeployStacks(oldCfg, newCfg, params)
+	assert.NoError(t, err)
+	mocker.AssertExpectations(t)
+}
+
+func TestRemoveAndDeployStacks_RedeployAirCompose_Error(t *testing.T) {
+	mocker := &Mocker{}
+	deployer := newDeployerWithMocks(t, mocker)
+
+	oldCfg := models.Config{
+		Services: map[string]models.ServiceConfig{
+			"svc1": {},
+		},
+	}
+
+	newCfg := models.Config{
+		Services: map[string]models.ServiceConfig{
+			"svc1":        {},
+			"air-compose": {},
+		},
+	}
+
+	params := models.DeploymentParams{
+		ServicesDir:     "/services",
+		WorkingDir:      "/working",
+		AirComposeImage: "air-compose-image",
+	}
+
+	expectedArgs := []string{
+		"run", "-d", "--rm",
+		"--name", "air-compose-updater",
+		"--pull=never",
+		"-v", "/var/run/docker.sock:/var/run/docker.sock",
+		"-v", "/services:/services",
+		"-v", "/working:/working",
+	}
+	expectedArgs = append(expectedArgs, getEnvVarsArgs()...)
+	expectedArgs = append(expectedArgs, "air-compose-image", "/app/air-compose", "redeploy")
+
+	mocker.Executor.On("Exec", "docker", expectedArgs).Return([]byte{}, ErrRunCmd)
+	mocker.On(
+		"Copy", "/working/repo/services/svc1", "/services/svc1",
+	).Return(nil)
+	mocker.On(
+		"Copy", "/working/repo/services/air-compose", "/services/air-compose",
+	).Return(nil)
+	mocker.On("WriteToFile", mock.Anything, mock.Anything).Return(nil)
+	mocker.Executor.On(
+		"Exec", "docker", []string{"compose", "--project-directory", filepath.Join("/", "services", "svc1"), "--progress", "quiet", "up", "-d", "--quiet-pull"},
+	).Return([]byte{}, nil)
+	err := deployer.RemoveAndDeployStacks(oldCfg, newCfg, params)
+	assert.ErrorIs(t, err, ErrRunCmd)
+	mocker.AssertExpectations(t)
+}

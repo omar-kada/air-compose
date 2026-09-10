@@ -111,6 +111,41 @@ func TestHistoryHubUnregisterRemovesClient(t *testing.T) {
 	}
 }
 
+func TestHistoryHubInitSeedsHistory(t *testing.T) {
+	hub := NewHistoryHub(3)
+	records := []slog.Record{
+		slog.NewRecord(time.Unix(1, 0), slog.LevelInfo, "one", 0),
+		slog.NewRecord(time.Unix(2, 0), slog.LevelWarn, "two", 0),
+	}
+
+	hub.Init(records)
+
+	client := hub.Register()
+	got := receiveLogs(t, client.Send)
+	assert.Len(t, got, 2)
+	assert.Equal(t, "one", got[0].Message)
+	assert.Equal(t, "two", got[1].Message)
+}
+
+func TestHistoryHubInitKeepsOnlyNewestRecords(t *testing.T) {
+	hub := NewHistoryHub(3)
+	records := []slog.Record{
+		slog.NewRecord(time.Unix(1, 0), slog.LevelInfo, "one", 0),
+		slog.NewRecord(time.Unix(2, 0), slog.LevelWarn, "two", 0),
+		slog.NewRecord(time.Unix(3, 0), slog.LevelInfo, "three", 0),
+		slog.NewRecord(time.Unix(4, 0), slog.LevelWarn, "four", 0),
+	}
+
+	hub.Init(records)
+
+	client := hub.Register()
+	got := receiveLogs(t, client.Send)
+	assert.Len(t, got, 3)
+	assert.Equal(t, "two", got[0].Message)
+	assert.Equal(t, "three", got[1].Message)
+	assert.Equal(t, "four", got[2].Message)
+}
+
 func receiveLogs(t *testing.T, ch <-chan []slog.Record) []slog.Record {
 	t.Helper()
 
@@ -145,9 +180,10 @@ func BenchmarkHistoryHubBroadcastSequential(b *testing.B) {
 	clients := make([]*Client, 2)
 
 	for i := range clients {
-		clients[i] = hub.Register()
+		client := hub.Register()
+		clients[i] = client
 		go func() {
-			for range clients[i].Send {
+			for range client.Send {
 				time.Sleep(time.Microsecond)
 			}
 		}()

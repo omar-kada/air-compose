@@ -1,6 +1,6 @@
 services:
   air-compose:
-    image: air-compose:latest
+    image: ghcr.io/omar-kada/air-compose:latest
     container_name: air-compose
     ports:
       - 5005:5005
@@ -8,8 +8,10 @@ services:
       - .env
     environment:
       AIR_COMPOSE_SERVICES_DIR: "${AIR_COMPOSE_SERVICES_DIR}"
+      AIR_COMPOSE_WORKING_DIR: "${AIR_COMPOSE_WORKING_DIR}"
+      AIR_COMPOSE_DOCKER_IMAGE: "ghcr.io/omar-kada/air-compose:latest"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${AIR_COMPOSE_SERVICES_DIR}:${AIR_COMPOSE_SERVICES_DIR} # path where compose stacks will be stored (must be equal & absolute)
-      - ${AIR_COMPOSE_DATA_PATH}:/data # data for AIR_COMPOSE, like repository files and DB
+      - ${AIR_COMPOSE_WORKING_DIR}:${AIR_COMPOSE_WORKING_DIR} # data for AIR_COMPOSE, like repository files and DB
     restart: "no"

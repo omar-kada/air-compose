@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"omar-kada/air-compose/internal/events"
 	"omar-kada/air-compose/internal/files"
@@ -111,6 +112,9 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 			errors[service] = err
 			continue
 		}
+		if service == "air-compose" {
+			continue // delay air-compose deployment until the end
+		}
 		if err := d.composeUp(filepath.Join(params.ServicesDir, service)); err != nil {
 			d.eventPublisher.Publish(d.ctx, models.SourceEvent{
 				Type: models.EventError,
@@ -153,10 +157,48 @@ func (d deployer) RemoveAndDeployStacks(oldCfg, cfg models.Config, params models
 		Type: models.EventMisc,
 		Msg:  fmt.Sprintf("deploying enabled services %v", enabledServiecs),
 	})
+
 	if errs := d.DeployServices(cfg, params); len(errs) > 0 {
 		return fmt.Errorf("error(s) while deploying services : %v", errs)
 	}
+
+	if slices.Contains(enabledServiecs, "air-compose") {
+		err := d.redeployAirCompose(params)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (d deployer) redeployAirCompose(params models.DeploymentParams) error {
+	args := []string{
+		"run", "-d", "--rm",
+		"--name", "air-compose-updater",
+		"--pull=never",
+		"-v", "/var/run/docker.sock:/var/run/docker.sock",
+		"-v", params.ServicesDir + ":" + params.ServicesDir,
+		"-v", params.WorkingDir + ":" + params.WorkingDir,
+	}
+	args = append(args, getEnvVarsArgs()...)
+	args = append(args, params.AirComposeImage, "/app/air-compose", "redeploy")
+
+	_, err := d.cmdExecuter.Exec("docker", args...)
+	if err != nil {
+		return fmt.Errorf("failed to launch redeploy container : %w", err)
+	}
+	return nil
+}
+
+func getEnvVarsArgs() []string {
+	envVars := os.Environ()
+	var envVarsArgs []string
+	for _, envVar := range envVars {
+		if len(strings.SplitN(envVar, "=", 2)) == 2 {
+			envVarsArgs = append(envVarsArgs, "-e", strings.TrimSpace(envVar))
+		}
+	}
+	return envVarsArgs
 }
 
 func (d deployer) copyServiceFiles(serviceName string, params models.DeploymentParams) error {
