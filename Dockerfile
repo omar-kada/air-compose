@@ -40,7 +40,7 @@ RUN apt update && apt install --yes --no-install-recommends \
     && apt update \
     && apt --yes --no-install-recommends install \
          docker-ce-cli \
-         docker-compose-plugin \
+         docker-compose-plugin=5.1.4* \
     && rm -rf /var/lib/apt/lists/*
 
 # Move to working directory /build
@@ -49,18 +49,21 @@ ARG UID=1000
 ARG GID=1000
 
 RUN mkdir /app && mkdir /data
-WORKDIR /app
 
 COPY --from=builder /air-compose/air-compose /app/
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENV AIR_COMPOSE_WORKING_DIR="/data"
+
 EXPOSE 5005
 
 # Start the application
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/app/air-compose", "run"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

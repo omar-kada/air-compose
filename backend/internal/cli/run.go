@@ -27,7 +27,6 @@ import (
 
 type runCommand struct {
 	executor  shell.Executor
-	logHub    logs.Hub
 	dbCreator func(params RunParams) (*gorm.DB, error)
 
 	cmd    *cobra.Command
@@ -35,11 +34,10 @@ type runCommand struct {
 }
 
 // NewRunCommand creates a new run
-func NewRunCommand(executor shell.Executor, logHub logs.Hub, dbCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
+func NewRunCommand(executor shell.Executor, dbCreator func(params RunParams) (*gorm.DB, error)) *cobra.Command {
 	run := runCommand{
 		params:    RunParams{},
 		executor:  executor,
-		logHub:    logHub,
 		dbCreator: dbCreator,
 	}
 
@@ -54,17 +52,23 @@ func NewRunCommand(executor shell.Executor, logHub logs.Hub, dbCreator func(para
 			return nil
 		},
 	}
-	run.cmd.Flags().StringVarP(&run.params.ConfigFile, string(_file), "f", "",
-		varInfoMap.GetDefaultString("YAML config file", _file))
+	run.cmd.Flags().StringVarP(&run.params.ConfigFile, string(_configFile), "c", "",
+		varInfoMap.GetDefaultString("YAML config file", _configFile))
 	run.cmd.Flags().StringVarP(&run.params.WorkingDir, string(_workingDir), "d", "",
 		varInfoMap.GetDefaultString("directory where air-compose data will be stored", _workingDir))
 	run.cmd.Flags().StringVarP(&run.params.ServicesDir, string(_servicesDir), "s", "",
 		varInfoMap.GetDefaultString("directory where services compose stacks will be stored", _servicesDir))
+	run.cmd.Flags().StringVarP(&run.params.AirComposeImage, string(_image), "i", "",
+		varInfoMap.GetDefaultString("docker image of air-compose (used for self update)", _image))
 	run.cmd.Flags().StringVarP(&run.params.AddWritePerm, string(_addWritePerm), "w", "",
 		varInfoMap.GetDefaultString("when true, the tool adds write permission to files it creates", _addWritePerm))
 	run.cmd.Flags().IntVarP(&run.params.Port, string(_port), "p", 0,
 		varInfoMap.GetDefaultString("port that will be used for exposing the API/UI", _port))
 
+	run.cmd.Flags().StringVarP(&run.params.LogLevel, string(_logLevel), "l", "",
+		varInfoMap.GetDefaultString("log level", _logLevel))
+	run.cmd.Flags().StringVarP(&run.params.LogFile, string(_logFile), "f", "",
+		varInfoMap.GetDefaultString("log file", _logFile))
 	return run.cmd
 }
 
@@ -72,7 +76,8 @@ func (run *runCommand) doRun() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	params := getParamsWithDefaults(run.params)
+	params := run.params.getParamsWithDefaults()
+	logHub := logs.InitLogHub(params.LoggerParams)
 	slog.Debug("running params : ", "params", params)
 
 	db, err := run.dbCreator(params)
@@ -102,7 +107,7 @@ func (run *runCommand) doRun() error {
 	}
 
 	eventBus := events.NewBus(10)
-	configStore, err := config.NewConfigStore(params.ConfigFile, eventBus)
+	configStore, err := config.NewConfigStore(params.GetConfigPath(), eventBus)
 	if err != nil {
 		return fmt.Errorf("error creating config storage %w", err)
 	}
@@ -168,7 +173,7 @@ func (run *runCommand) doRun() error {
 		fetcher, healthChecker, repoWatcher,
 		eventStore, deploymentStore)
 
-	socketHandler := socket.NewWebSocketHandler(run.logHub)
+	socketHandler := socket.NewWebSocketHandler(logHub)
 
 	eventBus.Register(events.HandlerFunc(socketHandler.BroadcastEvent))
 

@@ -50,8 +50,15 @@ function LogEntry({ line, expand }: { line: LogLine; expand?: boolean }) {
   }, [expand]);
 
   return (
-    <li className="flex flex-col  border-b border-border/50" onClick={() => setExpanded(!expanded)}>
-      <div className="flex items-start gap-2 py-1">
+    <li className="flex flex-col  border-b border-border/50">
+      <div
+        className="flex items-start gap-2 py-1"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setExpanded(!expanded);
+          }
+        }}
+      >
         <span className="text-muted-foreground shrink-0 tabular-nums">
           {new Date(line.time).toLocaleTimeString()}
         </span>
@@ -63,9 +70,15 @@ function LogEntry({ line, expand }: { line: LogLine; expand?: boolean }) {
         >
           {line.level}
         </Badge>
-        <span className="break-all flex-1">{line.msg}</span>
+        <span className="break-all">{line.msg}</span>
+        <span className="flex-1" onClick={() => setExpanded(!expanded)}></span>
         {line.meta && Object.keys(line.meta).length > 0 && (
-          <Button className="size-3 " size="icon-xs" variant="ghost">
+          <Button
+            className="size-3 "
+            size="icon-xs"
+            variant="ghost"
+            onClick={() => setExpanded(!expanded)}
+          >
             {expanded ? <ChevronUp /> : <ChevronDown />}
           </Button>
         )}

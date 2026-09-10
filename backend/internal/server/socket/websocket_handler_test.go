@@ -42,8 +42,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 	url := "ws" + strings.TrimPrefix(server.URL, "http")
 
 	const numSessions = 3
-	sessions := make([]*websocket.Conn, numSessions)
-	ids := make([]uint64, numSessions)
+	sessions := make([]*session, numSessions)
 
 	// Establish multiple sessions and record their IDs
 	for i := range numSessions {
@@ -55,8 +54,9 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 				conn.Close(websocket.StatusNormalClosure, "")
 			}
 		})
-		sessions[i] = conn
-		ids[i] = socketHandler.sessionIDCounter.Load()
+		socketHandler.mu.Lock()
+		sessions[i] = socketHandler.sessions[uint64(i)]
+		socketHandler.mu.Unlock()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		// Send a test message to make sure the conn is working
@@ -73,7 +73,7 @@ func TestWebSocketHandlerSessionIDIncrement(t *testing.T) {
 
 	// Verify IDs are incrementing
 	for i := 1; i < numSessions; i++ {
-		assert.Greater(t, ids[i], ids[i-1], "session ID should increment")
+		assert.Equal(t, uint64(i), sessions[i].id)
 	}
 }
 

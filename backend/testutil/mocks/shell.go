@@ -23,3 +23,9 @@ func (m *Executor) NoLogs() shell.Executor {
 	res := m.Called()
 	return res.Get(0).(shell.Executor)
 }
+
+// WithLogs returns a new executor that allows logging.
+func (m *Executor) WithLogs() shell.Executor {
+	res := m.Called()
+	return res.Get(0).(shell.Executor)
+}

@@ -47,6 +47,11 @@ jobs:
           sudo systemctl start docker
           docker --version
 
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v2
+        with:
+          version: v5.1.4
+
       - name: Debug user info
         run: |
           echo "User: $(id -u)"

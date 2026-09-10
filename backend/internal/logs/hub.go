@@ -19,6 +19,7 @@ type Hub interface {
 	Broadcast(msg slog.Record)
 	Register() *Client
 	Unregister(c *Client)
+	Init([]slog.Record)
 }
 
 const clientSendTimeout = 10 * time.Millisecond
@@ -88,6 +89,33 @@ func (h *HistoryHub) Unregister(c *Client) {
 	if _, ok := h.clients[c]; ok {
 		delete(h.clients, c)
 		close(c.Send)
+	}
+}
+
+// Init initializes the history buffer with the given records, replacing any existing history.
+func (h *HistoryHub) Init(records []slog.Record) {
+	if len(h.history) == 0 {
+		return
+	}
+
+	h.historyMu.Lock()
+	defer h.historyMu.Unlock()
+
+	h.next = 0
+	h.count = 0
+
+	if len(records) > len(h.history) {
+		records = records[len(records)-len(h.history):]
+	}
+	if len(records) == 0 {
+		return
+	}
+
+	copy(h.history, records)
+	h.count = len(records)
+	if h.count < len(h.history) {
+		h.next = h.count
+		return
 	}
 }
 
