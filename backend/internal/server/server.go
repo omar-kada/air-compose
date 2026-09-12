@@ -62,7 +62,7 @@ func (s *HTTPServer) Serve(
 	strict := api.NewStrictHandler(businessHandler, []api.StrictMiddlewareFunc{})
 	mux.HandleFunc("/api/ws", socketHandler.Handle)
 	mux.Handle("/api/", api.Handler(strict))
-	mux.HandleFunc("/", spaHandler)
+	mux.HandleFunc("/", newSPAHandler(params.FrontDir))
 
 	// Set up the CORS filter
 	corsHandler := cors.New(cors.Options{

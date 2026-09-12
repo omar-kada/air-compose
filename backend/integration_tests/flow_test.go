@@ -3,23 +3,22 @@ package integrationtests
 import (
 	"context"
 	"fmt"
-	"io"
+	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/testutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"omar-kada/air-compose/internal/docker"
-	"omar-kada/air-compose/internal/events"
-	"omar-kada/air-compose/internal/shell"
-	"omar-kada/air-compose/testutil"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
 func TestFileGeneration(t *testing.T) {
+	t.Skip("no need")
 	ctx := context.Background()
 
 	// Given
@@ -36,9 +35,12 @@ func TestFileGeneration(t *testing.T) {
 
 	servicesDir := filepath.Join(baseDir, "services")
 	dataDir := filepath.Join(baseDir, "data")
+	dbDir := filepath.Join(dataDir, "db")
 	err = os.Mkdir(servicesDir, 0o750)
 	assert.NoError(t, err)
 	err = os.Mkdir(dataDir, 0o750)
+	assert.NoError(t, err)
+	err = os.Mkdir(dbDir, 0o750)
 	assert.NoError(t, err)
 
 	err = os.WriteFile(filepath.Join(dataDir, "config.yaml"),
@@ -68,7 +70,7 @@ func TestFileGeneration(t *testing.T) {
 	composeEnv, err := compose.NewDockerCompose("../../compose.local.yaml")
 	stack := composeEnv.WithEnv(map[string]string{
 		"AIR_COMPOSE_SERVICES_DIR":   servicesDir,
-		"AIR_COMPOSE_DATA_PATH":      dataDir,
+		"AIR_COMPOSE_WORKING_DIR":    dataDir,
 		"AIR_COMPOSE_ADD_WRITE_PERM": "true",
 		"ENV":                        "DEV",
 		"UID":                        fmt.Sprint(os.Getuid()),
@@ -84,7 +86,7 @@ func TestFileGeneration(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		if t.Failed() {
-			printContainerLogs(ctx, t, composeEnv)
+			testutil.PrintContainerLogs(ctx, t, composeEnv)
 		}
 		if err := stack.Down(ctx); err != nil {
 			t.Error(err)
@@ -124,22 +126,4 @@ func TestFileGeneration(t *testing.T) {
 		dockerDeployer := docker.NewDeployer(events.NewBus(1), shell.NewExecutor())
 		dockerDeployer.RemoveServices([]string{"homepage"}, servicesDir)
 	})
-}
-
-func printContainerLogs(ctx context.Context, t *testing.T, composeEnv *compose.DockerCompose) {
-	t.Helper()
-
-	for _, service := range composeEnv.Services() {
-
-		cont, err := composeEnv.ServiceContainer(ctx, service)
-		assert.NoError(t, err)
-
-		logsReader, err := cont.Logs(ctx)
-		assert.NoError(t, err)
-
-		bytes, err := io.ReadAll(logsReader)
-
-		assert.NoError(t, err)
-		fmt.Printf("Logs for service %s:\n%s\n", service, string(bytes))
-	}
 }

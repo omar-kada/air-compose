@@ -16,9 +16,9 @@ type Features struct {
 // LoadFeatures loads feature flags from environment variables.
 func LoadFeatures() Features {
 	return Features{
-		DisplayConfig:  getBool("AIR_COMPOSE_DISPLAY_CONFIG", false),
-		EditConfig:     getBool("AIR_COMPOSE_EDIT_CONFIG", false),
-		EditSettings:   getBool("AIR_COMPOSE_EDIT_SETTINGS", false),
+		DisplayConfig:  getBool("AIR_COMPOSE_DISPLAY_CONFIG", true),
+		EditConfig:     getBool("AIR_COMPOSE_EDIT_CONFIG", true),
+		EditSettings:   getBool("AIR_COMPOSE_EDIT_SETTINGS", true),
 		DisplayCmdLogs: getBool("AIR_COMPOSE_DISPLAY_CMD_LOGS", false),
 	}
 }

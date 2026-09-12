@@ -32,7 +32,10 @@ require (
 	gorm.io/gorm v1.31.2
 )
 
-require github.com/speakeasy-api/openapi v1.19.2 // indirect
+require (
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/speakeasy-api/openapi v1.19.2 // indirect
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect

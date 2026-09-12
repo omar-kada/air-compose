@@ -40,7 +40,7 @@ services/
 
 ```yaml
 AIR_COMPOSE_SERVICES_DIR: where the stack configuration will be stored
-AIR_COMPOSE_DATA_PATH: path to the data directory, AirCompose will store config.yaml and DB files in this directory
+AIR_COMPOSE_WORKING_DIR: path to the data directory, AirCompose will store config.yaml and DB files in this directory
 ```
 
 3. **Run the stack** using :

@@ -40,7 +40,7 @@ RUN apt update && apt install --yes --no-install-recommends \
     && apt update \
     && apt --yes --no-install-recommends install \
          docker-ce-cli \
-         docker-compose-plugin \
+         docker-compose-plugin=5.1.4* \
     && rm -rf /var/lib/apt/lists/*
 
 # Move to working directory /build
@@ -49,14 +49,15 @@ ARG UID=1000
 ARG GID=1000
 
 RUN mkdir /app && mkdir /data
-WORKDIR /app
 
 COPY --from=builder /air-compose/air-compose /app/
 COPY --from=frontend-builder /app/dist /app/frontend/dist
 
 RUN chmod -R 744 /app
 
-ENV AIR_COMPOSE_WORKING_DIR="/data"
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 5005
 
 # Start the application

@@ -14,6 +14,7 @@ import (
 type Executor interface {
 	Exec(cmd string, args ...string) ([]byte, error)
 	NoLogs() Executor
+	WithLogs() Executor
 }
 
 type cmdExecuter struct {
@@ -32,6 +33,13 @@ func NewExecutor() Executor {
 func (cmdExecuter) NoLogs() Executor {
 	return cmdExecuter{
 		showLogs: false,
+	}
+}
+
+// WithLogs returns a new Executor that will log command execution.
+func (cmdExecuter) WithLogs() Executor {
+	return cmdExecuter{
+		showLogs: true,
 	}
 }
 
