@@ -105,7 +105,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 		repo, err = git.PlainOpen(f.repoDir)
 	}
 	if err != nil {
-		return repo, fmt.Errorf("error while opening repo : %w, %v", err, *f)
+		return repo, fmt.Errorf("error while opening repo : %w", err)
 	}
 	err = repo.Fetch(&git.FetchOptions{
 		ClientOptions: []client.Option{client.WithHTTPAuth(f._auth)},
@@ -115,7 +115,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 	})
 
 	if err != nil && err != NoErrAlreadyUpToDate {
-		return repo, fmt.Errorf("error while fetching repo : %w, %v", err, *f)
+		return repo, fmt.Errorf("error while fetching repo : %w", err)
 	}
 
 	if branch != "" {
