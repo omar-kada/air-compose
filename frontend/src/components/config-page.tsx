@@ -45,6 +45,8 @@ export function ConfigPage() {
     }),
   );
 
+  const [text, setText] = useState('');
+
   const { updateConfig, isPending: isSavePending } = useUpdateConfig();
   const onSubmit = (data: FormValues) => updateConfig(toConfig(data));
 
@@ -54,13 +56,17 @@ export function ConfigPage() {
     disabled,
   });
   const resetForm = useCallback(() => form.reset(fromConfig(config)), [form, config]);
-
+  const watchedForm = form.watch();
   useEffect(() => {
     // init and reset when config changes
     if (config) {
       form.reset(fromConfig(config));
     }
   }, [config, form]);
+
+  useEffect(() => {
+    setText(toYaml(watchedForm));
+  }, [watchedForm, setText]);
 
   const isMobile = useIsMobile();
   const [showYaml, setShowYaml] = useState(!isMobile);
@@ -142,10 +148,7 @@ export function ConfigPage() {
               <ConfigForm className={cn('flex-1 p-4')} form={form} disabled={disabled} />
             )}
             {config && displayYaml && (
-              <ConfigViewer
-                text={toYaml(form.getValues())}
-                onClose={isMobile ? () => setShowYaml(false) : undefined}
-              />
+              <ConfigViewer text={text} onClose={isMobile ? () => setShowYaml(false) : undefined} />
             )}
           </div>
         )}
