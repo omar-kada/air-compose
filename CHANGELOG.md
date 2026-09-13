@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/omar-kada/air-compose/compare/v0.6.0...v0.6.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* remove sensitive error logging ([#281](https://github.com/omar-kada/air-compose/issues/281)) ([031df0b](https://github.com/omar-kada/air-compose/commit/031df0bb29e6814dfe0c43b6159c27e616c0c2df))
+
 ## [0.6.0](https://github.com/omar-kada/air-compose/compare/v0.5.1...v0.6.0) (2026-09-13)
 
 
