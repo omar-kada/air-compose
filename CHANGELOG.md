@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/omar-kada/air-compose/compare/v0.5.1...v0.6.0) (2026-09-13)
+
+
+### Features
+
+* self auto-update when config changes in the repo ([#265](https://github.com/omar-kada/air-compose/issues/265)) ([3e91d1a](https://github.com/omar-kada/air-compose/commit/3e91d1a57159d8b0f1685643ce2e458ec0322576))
+* write logs to file to keep history between reruns ([#265](https://github.com/omar-kada/air-compose/issues/265)) ([3e91d1a](https://github.com/omar-kada/air-compose/commit/3e91d1a57159d8b0f1685643ce2e458ec0322576))
+
 ## [0.5.1](https://github.com/omar-kada/air-compose/compare/v0.5.0...v0.5.1) (2026-08-25)
 
 
