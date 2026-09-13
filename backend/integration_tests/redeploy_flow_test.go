@@ -20,7 +20,6 @@ import (
 )
 
 func TestRedeploy(t *testing.T) {
-	t.Skip("no need")
 	ctx := context.Background()
 	t.Setenv("AIR_COMPOSE_DISPLAY_CMD_LOGS", "true")
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{

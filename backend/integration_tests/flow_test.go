@@ -18,7 +18,6 @@ import (
 )
 
 func TestFileGeneration(t *testing.T) {
-	t.Skip("no need")
 	ctx := context.Background()
 
 	// Given

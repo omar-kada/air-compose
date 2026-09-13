@@ -112,6 +112,7 @@ func (f *fetcher) openRepo(branch string) (repo *git.Repository, err error) {
 		RefSpecs: []gitConfig.RefSpec{
 			"refs/heads/*:refs/remotes/origin/*",
 		},
+		Force: true,
 	})
 
 	if err != nil && err != NoErrAlreadyUpToDate {
