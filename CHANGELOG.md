@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/omar-kada/air-compose/compare/v0.6.1...v0.6.2) (2026-09-13)
+
+
+### Bug Fixes
+
+* force fetch to ignore refs issues ([#283](https://github.com/omar-kada/air-compose/issues/283)) ([fa6e1a7](https://github.com/omar-kada/air-compose/commit/fa6e1a7c78fd1cbd7ec80688306c03b432bb3540))
+
 ## [0.6.1](https://github.com/omar-kada/air-compose/compare/v0.6.0...v0.6.1) (2026-09-13)
 
 
