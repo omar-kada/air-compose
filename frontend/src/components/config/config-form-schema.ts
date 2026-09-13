@@ -1,5 +1,5 @@
 import type { Config } from '@/api/api';
-import yaml from 'js-yaml';
+import { dump } from 'js-yaml';
 import z from 'zod';
 
 export const formSchema = z.object({
@@ -63,5 +63,5 @@ function envArrayToObject<T>(vars: { key: string; value: T }[]): { [key: string]
 export function toYaml(formData: FormValues): string {
   if (!formData) return '';
   const config = toConfig(formData);
-  return yaml.dump(config);
+  return dump(config);
 }
