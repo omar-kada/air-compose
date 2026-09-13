@@ -9,7 +9,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/go-git/go-git/v6 v6.0.0-alpha.4
+	github.com/go-git/go-git/v6 v6.0.0-alpha.5
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/lmittmann/tint v1.2.0
 	github.com/moby/moby/api v1.54.2
