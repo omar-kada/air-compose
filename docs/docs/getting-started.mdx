@@ -1,0 +1,78 @@
+---
+sidebar_position: 1
+---
+
+# Getting Started
+
+AirCompose is a lightweight GitOps automation tool that handles Docker Compose stack deployments. It syncs your compose stacks from a Git repository and deploys them automatically — no heavy tooling required.
+
+## Requirements
+
+- A Linux environment with **Docker** installed
+- Docker Compose plugin (v2.x recommended)
+- A Git repository containing your compose stacks
+
+## Quick Start
+
+### 1. Prepare Your Services Repository
+
+Create a Git repository with this structure:
+
+```
+services/
+├── service1/
+│   ├── compose.yaml
+│   └── .env
+└── service2/
+    ├── compose.yaml
+    └── .env
+```
+
+Each service directory contains a standard `docker-compose.yaml` file and an optional `.env` file.
+
+:::tip
+Example configuration repository: [air-compose-config](https://github.com/omar-kada/air-compose-config)
+:::
+
+### 2. Download the Compose File
+
+Download the official `compose.yaml` and create a `.env` file alongside it:
+
+```bash
+curl -Lo compose.yaml https://raw.githubusercontent.com/omar-kada/air-compose/main/compose.yaml
+```
+
+### 3. Configure Environment Variables
+
+Edit the `.env` file and set the required variables:
+
+```env
+AIR_COMPOSE_SERVICES_DIR=/path/to/services
+AIR_COMPOSE_WORKING_DIR=/path/to/data
+```
+
+| Variable | Description | Required |
+|---|---|---|
+| `AIR_COMPOSE_SERVICES_DIR` | Absolute path where compose stacks are stored | Yes |
+| `AIR_COMPOSE_WORKING_DIR` | Absolute path for AirCompose data (config, database, repo clone) | Yes |
+
+### 4. Launch AirCompose
+
+```bash
+docker compose up -d
+```
+
+AirCompose will start on port **5005** by default.
+
+### 5. Register and Configure
+
+1. Open `http://localhost:5005` in your browser
+2. Register the first user (this also initializes the configuration)
+3. Configure your Git repository credentials in the **Settings** page
+4. Set up environment variables for each service
+5. Click **Sync** to pull and deploy your stacks
+
+## Next Steps
+
+- [Configuration overview →](./configuration)
+- [GitOps workflow →](./advanced/gitops-workflow)

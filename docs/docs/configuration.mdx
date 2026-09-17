@@ -1,0 +1,165 @@
+---
+sidebar_position: 2
+---
+
+# Configuration
+
+AirCompose stores its configuration in a `config.yaml` file located in the working directory (`AIR_COMPOSE_WORKING_DIR`). The configuration can be edited through the UI or by modifying the file directly.
+
+## Configuration File
+
+The `config.yaml` file has the following structure:
+
+```yaml
+settings:
+  git:
+    repo: "https://github.com/your-org/air-compose-config"
+    branch: "main"          # optional, defaults to "main"
+    username: "your-username"
+    token: "your-token"
+  schedule:
+    cron: "@hourly"         # cron expression for auto-sync
+    retriesOnUnhealthy: 3   # number of redeploy attempts on unhealthy
+    retryDelay: 30000       # milliseconds between retries
+  notifications:
+    notificationURL: "shoutrrr://..."  # Shoutrrr-compatible URL
+    notificationTypes:
+      - "DEPLOYMENT_STARTED"
+      - "DEPLOYMENT_SUCCESS"
+      - "DEPLOYMENT_ERROR"
+      - "HEALTH_CHANGE"
+      - "NEW_COMMIT"
+      - "CONFIGURATION_UPDATED"
+      - "PASSWORD_UPDATED"
+      - "SESSION_REUSED"
+  oidc:
+    issuerURL: "https://your-oidc-provider"
+    clientID: "your-client-id"
+    clientSecret: "your-client-secret"
+environment:
+  GLOBAL_VAR: "value"
+services:
+  service1:
+    PORT: "8080"
+    API_KEY: "secret"
+  service2:
+    PORT: "3000"
+```
+
+### Settings
+
+#### Git Settings
+
+| Field | Description | Required |
+|---|---|---|
+| `git.repo` | URL of the Git repository containing compose stacks | Yes |
+| `git.branch` | Branch to track (defaults to `main`) | No |
+| `git.username` | Git username for HTTP authentication | Only for private repos |
+| `git.token` | Personal access token for Git authentication | Only for private repos |
+
+#### Schedule Settings
+
+| Field | Description | Default |
+|---|---|---|
+| `schedule.cron` | Cron expression for automatic sync | Empty (disabled) |
+| `schedule.retriesOnUnhealthy` | Max redeploy attempts when containers are unhealthy | 0 |
+| `schedule.retryDelay` | Delay between retries (milliseconds) | 30000 |
+
+#### Notifications
+
+AirCompose uses [Shoutrrr](https://containrrr.dev/shoutrrr/) for notifications, supporting email, Slack, Discord, Telegram, and many other services.
+
+| Field | Description |
+|---|---|
+| `notificationURL` | Shoutrrr-compatible URL for notifications |
+| `notificationTypes` | List of event types to trigger notifications |
+
+#### OIDC (OpenID Connect)
+
+| Field | Description |
+|---|---|
+| `issuerURL` | OIDC provider's issuer URL |
+| `clientID` | Client ID registered with the provider |
+| `clientSecret` | Client secret registered with the provider |
+
+### Environment Variables
+
+Global environment variables applied to all services:
+
+```yaml
+environment:
+  TZ: "UTC"
+  LOG_LEVEL: "info"
+```
+
+### Per-Service Overrides
+
+Environment variables specific to individual services:
+
+```yaml
+services:
+  my-app:
+    PORT: "8080"
+    DATABASE_URL: "postgres://..."
+```
+
+:::note
+Per-service variables override global variables.
+:::
+
+## CLI Parameters
+
+In addition to the `config.yaml`, AirCompose accepts CLI flags and environment variables. Priority is: CLI flag > environment variable > default value.
+
+### Run Command
+
+| Flag | Env Variable | Default | Description |
+|---|---|---|---|
+| `-c` | `AIR_COMPOSE_CONFIG_FILE` | `./config.yaml` | Path to the config file |
+| `-d` | `AIR_COMPOSE_WORKING_DIR` | `./data` | Data directory |
+| `-s` | `AIR_COMPOSE_SERVICES_DIR` | `.` | Services directory |
+| `-i` | `AIR_COMPOSE_DOCKER_IMAGE` | `ghcr.io/omar-kada/air-compose` | Docker image for self-update |
+| `-w` | `AIR_COMPOSE_ADD_WRITE_PERM` | `false` | Add write permissions to created files |
+| `-p` | `AIR_COMPOSE_PORT` | `5005` | API/UI port |
+| `-l` | `AIR_COMPOSE_LOG_LEVEL` | `INFO` | Log level (DEBUG, INFO, WARN, ERROR) |
+| `-f` | `AIR_COMPOSE_LOG_FILE` | `./air-compose.log` | Log file path |
+
+### Redeploy Command
+
+| Flag | Env Variable | Default | Description |
+|---|---|---|---|
+| `-d` | `AIR_COMPOSE_WORKING_DIR` | `./data` | Data directory |
+| `-s` | `AIR_COMPOSE_SERVICES_DIR` | `.` | Services directory |
+| `-l` | `AIR_COMPOSE_LOG_LEVEL` | `INFO` | Log level |
+| `-f` | `AIR_COMPOSE_LOG_FILE` | `./air-compose.log` | Log file path |
+
+### Feature Flags
+
+Feature flags control which UI features are available and are read from the container's environment at startup. These are **not** the logging variables — only the four below toggle UI capabilities. See the [Environment Variables](./advanced/environment-variables) reference for logging options like `AIR_COMPOSE_HUMAN_LOG`.
+
+| Env Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_DISPLAY_CONFIG` | `true` | Enable config page in UI |
+| `AIR_COMPOSE_EDIT_CONFIG` | `true` | Allow editing compose configuration from the UI |
+| `AIR_COMPOSE_EDIT_SETTINGS` | `true` | Allow editing settings (Git, OIDC, notifications) from the UI |
+| `AIR_COMPOSE_DISPLAY_CMD_LOGS` | `false` | Display command execution logs |
+## Data Directory Layout
+
+The working directory is organized as follows:
+
+```
+working-dir/
+├── config.yaml        # Configuration file
+├── air-compose.log    # Application log file
+├── db/                # SQLite database directory (created by GORM)
+│   └── air-compose.db # SQLite database
+├── repo/              # Git repository clone
+│   └── services/
+│       ├── service1/
+│       └── service2/
+```
+
+## Next Steps
+
+- [Environment Variables reference →](./advanced/environment-variables)
+- [GitOps workflow →](./advanced/gitops-workflow)

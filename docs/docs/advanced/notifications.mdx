@@ -1,0 +1,71 @@
+---
+sidebar_position: 3
+---
+
+# Notifications
+
+AirCompose sends real-time notifications through [Shoutrrr](https://containrrr.dev/shoutrrr/), a unified notification library that supports dozens of services including Slack, Discord, Telegram, Email, Teams, and more.
+
+## Configuration
+
+Notifications are configured in the `config.yaml` file:
+
+```yaml
+settings:
+  notifications:
+    notificationURL: "shoutrrr://..."
+    notificationTypes:
+      - "DEPLOYMENT_STARTED"
+      - "DEPLOYMENT_SUCCESS"
+      - "DEPLOYMENT_ERROR"
+      - "HEALTH_CHANGE"
+      - "NEW_COMMIT"
+      - "CONFIGURATION_UPDATED"
+```
+
+### Notification URL
+
+The `notificationURL` field uses Shoutrrr's URL format. Here are common examples:
+
+| Service | Example URL |
+|---|---|
+| Telegram Bot | `shoutrrr://telegram://bot{bot_token}/?chatId={chat_id}` |
+| Slack Webhook | `shoutrrr://slack://{webhook_id}/{webhook_token}` |
+| Discord Webhook | `shoutrrr://discord://{webhook_id}/{webhook_token}` |
+| Email (SMTP) | `shoutrrr://smtp.{tls_or_ssl}://{user}:{password}@{host}:{port}/?from={from}&to={to}&subject={subject}` |
+| Gotify | `shoutrrr://gotify://{host}:{port}/{token}/?title={title}` |
+| Webhook | `shoutrrr://webhook://{host}:{port}/{path}/?method=POST&body={body}` |
+
+### Notification Types
+
+Select which event types should trigger a notification:
+
+| Type | Description |
+|---|---|
+| `DEPLOYMENT_STARTED` | A deployment process has begun |
+| `DEPLOYMENT_SUCCESS` | A deployment completed successfully |
+| `DEPLOYMENT_ERROR` | A deployment encountered an error |
+| `HEALTH_CHANGE` | Container health status changed (healthy ↔ unhealthy) |
+| `NEW_COMMIT` | New commits detected in the config repository |
+| `CONFIGURATION_UPDATED` | Configuration file was updated |
+| `PASSWORD_UPDATED` | A user's password was changed |
+| `SESSION_REUSED` | A revoked refresh token was reused (security event) |
+| `MISC` | Miscellaneous events |
+
+## Testing
+
+Use the **Test Git Connection** button in the Settings page to verify your Git credentials. There is no built-in notification test — instead, trigger a manual sync and check if the notification arrives.
+
+## Delivery Flow
+
+1. An event is published to the **Event Bus**
+2. The `NotificationEventHandler` checks if the event type is enabled in `notificationTypes`
+3. If enabled and `notificationURL` is set, Shoutrrr sends the message
+4. The event is also persisted to the **Event Store** (SQLite) for UI display
+
+If a notification fails to send, the error is logged but does not block the deployment process.
+
+## Related
+
+- [Shoutrrr documentation](https://containrrr.dev/shoutrrr/)
+- [Configuration →](../configuration)

@@ -1,0 +1,98 @@
+---
+sidebar_position: 4
+---
+
+# OpenID Connect (OIDC)
+
+AirCompose supports authentication via OpenID Connect (OIDC), allowing users to log in using an external identity provider (IdP) such as Keycloak, Auth0, Azure AD, Google, or any OIDC-compliant provider.
+
+## Overview
+
+When OIDC is configured:
+
+1. Users are redirected to the IdP's login page
+2. After authentication, the IdP redirects back with an authorization code
+3. AirCompose verifies the ID token and extracts the user's email
+4. The user is automatically provisioned (created if they don't exist)
+5. A session token is issued, identical to local authentication
+
+Users can still register a local account if OIDC is not configured or is disabled.
+
+## Configuration
+
+OIDC settings are stored in the `config.yaml` file:
+
+```yaml
+settings:
+  oidc:
+    issuerURL: "https://your-oidc-provider"
+    clientID: "your-client-id"
+    clientSecret: "your-client-secret"
+```
+
+| Field | Description |
+|---|---|
+| `issuerURL` | The OIDC provider's issuer URL (must expose a `.well-known/openid-configuration` endpoint) |
+| `clientID` | The client ID registered with your OIDC provider |
+| `clientSecret` | The client secret registered with your OIDC provider |
+
+## OIDC Flow
+
+### 1. Login Initiation
+
+1. User selects "Login with OIDC" on the UI
+2. The backend calls `GET /api/oidc/login`
+3. AirCompose constructs the authorization URL using the provider's discovery endpoint
+4. The user is redirected to the IdP
+
+### 2. Callback Handling
+
+1. After successful authentication, the IdP redirects to `GET /api/oidc/callback?code={code}&state={state}`
+2. AirCompose exchanges the authorization code for an ID token via the token endpoint
+3. The ID token's nonce is verified against the initial state
+4. The user's email is extracted from the ID token claims
+
+### 3. User Provisioning
+
+- If the user's email doesn't exist in the database, a new user is created with type `OIDC`
+- A session token and refresh token are generated
+- The user is redirected back to the UI with their session established
+
+## Supported Scopes
+
+AirCompose requests the following scopes:
+- `openid` — required for OIDC flows
+- `email` — to retrieve the user's email address (used as the username)
+
+## User Types
+
+| Type | Description |
+|---|---|
+| `LOCAL` | Authenticated via username/password stored in AirCompose's database |
+| `OIDC` | Authenticated via an external OIDC identity provider |
+
+The first registered user is always `LOCAL`. Subsequent user registration behavior depends on configuration:
+
+- If OIDC is configured, users can register via either method
+- If only local auth is set up, only local registration is available
+
+## Disabling OIDC
+
+To disable OIDC, remove the `oidc` section from `config.yaml` or set all fields to empty values. The OIDC login option will no longer appear in the UI.
+
+## Troubleshooting
+
+### Provider Not Reachable
+
+If the OIDC provider is unreachable during login, check:
+- The `issuerURL` is correct and publicly accessible
+- The provider exposes a valid `/.well-known/openid-configuration` endpoint
+- Network connectivity from the AirCompose container
+
+### Nonce Mismatch
+
+If you see a "nonce mismatch" error, this typically indicates a token verification issue. Ensure the `clientID` and `clientSecret` match those registered with your provider.
+
+## Related
+
+- [Configuration →](../configuration)
