@@ -18,11 +18,6 @@ const sidebars: SidebarsConfig = {
     'configuration',
     {
       type: 'category',
-      label: 'Architecture',
-      items: ['architecture'],
-    },
-    {
-      type: 'category',
       label: 'Advanced',
       items: [
         'advanced/notifications',
@@ -30,11 +25,6 @@ const sidebars: SidebarsConfig = {
         'advanced/environment-variables',
         'advanced/gitops-workflow',
       ],
-    },
-    {
-      type: 'category',
-      label: 'API Reference',
-      items: ['api/rest-api'],
     },
   ],
 };

@@ -92,10 +92,6 @@ const config: Config = {
               label: 'Configuration',
               to: '/docs/configuration',
             },
-            {
-              label: 'Architecture',
-              to: '/docs/architecture',
-            },
           ],
         },
         {
