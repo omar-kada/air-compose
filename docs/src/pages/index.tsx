@@ -33,8 +33,8 @@ export default function Home(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`AirCompose`}
-      description="Lightweight GitOps automation for Docker Compose deployments">
+      title={siteConfig.title}
+      description={siteConfig.tagline}>
       <HomepageHeader />
     </Layout>
   );
