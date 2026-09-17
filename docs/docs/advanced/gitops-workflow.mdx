@@ -147,6 +147,11 @@ AirCompose emits events throughout the GitOps workflow:
 | `HEALTH_CHANGE` | Container health status changes |
 | `CONFIGURATION_UPDATED` | Config file is modified |
 | `ERROR` | A non-deployment error occurs |
+| `MISC` | Informational deployment events (e.g. services to remove, deploy list, working-branch updates) |
+
+:::note
+`PASSWORD_UPDATED` and `SESSION_REUSED` are also valid event types, but they originate from the auth system (password changes / OIDC session reuse), not the GitOps deployment flow.
+:::
 
 ## Related
 

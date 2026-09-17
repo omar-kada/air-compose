@@ -135,14 +135,14 @@ In addition to the `config.yaml`, AirCompose accepts CLI flags and environment v
 
 ### Feature Flags
 
+Feature flags control which UI features are available and are read from the container's environment at startup. These are **not** the logging variables — only the four below toggle UI capabilities. See the [Environment Variables](./advanced/environment-variables) reference for logging options like `AIR_COMPOSE_HUMAN_LOG`.
+
 | Env Variable | Default | Description |
 |---|---|---|
 | `AIR_COMPOSE_DISPLAY_CONFIG` | `true` | Enable config page in UI |
-| `AIR_COMPOSE_EDIT_CONFIG` | `true` | Allow editing config from UI |
-| `AIR_COMPOSE_EDIT_SETTINGS` | `true` | Allow editing settings from UI |
+| `AIR_COMPOSE_EDIT_CONFIG` | `true` | Allow editing compose configuration from the UI |
+| `AIR_COMPOSE_EDIT_SETTINGS` | `true` | Allow editing settings (Git, OIDC, notifications) from the UI |
 | `AIR_COMPOSE_DISPLAY_CMD_LOGS` | `false` | Display command execution logs |
-| `AIR_COMPOSE_HUMAN_LOG` | `false` | Use human-readable log format |
-| `AIR_COMPOSE_DISPLAY_CMD_LOGS` | `false` | Display command logs in UI |
 ## Data Directory Layout
 
 The working directory is organized as follows:
@@ -151,7 +151,8 @@ The working directory is organized as follows:
 working-dir/
 ├── config.yaml        # Configuration file
 ├── air-compose.log    # Application log file
-├── air-compose.db     # SQLite database
+├── db/                # SQLite database directory (created by GORM)
+│   └── air-compose.db # SQLite database
 ├── repo/              # Git repository clone
 │   └── services/
 │       ├── service1/

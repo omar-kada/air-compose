@@ -93,13 +93,13 @@ curl -X POST http://localhost:5005/api/config \
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/deployment?limit=20&offset=0` | List deployments (paginated) |
+| `GET` | `/api/deployment?limit=20&offset={cursor}` | List deployments (paginated) |
 | `POST` | `/api/deployment` | Sync and deploy if changes exist |
 | `GET` | `/api/deployment/{id}` | Get deployment details |
 
 **List Deployments:**
 ```bash
-curl "http://localhost:5005/api/deployment?limit=20&offset=0" -b cookies.txt
+curl "http://localhost:5005/api/deployment?limit=20&offset={cursor}" -b cookies.txt
 ```
 
 Response includes pagination info:
@@ -228,7 +228,7 @@ Returns a nested map of service names to container statuses.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/notifications?limit=20&offset=0` | List notification events |
+| `GET` | `/api/notifications?limit=20&offset={cursor}` | List notification events |
 
 ### User
 
