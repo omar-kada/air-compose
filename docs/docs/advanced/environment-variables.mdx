@@ -1,0 +1,90 @@
+---
+sidebar_position: 1
+---
+
+# Environment Variables
+
+AirCompose uses environment variables to configure runtime behavior. Variable priority follows this order: **CLI flag → environment variable → config file → default**.
+
+## Docker Compose Variables
+
+When running AirCompose via `docker compose up`, these variables are read from your `.env` file:
+
+| Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_SERVICES_DIR` | — | Absolute path where compose stacks are stored |
+| `AIR_COMPOSE_WORKING_DIR` | — | Absolute path for AirCompose data (config, database, repo clone) |
+
+:::warning
+Both `AIR_COMPOSE_SERVICES_DIR` and `AIR_COMPOSE_WORKING_DIR` must be absolute paths.
+:::
+
+## Application Configuration Variables
+
+These variables configure the AirCompose container itself:
+
+### Core
+
+| Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_PORT` | `5005` | Port for the HTTP API and UI |
+| `AIR_COMPOSE_DOCKER_IMAGE` | `ghcr.io/omar-kada/air-compose:latest` | Docker image used for self-update |
+
+### Logging
+
+| Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_LOG_LEVEL` | `INFO` | Log level: `DEBUG`, `INFO`, `WARN`, `ERROR` |
+| `AIR_COMPOSE_LOG_FILE` | `./air-compose.log` | Path to the log file |
+| `AIR_COMPOSE_HUMAN_LOG` | `false` | If `TRUE`, uses human-readable log format instead of JSON |
+| `AIR_COMPOSE_DISPLAY_CMD_LOGS` | `false` | If `TRUE`, logs Docker command execution to the log output |
+
+### File Permissions
+
+| Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_ADD_WRITE_PERM` | `false` | If `TRUE`, adds write permissions (0o666) to files created by AirCompose. Needed when Docker runs as non-root and shares volumes with other containers. |
+
+## Feature Flags
+
+Feature flags control which UI features are available and are read from the container's environment at startup.
+
+| Variable | Default | Description |
+|---|---|---|
+| `AIR_COMPOSE_DISPLAY_CONFIG` | `true` | Show/hide the Config page in the UI |
+| `AIR_COMPOSE_EDIT_CONFIG` | `true` | Allow editing compose configuration from the UI |
+| `AIR_COMPOSE_EDIT_SETTINGS` | `true` | Allow editing settings (Git, OIDC, notifications) from the UI |
+| `AIR_COMPOSE_DISPLAY_CMD_LOGS` | `false` | Display command execution logs in the log viewer |
+
+## Local Development Overrides
+
+When using `compose.local.yaml`, additional development variables are available:
+
+| Variable | Default | Description |
+|---|---|---|
+| `ENV` | `DEV` | Environment identifier for local builds |
+
+The local compose file also sets:
+- `AIR_COMPOSE_LOG_LEVEL=DEBUG` for verbose logging
+- `AIR_COMPOSE_HUMAN_LOG=TRUE` for readable log format
+- `AIR_COMPOSE_DISPLAY_CMD_LOGS=true` to see Docker commands
+
+## Precedence
+
+Configuration values are resolved with the following priority (highest to lowest):
+
+1. **CLI flags** passed to the `run` or `redeploy` command
+2. **Environment variables** set in the container
+3. **Config file** (`config.yaml`) values
+4. **Default values** (see tables above)
+
+:::tip
+To check the effective configuration, view the startup debug log which prints all resolved parameters:
+```
+running params : { ...
+```
+:::
+
+## Related
+
+- [Configuration file reference →](./configuration.mdx)

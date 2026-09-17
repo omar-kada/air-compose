@@ -2,46 +2,35 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Welcome
 
-Let's discover **Docusaurus in less than 5 minutes**.
+AirCompose is a lightweight GitOps automation tool that handles **Docker Compose** stack deployments. Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible** — without the need for heavy tooling or dependencies.
+
+## Features
+
+1. **Auto-sync** from a Git repository — changes to your compose stacks are detected and deployed automatically
+2. **No special syntax** — compose stacks keep their original form and are accessible to users
+3. **Modern UI** — manage everything remotely through a web interface
+4. **Notifications** — receive alerts on deployments and health status via [Shoutrrr](https://containrrr.dev/shoutrrr)
+5. **Environment variable overrides** — keep secrets local with per-service environment variable management
+6. **Self-contained** — runs on any Docker-capable system with a mounted Docker socket
+
+## Architecture at a Glance
+
+```
+User (Browser) ──HTTP/WebSocket──► AirCompose Container
+                              │
+            ┌─────────────────┼─────────────────┐
+            │                 │                 │
+            ▼                 ▼                 ▼
+     React Frontend   Go Backend (HTTP)  Docker Engine
+                                    │
+                          Git Repo  │  Docker Compose
+                          (config)  ▼  (stacks)
+```
 
 ## Getting Started
 
-Get started by **creating a new site**.
+If this is your first time using AirCompose, check out the [Getting Started](./getting-started.mdx) guide.
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
-
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+For a complete list of documentation pages, browse the [Docs](./getting-started.mdx) sidebar.
