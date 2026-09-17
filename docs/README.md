@@ -1,22 +1,15 @@
-# Website
+# AirCompose Documentation
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
-
-## Installation
-
-```bash
-npm install
-```
-
-**Note**: feel free to use the package manager of your choice.
+This website contains the documentation for **AirCompose** — a lightweight GitOps automation tool for Docker Compose deployments.
 
 ## Local Development
 
 ```bash
+npm install
 npm run start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+This starts a local development server (typically at `http://localhost:3000`). Most changes are reflected live without restarting.
 
 ## Build
 
@@ -24,20 +17,9 @@ This command starts a local development server and opens up a browser window. Mo
 npm run build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This generates static content into the `build/` directory and can be served using any static hosting service.
 
-## Deployment
+## Learn More
 
-Using SSH:
-
-```bash
-USE_SSH=true npm run deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> npm run deploy
-```
-
-If you are using GitHub Pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+- [AirCompose Documentation](https://air-compose.omar-kada.dev/docs/intro)
+- [Docusaurus](https://docusaurus.io/) — the static site generator used for this site
