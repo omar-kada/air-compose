@@ -4,6 +4,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -95,7 +96,6 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 
 	errors := make(map[string]error)
 	for _, service := range enabledServices {
-
 		if err := d.copyServiceFiles(service, params); err != nil {
 			d.eventPublisher.Publish(d.ctx, models.SourceEvent{
 				Type: models.EventError,
@@ -113,7 +113,8 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 			continue
 		}
 		if service == "air-compose" {
-			continue // delay air-compose deployment until the end
+			slog.Debug("skipping air-compose until the end of the deployment")
+			continue
 		}
 		if err := d.composeUp(filepath.Join(params.ServicesDir, service)); err != nil {
 			d.eventPublisher.Publish(d.ctx, models.SourceEvent{
@@ -127,6 +128,7 @@ func (d deployer) DeployServices(cfg models.Config, params models.DeploymentPara
 }
 
 func (d deployer) composeUp(composePath string) error {
+	slog.Debug("running compose up from " + composePath)
 	args := []string{"compose", "--project-directory", composePath, "--progress", "quiet", "up", "-d", "--quiet-pull"}
 	if _, err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose up : %w", err)
@@ -135,6 +137,7 @@ func (d deployer) composeUp(composePath string) error {
 }
 
 func (d deployer) composeDown(composePath string) error {
+	slog.Debug("running compose down from " + composePath)
 	args := []string{"compose", "--project-directory", composePath, "--progress", "quiet", "down"}
 	if _, err := d.cmdExecuter.Exec("docker", args...); err != nil {
 		return fmt.Errorf("failed to run docker compose down : %w", err)
@@ -202,12 +205,10 @@ func getEnvVarsArgs() []string {
 }
 
 func (d deployer) copyServiceFiles(serviceName string, params models.DeploymentParams) error {
+	slog.Debug("copying service files for " + serviceName)
 	src := filepath.Join(params.GetRepoDir(), "services", serviceName)
 	dst := filepath.Join(params.ServicesDir, serviceName)
-	if err := d.copier.Copy(src, dst); err != nil {
-		return err
-	}
-	return nil
+	return d.copier.Copy(src, dst)
 }
 
 func getUnusedServices(oldCfg, cfg models.Config) []string {

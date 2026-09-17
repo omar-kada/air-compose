@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,7 @@ type EnvGenerator struct {
 }
 
 func (g EnvGenerator) generateEnvFile(cfg models.Config, servicesDir, service string) error {
+	slog.Debug("generating environement file for " + service)
 	serviceCfg := cfg.PerService(service)
 	envFilePath := filepath.Join(servicesDir, service, ".env")
 

@@ -17,5 +17,7 @@ func NewCopier() Copier {
 }
 
 func (directoryCopier) Copy(src, dst string) error {
-	return copy.Copy(src, dst)
+	return copy.Copy(src, dst, copy.Options{
+		Sync: true,
+	})
 }

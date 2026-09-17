@@ -78,7 +78,7 @@ func (hc *healthChecker) setCurrentState(newState models.StacksState) {
 	if len(unhealthy) > 0 {
 		slog.Debug("[HEALTH CHECK] unhealthy services", "services", strings.Join(unhealthy, ", "))
 	} else {
-		slog.Debug("[HEALTH CHECK] result", "state", globalHealth)
+		slog.Debug("[HEALTH CHECK] result "+string(globalHealth), "state", globalHealth)
 	}
 
 	if oldGlobalHealth != globalHealth && (globalHealth != models.ContainerHealthy || hc.currentStacksState != nil) {

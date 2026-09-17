@@ -42,7 +42,8 @@ func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.E
 
 		err := h.Send(cfg.Settings.Notifications.NotificationURL, message)
 		if err != nil {
-			slog.Error("can't send notification", "error", err)
+			slog.Error("[NOTIFIER] couldn't send notification")
+			slog.Debug("reasson for not sending notification", "error", err)
 		}
 	}
 }
@@ -50,6 +51,6 @@ func (h *NotificationEventHandler) HandleEvent(_ context.Context, event models.E
 func (h *NotificationEventHandler) storeNotification(event models.Event) {
 	err := h.eventStore.StoreEvent(event)
 	if err != nil {
-		slog.Error("can't store event", "error", err)
+		slog.Error("[NOTIFIER] couldn't store event", "error", err)
 	}
 }

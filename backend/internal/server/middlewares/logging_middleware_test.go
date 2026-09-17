@@ -51,7 +51,7 @@ func TestLoggingMiddleware_RecordsStatusAndBytes(t *testing.T) {
 
 	assert.Len(t, mh.entries, 1)
 	ent := mh.entries[0]
-	assert.Equal(t, "[HTTP] request", ent["msg"])
+	assert.Equal(t, "[HTTP] request GET /testpath", ent["msg"])
 	assert.Equal(t, "GET", ent["method"])
 	assert.Equal(t, "/testpath", ent["path"])
 	assert.Equal(t, int64(201), ent["status"])
