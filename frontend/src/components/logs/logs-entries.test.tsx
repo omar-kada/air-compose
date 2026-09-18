@@ -39,13 +39,28 @@ describe('LogEntries', () => {
     expect(screen.queryByText('ERROR')).not.toBeNull();
   });
 
-  it('keeps meta collapsed until Expand All is toggled', async () => {
+  it('expands and collapses meta via Expand All', async () => {
     render(<LogEntries logs={list(line({ meta: { pod: 'api-1', node: 'n1' } }))} />);
+    const expandAll = screen.getByRole('button', { name: 'translated:LOGS.EXPAND_ALL' });
     expect(screen.queryByText('pod: api-1')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'translated:LOGS.EXPAND_ALL' }));
+    fireEvent.click(expandAll);
     await waitFor(() => {
       expect(screen.queryByText('pod: api-1')).not.toBeNull();
       expect(screen.queryByText('node: n1')).not.toBeNull();
     });
+    fireEvent.click(expandAll);
+    await waitFor(() => expect(screen.queryByText('pod: api-1')).toBeNull());
+  });
+
+  it('toggles an entry meta via its chevron button', async () => {
+    render(<LogEntries logs={list(line({ meta: { pod: 'api-1' } }))} />);
+    expect(screen.queryByText('pod: api-1')).toBeNull();
+    const chevron = screen
+      .getAllByRole('button')
+      .find((b) => b.textContent !== 'translated:LOGS.EXPAND_ALL')!;
+    fireEvent.click(chevron);
+    await waitFor(() => expect(screen.queryByText('pod: api-1')).not.toBeNull());
+    fireEvent.click(chevron);
+    await waitFor(() => expect(screen.queryByText('pod: api-1')).toBeNull());
   });
 });

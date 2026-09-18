@@ -40,10 +40,10 @@ describe('useLogFilter', () => {
   it('composes text and level filters together', () => {
     const { result } = renderHook(() => useLogFilter(logs));
     act(() => {
-      result.current.setText('msg');
+      result.current.setText('error');
       result.current.setActiveLevels(new Set([Level.DEBUG, Level.ERROR]));
     });
-    expect(result.current.filtered.map((l) => l.level)).toEqual([Level.DEBUG, Level.ERROR]);
+    expect(result.current.filtered).toEqual([error]);
   });
 
   it('tracks the provided text across multiple changes', () => {
