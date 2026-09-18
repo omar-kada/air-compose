@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface AutoScrollAreaProps {
   children?: ReactNode;
@@ -11,6 +12,7 @@ interface AutoScrollAreaProps {
 }
 
 export function AutoScrollArea({ children, className = '', watch }: AutoScrollAreaProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +108,7 @@ export function AutoScrollArea({ children, className = '', watch }: AutoScrollAr
       {/* Floating button – fixed to viewport */}
       {showResetButton && (
         <Button
-          aria-label="Scroll to bottom"
+          aria-label={t('LOGS.SCROLL_TO_BOTTOM')}
           onClick={smoothScrollToBottom}
           className="fixed bottom-16 right-6 rounded-full p-3 shadow-lg z-50"
           size="icon"

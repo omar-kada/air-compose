@@ -68,7 +68,7 @@ const viewport = (container: HTMLElement): HTMLElement => {
 // name; query by role+name (intent) rather than a Tailwind class or test-id.
 const resetButton = (container: HTMLElement): HTMLButtonElement | null =>
   within(container).queryByRole('button', {
-    name: /scroll to bottom/i,
+    name: /scroll.*bottom/i,
   }) as HTMLButtonElement | null;
 
 const triggerIo = (intersecting: boolean) =>
