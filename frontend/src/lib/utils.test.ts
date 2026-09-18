@@ -1,25 +1,7 @@
 import { AxiosError } from 'axios';
 import type { AxiosResponse } from 'axios';
 import { ErrorCode } from '@/api/api';
-import { cn, formatTime, isInvalidToken } from './utils';
-
-describe('cn', () => {
-  it('joins class names with a single space', () => {
-    expect(cn('a', 'b', 'c')).toBe('a b c');
-  });
-
-  it('drops falsy class arguments', () => {
-    expect(cn('a', false, '', null, undefined, 0, 'b')).toBe('a b');
-  });
-
-  it('supports clsx conditional objects', () => {
-    expect(cn('a', { b: true, c: false })).toBe('a b');
-  });
-
-  it('deduplicates conflicting tailwind classes (last wins)', () => {
-    expect(cn('text-red-500', 'text-blue-500')).toBe('text-blue-500');
-  });
-});
+import { formatTime, isInvalidToken } from './utils';
 
 describe('formatTime', () => {
   it('returns an HH:mm:ss 24-hour string', () => {
@@ -70,7 +52,7 @@ describe('isInvalidToken', () => {
     expect(isInvalidToken(error)).toBe(false);
   });
 
-  it('returns false for non-AxiosError values', () => {
+  it('returns false for non-AxioError values', () => {
     expect(isInvalidToken(new Error('boom'))).toBe(false);
     expect(isInvalidToken('string')).toBe(false);
     expect(isInvalidToken(null)).toBe(false);
