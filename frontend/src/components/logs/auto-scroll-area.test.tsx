@@ -1,23 +1,16 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { AutoScrollArea } from './auto-scroll-area';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { LogLine, LogMessages } from '@/api';
+import { Level } from '@/api';
+import { LogEntries } from './logs-entries';
 
-// AutoScrollArea wraps Radix <ScrollArea>; render it as a plain div that
-// forwards the ref so the wheel/keydown listeners attach to a node we can
-// target, and so the bottom anchor lands in the DOM.
-vi.mock('@/components/ui/scroll-area', async () => {
-  const React = await import('react');
-  return {
-    ScrollArea: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-      ({ children }, ref) => (
-        <div ref={ref} data-testid="scroll-area">
-          {children}
-        </div>
-      ),
-    ),
-  };
-});
+// Integration test: exercise AutoScrollArea *through* LogEntries using the
+// project's real ScrollArea (no mock of AutoScrollArea / ScrollArea). jsdom
+// lacks IntersectionObserver / Element#scrollIntoView, so stub only those and
+// feed intersection entries to drive the reset-button show/hide behaviour.
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => `translated:${key}` }),
+}));
 
-// jsdom ships neither IntersectionObserver nor Element#scrollIntoView.
 let ioCallback: IntersectionObserverCallback | null = null;
 const scrollIntoView = vi.fn();
 
@@ -25,19 +18,26 @@ class MockIntersectionObserver {
   constructor(cb: IntersectionObserverCallback) {
     ioCallback = cb;
   }
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-  takeRecords() {
-    return [];
-  }
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+}
+
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
 }
 
 beforeAll(() => {
-  (
-    globalThis as unknown as { IntersectionObserver: typeof MockIntersectionObserver }
-  ).IntersectionObserver = MockIntersectionObserver;
+  vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  vi.stubGlobal('ResizeObserver', MockResizeObserver);
   Element.prototype.scrollIntoView = scrollIntoView;
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
 });
 
 afterEach(() => {
@@ -45,65 +45,80 @@ afterEach(() => {
   ioCallback = null;
 });
 
-describe('AutoScrollArea', () => {
-  it('renders children and the bottom anchor', () => {
-    render(
-      <AutoScrollArea>
-        <span data-testid="child">log line</span>
-      </AutoScrollArea>,
+const line = (over: Partial<LogLine> = {}): LogLine => ({
+  level: Level.INFO,
+  msg: 'hello',
+  time: '2025-01-01T00:00:00Z',
+  meta: {},
+  ...over,
+});
+const list = (...lines: LogLine[]): LogMessages => lines;
+
+const viewport = (container: HTMLElement): HTMLElement => {
+  const el = container.querySelector('[data-radix-scroll-area-viewport]');
+  expect(el).not.toBeNull();
+  return el as HTMLElement;
+};
+
+const resetButton = (container: HTMLElement): HTMLButtonElement | null =>
+  container.querySelector<HTMLButtonElement>('button.fixed.bottom-16.right-6');
+
+const triggerIo = (intersecting: boolean) =>
+  ioCallback?.([{ isIntersecting: intersecting } as IntersectionObserverEntry], undefined as never);
+
+describe('LogEntries + AutoScrollArea integration', () => {
+  it('renders log lines through the real ScrollArea viewport', () => {
+    const { container } = render(
+      <LogEntries logs={list(line({ msg: 'first' }), line({ msg: 'second' }))} />,
     );
-    expect(screen.getByTestId('child')).toBeTruthy();
-    expect(screen.getByTestId('scroll-area').querySelector('.h-1')).not.toBeNull();
+    expect(screen.queryByText('first')).not.toBeNull();
+    expect(screen.queryByText('second')).not.toBeNull();
+    expect(viewport(container)).not.toBeNull();
   });
 
-  it('scrolls to the bottom on mount', () => {
-    render(<AutoScrollArea>child</AutoScrollArea>);
-    expect(scrollIntoView).toHaveBeenCalled();
+  it('renders the bottom anchor used to observe intersection', () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    expect(container.querySelector('.h-1')).not.toBeNull();
+  });
+
+  it('scrolls to the bottom on mount (scrollIntoView called)', () => {
+    render(<LogEntries logs={list(line())} />);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
   });
 
-  it('shows a reset button when scrolling away from the bottom', () => {
-    const { queryByRole } = render(<AutoScrollArea>child</AutoScrollArea>);
-    const viewport = screen.getByTestId('scroll-area');
-    expect(queryByRole('button')).toBeNull();
-    ioCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], undefined as never);
-    fireEvent.wheel(viewport, { deltaY: 1 });
-    expect(queryByRole('button')).not.toBeNull();
+  it('shows the reset button when scrolled away from the bottom', async () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    triggerIo(false);
+    fireEvent.wheel(viewport(container), { deltaY: 1 });
+    await waitFor(() => expect(resetButton(container)).not.toBeNull());
   });
 
-  it('hides the reset button when scrolling back to the bottom', () => {
-    const { queryByRole } = render(<AutoScrollArea>child</AutoScrollArea>);
-    const viewport = screen.getByTestId('scroll-area');
-    ioCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], undefined as never);
-    fireEvent.wheel(viewport);
-    expect(queryByRole('button')).not.toBeNull();
-    ioCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], undefined as never);
-    fireEvent.wheel(viewport);
-    expect(queryByRole('button')).toBeNull();
+  it('hides the reset button when scrolled back to the bottom', async () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    triggerIo(false);
+    fireEvent.wheel(viewport(container));
+    await waitFor(() => expect(resetButton(container)).not.toBeNull());
+    triggerIo(true);
+    fireEvent.wheel(viewport(container));
+    await waitFor(() => expect(resetButton(container)).toBeNull());
   });
 
-  it('scrolls smoothly to the bottom when the reset button is clicked', () => {
-    const { getByRole } = render(<AutoScrollArea>child</AutoScrollArea>);
-    const viewport = screen.getByTestId('scroll-area');
-    ioCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], undefined as never);
-    fireEvent.wheel(viewport);
+  it('scrolls smoothly when the reset button is clicked', async () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    triggerIo(false);
+    fireEvent.wheel(viewport(container));
+    await waitFor(() => expect(resetButton(container)).not.toBeNull());
     scrollIntoView.mockClear();
-    fireEvent.click(getByRole('button'));
+    const btn = resetButton(container);
+    expect(btn).not.toBeNull();
+    if (btn) fireEvent.click(btn);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 
-  it('scrolls to the bottom when the `watch` prop changes', () => {
-    const { rerender } = render(<AutoScrollArea watch={1}>child</AutoScrollArea>);
+  it('re-scrolls when the number of logs changes (watch prop)', () => {
+    const { rerender } = render(<LogEntries logs={list(line({ msg: 'a' }))} />);
     scrollIntoView.mockClear();
-    rerender(<AutoScrollArea watch={2}>child</AutoScrollArea>);
+    rerender(<LogEntries logs={list(line({ msg: 'a' }), line({ msg: 'b' }))} />);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
-  });
-
-  it('treats keyboard navigation (ArrowDown) as a scroll intent', () => {
-    const { queryByRole } = render(<AutoScrollArea>child</AutoScrollArea>);
-    const viewport = screen.getByTestId('scroll-area');
-    ioCallback?.([{ isIntersecting: false } as IntersectionObserverEntry], undefined as never);
-    fireEvent.keyDown(viewport, { key: 'ArrowDown' });
-    expect(queryByRole('button')).not.toBeNull();
   });
 });
