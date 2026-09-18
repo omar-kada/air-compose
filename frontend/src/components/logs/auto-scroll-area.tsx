@@ -99,7 +99,7 @@ export function AutoScrollArea({ children, className = '', watch }: AutoScrollAr
       <ScrollArea className="w-full h-full" ref={containerRef}>
         <div className="p-4">
           {children}
-          <div ref={bottomRef} data-testid="auto-scroll-bottom-anchor" className="h-1" />
+          <div ref={bottomRef} className="h-1" />
         </div>
       </ScrollArea>
 

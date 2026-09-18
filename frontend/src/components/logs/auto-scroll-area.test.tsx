@@ -13,10 +13,12 @@ vi.mock('react-i18next', () => ({
 
 let ioCallback: IntersectionObserverCallback | null = null;
 const scrollIntoView = vi.fn();
+const mockObservers: MockIntersectionObserver[] = [];
 
 class MockIntersectionObserver {
   constructor(cb: IntersectionObserverCallback) {
     ioCallback = cb;
+    mockObservers.push(this);
   }
   observe = vi.fn();
   unobserve = vi.fn();
@@ -43,6 +45,7 @@ afterAll(() => {
 afterEach(() => {
   vi.clearAllMocks();
   ioCallback = null;
+  mockObservers.length = 0;
 });
 
 const line = (over: Partial<LogLine> = {}): LogLine => ({
@@ -61,9 +64,12 @@ const viewport = (container: HTMLElement): HTMLElement => {
   return el as HTMLElement;
 };
 
-// Query the reset button by its accessible name (intent), not a Tailwind class.
+// The reset button is an icon-only button distinguished by its accessible
+// name; query by role+name (intent) rather than a Tailwind class or test-id.
 const resetButton = (container: HTMLElement): HTMLButtonElement | null =>
-  within(container).queryByRole('button', { name: /scroll to bottom/i });
+  within(container).queryByRole('button', {
+    name: /scroll to bottom/i,
+  }) as HTMLButtonElement | null;
 
 const triggerIo = (intersecting: boolean) =>
   ioCallback?.([{ isIntersecting: intersecting } as IntersectionObserverEntry], undefined as never);
@@ -78,9 +84,12 @@ describe('LogEntries + AutoScrollArea integration', () => {
     expect(viewport(container)).not.toBeNull();
   });
 
-  it('renders the bottom anchor used to observe intersection', () => {
-    const { container } = render(<LogEntries logs={list(line())} />);
-    expect(within(container).getByTestId('auto-scroll-bottom-anchor')).toBeTruthy();
+  it('observes the bottom anchor on mount', () => {
+    render(<LogEntries logs={list(line())} />);
+    // intent: a single IntersectionObserver is created and given the bottom
+    // anchor to observe (the anchor exists purely to be observed)
+    expect(mockObservers.length).toBe(1);
+    expect(mockObservers[0].observe).toHaveBeenCalled();
   });
 
   it('scrolls to the bottom on mount (scrollIntoView called)', () => {
