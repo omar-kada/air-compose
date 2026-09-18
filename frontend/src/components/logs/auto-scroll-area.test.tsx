@@ -121,4 +121,44 @@ describe('LogEntries + AutoScrollArea integration', () => {
     rerender(<LogEntries logs={list(line({ msg: 'a' }), line({ msg: 'b' }))} />);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
   });
+
+  it('treats scroll-key keydown (ArrowDown) as a scroll intent', async () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    const vp = viewport(container);
+
+    // scrolled away from the bottom (IO not intersecting) -> no scroll intent yet
+    triggerIo(false);
+    expect(resetButton(container)).toBeNull();
+
+    // ArrowDown is a scroll key -> onKeyDown -> onUserScrollIntent -> shows reset
+    fireEvent.keyDown(vp, { key: 'ArrowDown' });
+    await waitFor(() => expect(resetButton(container)).not.toBeNull());
+
+    // 'Enter' is not a scroll key -> onKeyDown must not fire scroll intent
+    fireEvent.keyDown(vp, { key: 'Enter' });
+    expect(resetButton(container)).not.toBeNull();
+  });
+
+  it('does not show the reset button for a scroll intent already at the bottom', () => {
+    const { container } = render(<LogEntries logs={list(line())} />);
+    // bottom is visible on mount (scrollToBottom) and we stay at the bottom;
+    // a scroll-intent event here hits neither branch of onUserScrollIntent,
+    // so the reset button must stay hidden.
+    triggerIo(true);
+    fireEvent.wheel(viewport(container));
+    expect(resetButton(container)).toBeNull();
+  });
+
+  it('does not auto-scroll on watch change when the user has already scrolled away', async () => {
+    const { container, rerender } = render(<LogEntries logs={list(line({ msg: 'a' }))} />);
+    // user scrolls away -> reset button appears (manual scroll intent)
+    triggerIo(false);
+    fireEvent.wheel(viewport(container));
+    await waitFor(() => expect(resetButton(container)).not.toBeNull());
+    // rerendering with more logs must NOT auto-scroll to the bottom,
+    // because the user is browsing manually (userHasScrolledRef is true).
+    scrollIntoView.mockClear();
+    rerender(<LogEntries logs={list(line({ msg: 'a' }), line({ msg: 'b' }))} />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
 });
