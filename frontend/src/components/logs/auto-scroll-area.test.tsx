@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import type { LogLine, LogMessages } from '@/api';
 import { Level } from '@/api';
 import { LogEntries } from './logs-entries';
@@ -54,14 +54,16 @@ const line = (over: Partial<LogLine> = {}): LogLine => ({
 });
 const list = (...lines: LogLine[]): LogMessages => lines;
 
+// Radix ScrollArea exposes its scrollable viewport via this data attribute.
 const viewport = (container: HTMLElement): HTMLElement => {
   const el = container.querySelector('[data-radix-scroll-area-viewport]');
   expect(el).not.toBeNull();
   return el as HTMLElement;
 };
 
+// Query the reset button by its accessible name (intent), not a Tailwind class.
 const resetButton = (container: HTMLElement): HTMLButtonElement | null =>
-  container.querySelector<HTMLButtonElement>('button.fixed.bottom-16.right-6');
+  within(container).queryByRole('button', { name: /scroll to bottom/i });
 
 const triggerIo = (intersecting: boolean) =>
   ioCallback?.([{ isIntersecting: intersecting } as IntersectionObserverEntry], undefined as never);
@@ -78,11 +80,18 @@ describe('LogEntries + AutoScrollArea integration', () => {
 
   it('renders the bottom anchor used to observe intersection', () => {
     const { container } = render(<LogEntries logs={list(line())} />);
-    expect(container.querySelector('.h-1')).not.toBeNull();
+    expect(within(container).getByTestId('auto-scroll-bottom-anchor')).toBeTruthy();
   });
 
   it('scrolls to the bottom on mount (scrollIntoView called)', () => {
     render(<LogEntries logs={list(line())} />);
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
+  });
+
+  it('scrolls to the bottom when the number of logs changes (watch prop)', () => {
+    const { rerender } = render(<LogEntries logs={list(line({ msg: 'a' }))} />);
+    scrollIntoView.mockClear();
+    rerender(<LogEntries logs={list(line({ msg: 'a' }), line({ msg: 'b' }))} />);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
   });
 
@@ -115,18 +124,11 @@ describe('LogEntries + AutoScrollArea integration', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 
-  it('re-scrolls when the number of logs changes (watch prop)', () => {
-    const { rerender } = render(<LogEntries logs={list(line({ msg: 'a' }))} />);
-    scrollIntoView.mockClear();
-    rerender(<LogEntries logs={list(line({ msg: 'a' }), line({ msg: 'b' }))} />);
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant' });
-  });
-
   it('treats scroll-key keydown (ArrowDown) as a scroll intent', async () => {
     const { container } = render(<LogEntries logs={list(line())} />);
     const vp = viewport(container);
 
-    // scrolled away from the bottom (IO not intersecting) -> no scroll intent yet
+    // Scrolled away from the bottom (IO not intersecting) -> no scroll intent yet
     triggerIo(false);
     expect(resetButton(container)).toBeNull();
 
