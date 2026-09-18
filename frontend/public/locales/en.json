@@ -109,7 +109,8 @@
     "NO_LOGS_DESCRIPTION": "check if the server is generating logs correctly",
     "FILTER_LOGS": "Filter logs ...",
     "STREAMING": "Live",
-    "EXPAND_ALL": "Expand all"
+    "EXPAND_ALL": "Expand all",
+    "SCROLL_TO_BOTTOM": "Scroll to bottom"
   },
   "SETTINGS": {
     "SETTINGS": "Settings",
