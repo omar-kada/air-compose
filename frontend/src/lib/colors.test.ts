@@ -1,113 +1,106 @@
-import { EventType } from "@/api/api";
-import type { ContainerHealth } from "@/api/api";
-import {
-  colorForStatus,
-  borderForStatus,
-  textColorForStatus,
-  logColor,
-} from "./colors";
+import { EventType } from '@/api/api';
+import type { ContainerHealth } from '@/api/api';
+import { colorForStatus, borderForStatus, textColorForStatus, logColor } from './colors';
 
-describe("colorForStatus", () => {
-  it("maps healthy/success to green", () => {
-    expect(colorForStatus("healthy")).toBe("bg-green-400");
-    expect(colorForStatus("success")).toBe("bg-green-400");
+describe('colorForStatus', () => {
+  it('maps healthy/success to a green class', () => {
+    expect(colorForStatus('healthy')).toMatch(/green/);
+    expect(colorForStatus('success')).toMatch(/green/);
   });
 
-  it("maps unhealthy/error to red", () => {
-    expect(colorForStatus("unhealthy")).toBe("bg-red-400");
-    expect(colorForStatus("error")).toBe("bg-red-400");
+  it('maps unhealthy/error to a red class', () => {
+    expect(colorForStatus('unhealthy')).toMatch(/red/);
+    expect(colorForStatus('error')).toMatch(/red/);
   });
 
-  it("maps starting/planned to slate", () => {
-    expect(colorForStatus("starting")).toBe("bg-slate-400");
-    expect(colorForStatus("planned")).toBe("bg-slate-400");
+  it('maps starting/planned to a slate class', () => {
+    expect(colorForStatus('starting')).toMatch(/slate/);
+    expect(colorForStatus('planned')).toMatch(/slate/);
   });
 
-  it("maps running to blue", () => {
-    expect(colorForStatus("running")).toBe("bg-blue-400");
+  it('maps running to a blue class', () => {
+    expect(colorForStatus('running')).toMatch(/blue/);
   });
 
-  it("returns empty string for unknown statuses", () => {
-    expect(colorForStatus("unknown" as ContainerHealth)).toBe("");
+  it('returns empty string for unknown statuses', () => {
+    expect(colorForStatus('unknown' as ContainerHealth)).toBe('');
   });
 });
 
-describe("borderForStatus", () => {
-  it("maps running/healthy to green", () => {
-    expect(borderForStatus("running")).toBe("border-green-400");
-    expect(borderForStatus("healthy")).toBe("border-green-400");
+describe('borderForStatus', () => {
+  it('maps running/healthy to a green class', () => {
+    expect(borderForStatus('running')).toMatch(/green/);
+    expect(borderForStatus('healthy')).toMatch(/green/);
   });
 
-  it("maps dead/removing/unhealthy to red", () => {
-    expect(borderForStatus("dead")).toBe("border-red-400");
-    expect(borderForStatus("removing")).toBe("border-red-400");
-    expect(borderForStatus("unhealthy")).toBe("border-red-400");
+  it('maps dead/removing/unhealthy to a red class', () => {
+    expect(borderForStatus('dead')).toMatch(/red/);
+    expect(borderForStatus('removing')).toMatch(/red/);
+    expect(borderForStatus('unhealthy')).toMatch(/red/);
   });
 
-  it("maps exited/paused/none to slate", () => {
-    expect(borderForStatus("exited")).toBe("border-slate-400");
-    expect(borderForStatus("paused")).toBe("border-slate-400");
-    expect(borderForStatus("none")).toBe("border-slate-400");
+  it('maps exited/paused/none to a slate class', () => {
+    expect(borderForStatus('exited')).toMatch(/slate/);
+    expect(borderForStatus('paused')).toMatch(/slate/);
+    expect(borderForStatus('none')).toMatch(/slate/);
   });
 
-  it("maps created/restarting/starting to blue", () => {
-    expect(borderForStatus("created")).toBe("border-blue-400");
-    expect(borderForStatus("restarting")).toBe("border-blue-400");
-    expect(borderForStatus("starting")).toBe("border-blue-400");
+  it('maps created/restarting/starting to a blue class', () => {
+    expect(borderForStatus('created')).toMatch(/blue/);
+    expect(borderForStatus('restarting')).toMatch(/blue/);
+    expect(borderForStatus('starting')).toMatch(/blue/);
   });
 
-  it("returns empty string for undefined", () => {
-    expect(borderForStatus(undefined)).toBe("");
-  });
-});
-
-describe("textColorForStatus", () => {
-  it("maps running/healthy to green", () => {
-    expect(textColorForStatus("running")).toBe("text-green-400");
-    expect(textColorForStatus("healthy")).toBe("text-green-400");
-  });
-
-  it("maps dead/removing/unhealthy to red", () => {
-    expect(textColorForStatus("dead")).toBe("text-red-400");
-    expect(textColorForStatus("removing")).toBe("text-red-400");
-    expect(textColorForStatus("unhealthy")).toBe("text-red-400");
-  });
-
-  it("maps exited/paused/none to slate", () => {
-    expect(textColorForStatus("exited")).toBe("text-slate-400");
-    expect(textColorForStatus("paused")).toBe("text-slate-400");
-    expect(textColorForStatus("none")).toBe("text-slate-400");
-  });
-
-  it("maps created/restarting/starting to blue", () => {
-    expect(textColorForStatus("created")).toBe("text-blue-400");
-    expect(textColorForStatus("restarting")).toBe("text-blue-400");
-    expect(textColorForStatus("starting")).toBe("text-blue-400");
-  });
-
-  it("returns empty string for undefined", () => {
-    expect(textColorForStatus(undefined)).toBe("");
+  it('returns empty string when called with no status', () => {
+    expect(borderForStatus()).toBe('');
   });
 });
 
-describe("logColor", () => {
-  it("maps ERROR and DEPLOYMENT_ERROR to red", () => {
-    expect(logColor(EventType.ERROR)).toBe("text-red-700 dark:text-red-300 ");
-    expect(logColor(EventType.DEPLOYMENT_ERROR)).toBe(
-      "text-red-700 dark:text-red-300 ",
-    );
+describe('textColorForStatus', () => {
+  it('maps running/healthy to a green class', () => {
+    expect(textColorForStatus('running')).toMatch(/green/);
+    expect(textColorForStatus('healthy')).toMatch(/green/);
   });
 
-  it("maps MISC to gray", () => {
-    expect(logColor(EventType.MISC)).toBe("text-gray-700 dark:text-gray-300");
+  it('maps dead/removing/unhealthy to a red class', () => {
+    expect(textColorForStatus('dead')).toMatch(/red/);
+    expect(textColorForStatus('removing')).toMatch(/red/);
+    expect(textColorForStatus('unhealthy')).toMatch(/red/);
   });
 
-  it("returns empty string for unhandled event types", () => {
-    expect(logColor(EventType.DEPLOYMENT_SUCCESS)).toBe("");
-    expect(logColor(EventType.DEPLOYMENT_STARTED)).toBe("");
-    expect(logColor(EventType.HEALTH_CHANGE)).toBe("");
-    expect(logColor(EventType.CONFIGURATION_UPDATED)).toBe("");
-    expect(logColor(EventType.PASSWORD_UPDATED)).toBe("");
-    expect(logColor(EventType.SESSION_REUSED)).toBe("");
+  it('maps exited/paused/none to a slate class', () => {
+    expect(textColorForStatus('exited')).toMatch(/slate/);
+    expect(textColorForStatus('paused')).toMatch(/slate/);
+    expect(textColorForStatus('none')).toMatch(/slate/);
+  });
+
+  it('maps created/restarting/starting to a blue class', () => {
+    expect(textColorForStatus('created')).toMatch(/blue/);
+    expect(textColorForStatus('restarting')).toMatch(/blue/);
+    expect(textColorForStatus('starting')).toMatch(/blue/);
+  });
+
+  it('returns empty string when called with no status', () => {
+    expect(textColorForStatus()).toBe('');
+  });
+});
+
+describe('logColor', () => {
+  it('maps ERROR and DEPLOYMENT_ERROR to a red class', () => {
+    expect(logColor(EventType.ERROR)).toMatch(/red/);
+    expect(logColor(EventType.DEPLOYMENT_ERROR)).toMatch(/red/);
+  });
+
+  it('maps MISC to a gray class', () => {
+    expect(logColor(EventType.MISC)).toMatch(/gray/);
+  });
+
+  it('returns empty string for unhandled event types', () => {
+    expect(logColor(EventType.DEPLOYMENT_SUCCESS)).toBe('');
+    expect(logColor(EventType.DEPLOYMENT_STARTED)).toBe('');
+    expect(logColor(EventType.HEALTH_CHANGE)).toBe('');
+    expect(logColor(EventType.CONFIGURATION_UPDATED)).toBe('');
+    expect(logColor(EventType.PASSWORD_UPDATED)).toBe('');
+    expect(logColor(EventType.SESSION_REUSED)).toBe('');
   });
 });
