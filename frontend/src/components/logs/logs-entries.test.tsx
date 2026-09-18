@@ -57,10 +57,13 @@ describe('LogEntries', () => {
     expect(screen.queryByText('pod: api-1')).toBeNull();
     const chevron = screen
       .getAllByRole('button')
-      .find((b) => b.textContent !== 'translated:LOGS.EXPAND_ALL')!;
-    fireEvent.click(chevron);
-    await waitFor(() => expect(screen.queryByText('pod: api-1')).not.toBeNull());
-    fireEvent.click(chevron);
-    await waitFor(() => expect(screen.queryByText('pod: api-1')).toBeNull());
+      .find((b) => b.textContent !== 'translated:LOGS.EXPAND_ALL');
+    expect(chevron).toBeDefined();
+    if (chevron) {
+      fireEvent.click(chevron);
+      await waitFor(() => expect(screen.queryByText('pod: api-1')).not.toBeNull());
+      fireEvent.click(chevron);
+      await waitFor(() => expect(screen.queryByText('pod: api-1')).toBeNull());
+    }
   });
 });
