@@ -48,7 +48,7 @@ export function ConfigViewer({
           variant="ghost"
           size={copied ? undefined : 'icon'}
           onClick={copyText}
-          aria-label={copied ? t('ALERT.COPIED') : 'Copy to clipboard'}
+          aria-label={copied ? t('ALERT.COPIED') : t('ACTION.COPY')}
           className="end-2 top-2 z-10 transform transition-all"
         >
           {copied ? (

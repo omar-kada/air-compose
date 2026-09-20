@@ -43,7 +43,7 @@ describe('ConfigViewer', () => {
 
     it('renders the copy button when onClose is not provided', () => {
       render(<ConfigViewer text="test" />);
-      expect(screen.getByRole('button', { name: 'Copy to clipboard' })).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'ACTION.COPY' })).not.toBeNull();
     });
 
     it('does not render the close button when onClose is not provided', () => {
@@ -54,32 +54,32 @@ describe('ConfigViewer', () => {
     it('renders both close and copy buttons when onClose is provided', () => {
       render(<ConfigViewer text="test" onClose={vi.fn()} />);
       expect(screen.getByRole('button', { name: 'ACTION.CLOSE' })).not.toBeNull();
-      expect(screen.getByRole('button', { name: 'Copy to clipboard' })).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'ACTION.COPY' })).not.toBeNull();
     });
   });
 
   describe('copy functionality', () => {
     it('calls navigator.clipboard.writeText with the text', () => {
       render(<ConfigViewer text="yaml-content" />);
-      fireEvent.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+      fireEvent.click(screen.getByRole('button', { name: 'ACTION.COPY' }));
       expect(mockWriteText).toHaveBeenCalledWith('yaml-content');
     });
 
     it('shows COPIED text immediately after clicking copy', () => {
       render(<ConfigViewer text="yaml-content" />);
-      fireEvent.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+      fireEvent.click(screen.getByRole('button', { name: 'ACTION.COPY' }));
       expect(screen.getByText('ALERT.COPIED')).not.toBeNull();
     });
 
     it('reverts to copy button after 3 seconds', () => {
       render(<ConfigViewer text="yaml-content" />);
-      fireEvent.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+      fireEvent.click(screen.getByRole('button', { name: 'ACTION.COPY' }));
       expect(screen.getByRole('button', { name: 'ALERT.COPIED' })).not.toBeNull();
       act(() => {
         vi.advanceTimersByTime(3000);
       });
       expect(screen.queryByRole('button', { name: 'ALERT.COPIED' })).toBeNull();
-      expect(screen.getByRole('button', { name: 'Copy to clipboard' })).not.toBeNull();
+      expect(screen.getByRole('button', { name: 'ACTION.COPY' })).not.toBeNull();
     });
   });
 
