@@ -30,13 +30,22 @@
       "skip-github-release": true,
       "skip-changelog": true,
       "extra-files": []
+    },
+    "docs": {
+      "release-type": "node",
+      "component": "docs",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "skip-github-release": true,
+      "skip-changelog": true,
+      "extra-files": []
     }
   },
   "plugins": [
     {
       "type": "linked-versions",
       "groupName": "app",
-      "components": [".", "backend", "frontend"]
+      "components": [".", "backend", "frontend", "docs"]
     }
   ],
   "group-pull-request-title-pattern": "chore: release ${version}"

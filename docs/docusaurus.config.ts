@@ -1,13 +1,14 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
 import type { Options, ThemeConfig } from '@docusaurus/preset-classic';
+import type { Config } from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
   title: 'AirCompose',
   tagline: 'Lightweight GitOps automation for Docker Compose deployments',
-  favicon: 'img/favicon.ico',
+  staticDirectories: ['static', '../frontend/public'],  
+  favicon: 'air-compose.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
