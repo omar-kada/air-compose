@@ -1,13 +1,14 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
 import type { Options, ThemeConfig } from '@docusaurus/preset-classic';
+import type { Config } from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
   title: 'AirCompose',
   tagline: 'Lightweight GitOps automation for Docker Compose deployments',
-  favicon: 'img/favicon.ico',
+  staticDirectories: ['static', '../frontend/public'],  
+  favicon: 'air-compose.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -15,10 +16,10 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://air-compose.omar-kada.dev',
+  url: 'https://omar-kada.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/air-compose/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
