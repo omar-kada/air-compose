@@ -24,7 +24,7 @@ export function EnvVarArrayForm({
   const { t } = useTranslation();
   const {
     fields: varArray,
-    update,
+    append,
     remove,
   } = useFieldArray({
     control,
@@ -40,9 +40,9 @@ export function EnvVarArrayForm({
     const last = formData.at(-1);
 
     if (last?.key && last.key.trim() !== '') {
-      update(formData?.length || 0, { key: '', value: '' });
+      append({ key: '', value: '' });
     }
-  }, [formData, update]);
+  }, [formData, append]);
 
   return (
     <div className="grid grid-cols-2 gap-2 max-w-150">

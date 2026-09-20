@@ -35,7 +35,7 @@ export function ConfigViewer({
     <div className={cn('p-4', className)}>
       <div className="rounded-t-lg bg-accent flex items-center">
         {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('ACTION.CLOSE')}>
             <X className="size-4" />
           </Button>
         )}
@@ -48,6 +48,7 @@ export function ConfigViewer({
           variant="ghost"
           size={copied ? undefined : 'icon'}
           onClick={copyText}
+          aria-label={copied ? t('ALERT.COPIED') : t('ACTION.COPY')}
           className="end-2 top-2 z-10 transform transition-all"
         >
           {copied ? (

@@ -173,7 +173,8 @@
     "VIEW_FILE": "View file",
     "HIDE_FILE": "Hide file",
     "SELECT_ALL": "Select all",
-    "CLEAR_ALL": "Clear all"
+    "CLEAR_ALL": "Clear all",
+    "COPY": "Copy to clipboard"
   },
   "TIME": {
     "JUST_NOW": "Just now",
