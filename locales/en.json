@@ -1,0 +1,248 @@
+{
+  "TITLE": "AirCompose",
+  "DISABLED": "Disabled",
+  "STATUS": {
+    "STATUS": "Status",
+    "NO_STACKS_FOUND": "No stacks found",
+    "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
+  },
+  "MENU": {
+    "SETTINGS": "Settings",
+    "DARK_MODE": "Dark mode",
+    "LOGGED_AS": "Logged as",
+    "NOTIFICATION": "Notifications",
+    "ACCOUNT": "Account"
+  },
+  "REGISTER": {
+    "REGISTER": "Register",
+    "FORM": {
+      "TITLE": "Create a user",
+      "username": "Username",
+      "username_MIN_3": "Username should be at least 3 characters",
+      "password": "Password",
+      "password_MIN_10": "Password should be at least 10 characters",
+      "SUBMIT": "Create"
+    }
+  },
+  "LOGIN": {
+    "LOGIN": "Login",
+    "FORM": {
+      "TITLE": "Login",
+      "LOGIN_WITH_OIDC": "Login with OIDC",
+      "OR": "Or with local user",
+      "username": "Username",
+      "username_MIN_3": "Username should be at least 3 characters",
+      "password": "Password",
+      "password_MIN_10": "Password should be at least 10 characters",
+      "SUBMIT": "Login"
+    }
+  },
+  "ONBOARDING": {
+    "FORM": {
+      "TITLE": "Welcome to Air-compose",
+      "repo": "Repository",
+      "repo_REQUIRED": "Repository is required",
+      "branch": "Branch",
+      "username": "Username",
+      "username_REQUIRED": "Username is required",
+      "token": "Token",
+      "token_REQUIRED": "Token is required",
+      "cron": "Cron period",
+      "cron_PLACEHOLDER": "disabled when empty",
+      "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
+      "enableNotifications": "Enable notifications",
+      "notificationURL": "Notification URL",
+      "notificationURL_PLACEHOLDER": "check Shoutrrr docs for configuration",
+      "notificationTypes": "Notification Types",
+      "notificationTypes_DESCRIPTION": "Choose which types of notification to enable",
+      "SUBMIT": "Save",
+      "NEXT": "Next",
+      "PREVIOUS": "Previous",
+      "REPO_FORM_DESCRIPTION": "Configure the repository used for stack definition",
+      "CRON_FORM_DESCRIPTION": "Configure the frequency of auto-sync",
+      "NOTIFICATION_FORM_DESCRIPTION": "Configure notifications (using Shoutrrr services)",
+      "PRIVATE_REPO": "Private repository",
+      "TEST_CONNECTION": "Test Connection",
+      "CRON_DISABLED": "Never",
+      "CRON_EVERY_10_MIN": "Every 10 min",
+      "CRON_HOURLY": "Hourly",
+      "CRON_DAILY": "Daily"
+    }
+  },
+  "DEPLOYMENTS": {
+    "DEPLOYMENTS": "Deployments",
+    "AUTHOR": "by",
+    "AUTOMATIC": "Automatic",
+    "REPO": "from",
+    "EVENTS_LOG": "Events log",
+    "AUTO_SYNC": "Auto sync",
+    "NO_DEPLOYMENTS": "No deployments found",
+    "NO_DEPLOYMENTS_DESCRIPTION": "Get started by pushing a configuration and synchronizing.",
+    "SELECT_DEPLOYMENT_FOR_DETAILS": "Select deployment for details"
+  },
+  "NOTIFICATIONS": {
+    "NOTIFICATIONS": "Notifications",
+    "DESCRIPTION": "Based on notifications settings"
+  },
+  "CONFIGURATION": {
+    "CONFIGURATION": "Configuration",
+    "DISABLED_TITLE": "Configuration is disabled",
+    "DISABLED_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_DISPLAY_CONFIG' to 'true'",
+    "DISABLED_EDIT_TITLE": "Editing is disabled",
+    "DISABLED_EDIT_DESCRIPTION": "to enable it first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_EDIT_CONFIG' to 'true'",
+    "FORM": {
+      "GLOBAL_ENV_VARS": "Global environment variables",
+      "KEY": "Key",
+      "VALUE": "Value",
+      "SERVICES": "Services",
+      "SERVICE_NAME": "Service name",
+      "ADD_SERVICE": "Add service",
+      "REMOVE_SERVICE": "Remove service",
+      "REMOVE_VAR": "Remove variable",
+      "SERVICE_NAME_REQUIRED": "Service name is required"
+    }
+  },
+  "LOGS": {
+    "LOGS": "Logs",
+    "NO_LOGS_FILTERED": "No logs match the current filters",
+    "NO_LOGS": "No logs available",
+    "NO_LOGS_DESCRIPTION": "check if the server is generating logs correctly",
+    "FILTER_LOGS": "Filter logs ...",
+    "STREAMING": "Live",
+    "EXPAND_ALL": "Expand all",
+    "SCROLL_TO_BOTTOM": "Scroll to bottom"
+  },
+  "SETTINGS": {
+    "SETTINGS": "Settings",
+    "DESCRIPTION": "Update the app settings",
+    "DISABLED_TITLE": "Settings are disabled",
+    "DISABLED_DESCRIPTION": "to enable them first make sure the server is exposed securely, then set the environment variable 'AIR_COMPOSE_EDIT_SETTINGS' to 'true'",
+    "VERSION": "Version",
+    "FORM": {
+      "GIT": "Git",
+      "repo": "Repository",
+      "repo_PLACEHOLDER": "https://github.com/omar-kada/air-compose-config",
+      "repo_REQUIRED": "Repository is required",
+      "branch": "Branch",
+      "branch_PLACEHOLDER": "main",
+      "username": "Username",
+      "username_PLACEHOLDER": "required for private repositories",
+      "token": "Token",
+      "token_PLACEHOLDER": "required for private repositories",
+      "AUTO_SYNC": "Auto sync",
+      "cron": "Cron period",
+      "cron_DESCRIPTION": "standard linux cron period, example : 0 2 * * sun",
+      "cron_PLACEHOLDER": "disabled when empty",
+      "retriesOnUnhealthy": "Retries on unhealthy stacks ({{value}}) :",
+      "retriesOnUnhealthy_DESCRIPTION": "(0 = disabled)",
+      "retryDelay": "Delay between retries ({{value}}m) :",
+      "ACCOUNT": "Account",
+      "DELETE_ACCOUNT": "Delete account",
+      "CHANGE_PASSWORD": "Change password",
+      "DELETE_ACCOUNT_DIALOG": {
+        "TITLE": "Are you sure ?",
+        "DESCRIPTION": "Do you really want to delete your account ?"
+      },
+      "NOTIFICATION": "Notifications",
+      "notificationURL": "Notification URL",
+      "notificationURL_DESCRIPTION": "Check Shoutrrr docs for format",
+      "notificationURL_PLACEHOLDER": "gotify://123456789",
+      "notificationTypes": "Enabled Notifications",
+      "notificationTypes_DESCRIPTION": "Choose which types of notification to enable"
+    },
+    "CHANGE_PASS_DIALOG": {
+      "TITLE": "Change your password",
+      "DESCRIPTION": "Please provide your old password, and the new password",
+      "oldPass": "Old password",
+      "oldPass_MIN_10": "Password should be at least 10 characters",
+      "newPass": "New password",
+      "newPass_MIN_10": "Password should be at least 10 characters",
+      "CHANGE_PASS_SUCCESS": "Password changed successfully"
+    }
+  },
+  "ACTION": {
+    "BACK": "Back",
+    "CONFIRM": "Confirm",
+    "CANCEL": "Cancel",
+    "SIGN_OUT": "Sign out",
+    "CLOSE": "Close",
+    "SAVE": "Save",
+    "RESET": "Reset",
+    "TOGGLE_THEME": "Toggle Theme",
+    "SYNC_NOW": "Sync now",
+    "VIEW_FILE": "View file",
+    "HIDE_FILE": "Hide file",
+    "SELECT_ALL": "Select all",
+    "CLEAR_ALL": "Clear all",
+    "COPY": "Copy to clipboard"
+  },
+  "TIME": {
+    "JUST_NOW": "Just now",
+    "IN_FEW_SECONDS": "In a few seconds",
+    "LAST_X_DAYS": "Last {{days}} days"
+  },
+  "DIFF": {
+    "DIFF": "Diff",
+    "UPDATED_FILES": "Updated files",
+    "DIFF_BETWEEN_DEPLOYED_AND_REMOTE": "New changes from git repo",
+    "DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION": "Showing differences between what's currently deployed and the latest version from the repository."
+  },
+  "ALERT": {
+    "SUCCESS": "Success",
+    "ERROR": "Error",
+    "SERVER_ERROR": "Server error",
+    "CONNECTION_ERROR": "Error connecting to the server",
+    "SYNCHRONIZING": "Synchronizing",
+    "SYNC_SUCCESS": "Success, Deployment is running",
+    "SYNC_NO_CHANGES": "No changes to synchronize",
+    "SYNC_ERROR": "Error while Synchronizing",
+    "TESTING_CONNECTION": "Testing repo connection",
+    "TESTING_CONNECTION_SUCCESS": "Connection success",
+    "TESTING_CONNECTION_FAILED": "Connection failed",
+    "TESTING_CONNECTION_ERROR": "Error while testing repo connection",
+    "DIFF_ERROR": "Error while loading diff",
+    "LOAD_DEPLOYMENT_ERROR": "Error while loading deployment",
+    "LOAD_DEPLOYMENTS_ERROR": "Error while loading deployments",
+    "LOAD_NOTIFICATIONS_ERROR": "Error while loading notifications",
+    "LOAD_STATE_ERROR": "Error while loading state",
+    "LOAD_STATUS_ERROR": "Error while loading status",
+    "LOAD_LOGS_ERROR": "Error while loading logs",
+    "LOAD_CONFIGURATION_ERROR": "Error while loading configuration",
+    "LOAD_SETTINGS_ERROR": "Error while loading settings",
+    "COPIED": "Copied",
+    "LOGIN_ERROR": "Login error",
+    "LOGOUT_ERROR": "Logout error",
+    "USER_CREATION_ERROR": "register error",
+    "CHANGE_PASS_ERROR": "Error while changing password",
+    "DELETE_ACCOUNT_ERROR": "Error while deleting your account"
+  },
+  "SOCKET": {
+    "CONNECTED": {
+      "TITLE": "Server reconnected",
+      "DESCRIPTION": ""
+    },
+    "RECONNECTING": {
+      "TITLE": "Server connection lost",
+      "DESCRIPTION": "Trying to reconnect ({{attempt}}/{{max}})"
+    },
+    "FAILED": {
+      "TITLE": "Server connection lost",
+      "DESCRIPTION": "Reload when connection is established",
+      "ACTION": "Reload"
+    }
+  },
+  "EVENT_TYPE": {
+    "GENERAL": "General",
+    "MISC": "Info",
+    "ERROR": "Error",
+    "DEPLOYMENT": "Deployment",
+    "DEPLOYMENT_STARTED": "Deployment started",
+    "DEPLOYMENT_SUCCESS": "Deployment success",
+    "DEPLOYMENT_ERROR": "Deployment error",
+    "SETTINGS": "Settings",
+    "PASSWORD_UPDATED": "Password updated",
+    "HEALTH_CHANGE": "Health changed",
+    "CONFIGURATION_UPDATED": "Configuration updated",
+    "SESSION_REUSED": "Session reused"
+  }
+}
