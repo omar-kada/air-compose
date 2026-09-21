@@ -53,7 +53,7 @@ describe('DeploymentListItem', () => {
 
   it('applies the selected style when isSelected is true', () => {
     const { container } = render(
-      <DeploymentListItem deployment={mockDeployment} isSelected={true} onSelect={() => {}} />,
+      <DeploymentListItem deployment={mockDeployment} isSelected onSelect={() => {}} />,
     );
     expect((container.firstChild as HTMLElement).className).toContain('bg-sidebar');
   });
