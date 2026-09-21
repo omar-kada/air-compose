@@ -6,6 +6,12 @@
     "NO_STACKS_FOUND": "No stacks found",
     "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
   },
+  "DEPLOYMENT_STATUS": {
+    "SUCCESS": "Success",
+    "ERROR": "Error",
+    "RUNNING": "Running",
+    "PLANNED": "Planned"
+  },
   "MENU": {
     "SETTINGS": "Settings",
     "DARK_MODE": "Dark mode",

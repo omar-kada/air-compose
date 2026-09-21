@@ -2,17 +2,23 @@ import { render } from '@testing-library/react';
 import type { DeploymentStatus } from '@/api/api';
 import { DeploymentStatusBadge } from './deployment-status-badge';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => `translated:${key}`,
+    i18n: { language: 'en' },
+  }),
+}));
+
 describe('DeploymentStatusBadge', () => {
-  it('renders the status text as fallback label', () => {
+  it('renders the translated status text as fallback label', () => {
     const status = 'success' as const;
     const { container } = render(<DeploymentStatusBadge status={status} />);
     const badge = container.querySelector('[data-slot="badge"]');
-    expect(badge?.textContent).toContain(status);
+    expect(badge?.textContent).toContain(`translated:DEPLOYMENT_STATUS.${status.toUpperCase()}`);
   });
 
   it('does not render a text label when iconOnly is true', () => {
     const { container } = render(<DeploymentStatusBadge status="success" iconOnly />);
-    // Only the SVG icon is rendered, no text label
     expect(container.textContent?.trim()).toBe('');
   });
 
@@ -22,8 +28,10 @@ describe('DeploymentStatusBadge', () => {
   });
 
   it('renders a custom label when provided', () => {
-    const { container } = render(<DeploymentStatusBadge status="success" label="Deployed" />);
-    expect(container.textContent).toContain('Deployed');
+    const label = 'Deployed';
+    const { container } = render(<DeploymentStatusBadge status="success" label={label} />);
+    const badge = container.querySelector('[data-slot="badge"]');
+    expect(badge?.textContent).toContain(label);
   });
 
   it.each<[DeploymentStatus, string]>([
@@ -31,7 +39,7 @@ describe('DeploymentStatusBadge', () => {
     ['error', 'bg-red-400'],
     ['running', 'bg-blue-400'],
     ['planned', 'bg-slate-400'],
-  ])('applies color class %s for status "%s"', (status, colorClass) => {
+  ])('applies %s color class %s', (status, colorClass) => {
     const { container } = render(<DeploymentStatusBadge status={status} iconOnly />);
     expect(container.querySelector(`[class*="${colorClass}"]`)).not.toBeNull();
   });
@@ -61,6 +69,7 @@ describe('DeploymentStatusBadge', () => {
     const { container } = render(
       <DeploymentStatusBadge status={undefined as unknown as 'success'} label={undefined} />,
     );
-    expect(container.textContent).toContain('unknown');
+    const badge = container.querySelector('[data-slot="badge"]');
+    expect(badge?.textContent).toContain('unknown');
   });
 });
