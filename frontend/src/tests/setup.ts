@@ -1,10 +1,15 @@
 import '@testing-library/jest-dom';
 
-vi.stubGlobal(
-  'ResizeObserver',
-  class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  },
-);
+class ResizeObserverMock {
+  observe() {
+    void this;
+  }
+  unobserve() {
+    void this;
+  }
+  disconnect() {
+    void this;
+  }
+}
+
+vi.stubGlobal('ResizeObserver', ResizeObserverMock);
