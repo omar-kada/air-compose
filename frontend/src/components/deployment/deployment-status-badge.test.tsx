@@ -4,8 +4,10 @@ import { DeploymentStatusBadge } from './deployment-status-badge';
 
 describe('DeploymentStatusBadge', () => {
   it('renders the status text as fallback label', () => {
-    const { container } = render(<DeploymentStatusBadge status="success" />);
-    expect(container.textContent).toContain('success');
+    const status = 'success' as const;
+    const { container } = render(<DeploymentStatusBadge status={status} />);
+    const badge = container.querySelector('[data-slot="badge"]');
+    expect(badge?.textContent).toContain(status);
   });
 
   it('does not render a text label when iconOnly is true', () => {
