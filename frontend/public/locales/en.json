@@ -7,10 +7,10 @@
     "NO_STACKS_FOUND_DESCRIPTION": "Check the deployment page for more information"
   },
   "DEPLOYMENT_STATUS": {
-    "SUCCESS": "Success",
-    "ERROR": "Error",
-    "RUNNING": "Running",
-    "PLANNED": "Planned"
+    "success": "Success",
+    "error": "Error",
+    "running": "Running",
+    "planned": "Planned"
   },
   "MENU": {
     "SETTINGS": "Settings",

@@ -14,7 +14,7 @@ describe('DeploymentStatusBadge', () => {
     const status = 'success' as const;
     const { container } = render(<DeploymentStatusBadge status={status} />);
     const badge = container.querySelector('[data-slot="badge"]');
-    expect(badge?.textContent).toContain(`translated:DEPLOYMENT_STATUS.${status.toUpperCase()}`);
+    expect(badge?.textContent).toContain(`translated:DEPLOYMENT_STATUS.${status}`);
   });
 
   it('does not render a text label when iconOnly is true', () => {

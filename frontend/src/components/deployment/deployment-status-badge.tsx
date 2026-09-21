@@ -12,9 +12,7 @@ export function DeploymentStatusBadge(props: {
 }) {
   const { t } = useTranslation();
   const Icon = iconForStatus(props.status);
-  const statusLabel = props.status
-    ? t(`DEPLOYMENT_STATUS.${props.status.toUpperCase()}`)
-    : 'unknown';
+  const statusLabel = props.status ? t(`DEPLOYMENT_STATUS.${props.status}`) : 'unknown';
   return (
     <Badge className={cn(colorForStatus(props.status), props.className)}>
       <Icon className={`${props.status === 'running' ? 'animate-spin' : ''}`} />
