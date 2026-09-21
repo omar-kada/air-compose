@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { EventType, type Event } from '@/api/api';
 import { NotificationList, NotificationSkeleton } from './notifications-list';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, type UseInfiniteQueryResult } from '@tanstack/react-query';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -50,7 +50,7 @@ describe('NotificationList', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       fetchNextPage: vi.fn(),
-    } as any);
+    } as unknown as UseInfiniteQueryResult);
     const { container } = render(<NotificationList onNotificationClick={() => {}} />);
     expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3);
   });
@@ -63,7 +63,7 @@ describe('NotificationList', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       fetchNextPage: vi.fn(),
-    } as any);
+    } as unknown as UseInfiniteQueryResult);
     const { container } = render(<NotificationList onNotificationClick={() => {}} />);
     expect(container.querySelectorAll('[data-slot="item"]')).toHaveLength(1);
   });
@@ -76,7 +76,7 @@ describe('NotificationList', () => {
       hasNextPage: false,
       isFetchingNextPage: false,
       fetchNextPage: vi.fn(),
-    } as any);
+    } as unknown as UseInfiniteQueryResult);
     const { container } = render(<NotificationList onNotificationClick={() => {}} />);
     expect(container.querySelector('[data-slot="alert"]')).not.toBeNull();
   });

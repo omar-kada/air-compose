@@ -34,7 +34,7 @@ describe('NotificationFilter', () => {
       (t) => t.getAttribute('aria-describedby') === 'translated:EVENT_TYPE.ERROR',
     );
     expect(errorToggle).toBeDefined();
-    fireEvent.click(errorToggle!);
+    fireEvent.click(errorToggle as HTMLElement);
     await waitFor(() => {
       expect(onFilterChanged).toHaveBeenLastCalledWith([
         EventType.DEPLOYMENT_ERROR,
@@ -53,14 +53,14 @@ describe('NotificationFilter', () => {
     const errorToggle = toggles.find(
       (t) => t.getAttribute('aria-describedby') === 'translated:EVENT_TYPE.ERROR',
     );
-    fireEvent.click(errorToggle!);
+    fireEvent.click(errorToggle as HTMLElement);
     await waitFor(() => {
       expect(onFilterChanged).toHaveBeenLastCalledWith([
         EventType.DEPLOYMENT_ERROR,
         EventType.ERROR,
       ]);
     });
-    fireEvent.click(errorToggle!);
+    fireEvent.click(errorToggle as HTMLElement);
     await waitFor(() => {
       expect(onFilterChanged).toHaveBeenLastCalledWith(Object.values(EventType));
     });
