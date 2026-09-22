@@ -71,7 +71,7 @@ describe('SettingsSheet', () => {
   });
 
   it('renders settings form when settings are loaded', () => {
-    render(<SettingsSheet open={true} setOpen={vi.fn()} />);
+    render(<SettingsSheet open setOpen={vi.fn()} />);
     expect(document.querySelector('[data-slot="settings-form"]')).not.toBeNull();
   });
 
@@ -81,7 +81,7 @@ describe('SettingsSheet', () => {
       error: null,
       isPending: true,
     }));
-    render(<SettingsSheet open={true} setOpen={vi.fn()} />);
+    render(<SettingsSheet open setOpen={vi.fn()} />);
     expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3);
   });
 
@@ -92,12 +92,12 @@ describe('SettingsSheet', () => {
       error: testError,
       isPending: false,
     }));
-    render(<SettingsSheet open={true} setOpen={vi.fn()} />);
+    render(<SettingsSheet open setOpen={vi.fn()} />);
     expect(document.querySelector('[data-slot="error-alert"]')).not.toBeNull();
   });
 
   it('calls updateSettings on form submit', async () => {
-    render(<SettingsSheet open={true} setOpen={vi.fn()} />);
+    render(<SettingsSheet open setOpen={vi.fn()} />);
     await screen.findByRole('button', { name: 'translated:ACTION.SAVE' });
     fireEvent.click(screen.getByRole('button', { name: 'translated:ACTION.SAVE' }));
     await waitFor(() => {
@@ -109,7 +109,7 @@ describe('SettingsSheet', () => {
 
   it('renders disabled message when editSettings is false', () => {
     queryState.featuresEditSettings = false;
-    render(<SettingsSheet open={true} setOpen={vi.fn()} />);
+    render(<SettingsSheet open setOpen={vi.fn()} />);
     expect(screen.getByText(/translated:SETTINGS.DISABLED/)).toBeTruthy();
   });
 });
