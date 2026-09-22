@@ -23,12 +23,10 @@ const { mockUseFilteredQuery, mockUpdateSettings, queryState } = vi.hoisted(() =
   },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => `translated:${key}`,
-    i18n: { language: 'en' },
-  }),
-}));
+vi.mock('react-i18next', async () => {
+  const { createI18nMock } = await import('@/tests/mock-factories');
+  return createI18nMock();
+});
 
 vi.mock('@/hooks', () => ({
   getFeaturesQueryOptions: () => ({ queryKey: ['features'] }),
@@ -55,7 +53,6 @@ describe('SettingsSheet', () => {
     queryState.featuresEditSettings = true;
     queryState.isPending = false;
     queryState.error = null;
-    mockUpdateSettings.mockReset();
     mockUseFilteredQuery.mockImplementation(() => {
       queryState.callCount++;
       if (queryState.callCount === 1) {

@@ -3,20 +3,15 @@ import { ChangePasswordDialog } from './change-password-dialog';
 
 const mockChangePass = vi.hoisted(() => vi.fn().mockResolvedValue({ data: { success: true } }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => `translated:${key}`,
-    i18n: { language: 'en' },
-  }),
-}));
+vi.mock('react-i18next', async () => {
+  const { createI18nMock } = await import('@/tests/mock-factories');
+  return createI18nMock();
+});
 
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    loading: vi.fn(),
-  },
-}));
+vi.mock('sonner', async () => {
+  const { createSonnerMock } = await import('@/tests/mock-factories');
+  return createSonnerMock();
+});
 
 vi.mock('@/hooks/user/use-change-pass', () => ({
   useChangePass: () => ({
@@ -26,16 +21,12 @@ vi.mock('@/hooks/user/use-change-pass', () => ({
   }),
 }));
 
-vi.mock('../view', () => ({
-  ErrorAlert: () => null,
-}));
+vi.mock('../view', async () => {
+  const { createErrorAlertMock } = await import('@/tests/mock-factories');
+  return createErrorAlertMock();
+});
 
 describe('ChangePasswordDialog', () => {
-  beforeEach(() => {
-    mockChangePass.mockClear();
-    mockChangePass.mockResolvedValue({ data: { success: true } });
-  });
-
   it('renders password fields and action buttons when dialog is opened', async () => {
     render(
       <ChangePasswordDialog>
