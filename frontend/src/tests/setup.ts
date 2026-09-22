@@ -7,3 +7,4 @@ class ResizeObserverMock {
 }
 
 vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+vi.stubGlobal('__APP_VERSION__', 'test');
