@@ -54,9 +54,6 @@ describe('EnvironementHealth', () => {
   });
 
   it('renders unknown badge when health state is absent (disabled query)', () => {
-    // When user is null, getStateQueryOptions gets enabled:false, so the query is
-    // disabled and useFilteredQuery returns { isPending: false, data: undefined }.
-    // The component gates only on isPending; state?.health is undefined → unknown badge.
     mockUseUser.mockReturnValue({ data: null });
     mockUseFilteredQuery.mockReturnValue({ isPending: false, data: undefined });
 

@@ -46,7 +46,6 @@ describe('ServiceStatus', () => {
     render(<ServiceStatus serviceName="nginx" serviceContainers={mockContainers} />);
     const humanTime = document.querySelector('[data-slot="human-time"]');
     expect(humanTime).not.toBeNull();
-    // Latest startedAt is '2024-01-01T11:00:00Z' (container-2)
     expect(humanTime?.textContent).toBe(String(new Date('2024-01-01T11:00:00Z')));
   });
 
@@ -64,8 +63,8 @@ describe('ServiceStatus', () => {
   });
 
   it('renders no ContainerStatusBadges when serviceContainers is empty', () => {
-    render(<ServiceStatus serviceName="nginx" serviceContainers={{}} />);
-    expect(screen.queryByText('translated:')).toBeNull();
+    const { container } = render(<ServiceStatus serviceName="nginx" serviceContainers={{}} />);
+    expect(container.querySelectorAll('[data-slot="badge"]').length).toBe(0);
   });
 });
 
