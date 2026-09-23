@@ -10,7 +10,7 @@ export function createI18nMock() {
   return {
     useTranslation: () => ({
       t: (key: string) => `translated:${key}`,
-      i18n: { language: 'en' },
+      i18n: { language: "en" },
     }),
   };
 }
@@ -21,6 +21,8 @@ export function createSonnerMock() {
       success: vi.fn(),
       error: vi.fn(),
       loading: vi.fn(),
+      promise: vi.fn(),
+      dismiss: vi.fn(),
     },
   };
 }

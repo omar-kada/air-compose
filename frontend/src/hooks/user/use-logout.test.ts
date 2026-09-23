@@ -8,39 +8,40 @@ const mockFn = vi.hoisted(() =>
   })),
 );
 
-vi.mock('sonner', async () => {
-  const { createSonnerMock } = await import('@/tests/mock-factories');
+vi.mock("sonner", async () => {
+  const { createSonnerMock } = await import("@/tests/mock-factories");
   const m = createSonnerMock();
-  (m.toast as any).promise = mockToastPromise;
+  m.toast.promise = mockToastPromise;
   return m;
 });
 
-vi.mock('react-i18next', async () => {
-  const { createI18nMock } = await import('@/tests/mock-factories');
+vi.mock("react-i18next", async () => {
+  const { createI18nMock } = await import("@/tests/mock-factories");
   return createI18nMock();
 });
 
-vi.mock('@/api/api', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/api/api')>();
+vi.mock("@/api/api", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/api/api")>();
   return {
     ...original,
     getAuthAPILogoutMutationOptions: mockFn,
-    getUserAPIGetQueryOptions: vi.fn(() => ({ queryKey: ['user'] })),
+    getUserAPIGetQueryOptions: vi.fn(() => ({ queryKey: ["user"] })),
   };
 });
 
-import { useLogout } from './use-logout';
-import { renderHookWithQuery } from '@/tests/test-utils';
+import { useLogout } from "./use-logout";
+import { renderHookWithQuery } from "@/tests/test-utils";
+import type { AnyFunction } from "@/tests/test-utils";
 
-describe('useLogout', () => {
-  it('returns logout function', () => {
+describe("useLogout", () => {
+  it("returns logout function", () => {
     const { result } = renderHookWithQuery(() => useLogout());
     expect(result.current.logout).toBeInstanceOf(Function);
   });
 
-  it('logout calls toast.promise and unwrap', async () => {
+  it("logout calls toast.promise and unwrap", async () => {
     const { result } = renderHookWithQuery(() => useLogout());
-    await (result.current.logout as any)();
+    await (result.current.logout as AnyFunction)();
     expect(mockToastPromise).toHaveBeenCalled();
   });
 });

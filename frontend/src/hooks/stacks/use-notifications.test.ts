@@ -1,33 +1,48 @@
-const mockList = vi.hoisted(() => vi.fn(() => ({ data: { items: [], pageInfo: { endCursor: '' } } })));
-const mockKey = vi.hoisted(() => vi.fn(() => ['notifications-key']));
+const mockList = vi.hoisted(() =>
+  vi.fn(() => ({ data: { items: [], pageInfo: { endCursor: "" } } })),
+);
+const mockKey = vi.hoisted(() => vi.fn(() => ["notifications-key"]));
 
-vi.mock('@/api/api', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/api/api')>();
-  return { ...original, notificationsAPIList: mockList, getNotificationsAPIListQueryKey: mockKey };
+import type { AnyFunction } from "@/tests/test-utils";
+import type { QueryClient } from "@tanstack/react-query";
+vi.mock("@/api/api", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/api/api")>();
+  return {
+    ...original,
+    notificationsAPIList: mockList,
+    getNotificationsAPIListQueryKey: mockKey,
+  };
 });
 
-import { getNotificationsQueryOptions, refetchNotifications } from './use-notifications';
+import {
+  getNotificationsQueryOptions,
+  refetchNotifications,
+} from "./use-notifications";
 
-describe('getNotificationsQueryOptions', () => {
-  it('returns query options with correct structure', () => {
+describe("getNotificationsQueryOptions", () => {
+  it("returns query options with correct structure", () => {
     const options = getNotificationsQueryOptions();
-    expect(options.queryKey).toEqual(['notifications-key']);
+    expect(options.queryKey).toEqual(["notifications-key"]);
     expect(options.queryFn).toBeInstanceOf(Function);
     expect(options.select).toBeInstanceOf(Function);
     expect(options.getNextPageParam).toBeInstanceOf(Function);
-    expect(options.initialPageParam).toEqual({ limit: 10, offset: '' });
+    expect(options.initialPageParam).toEqual({ limit: 10, offset: "" });
     expect(options.gcTime).toBe(600000);
     expect(options.refetchOnMount).toBe(true);
   });
 
-  it('queryFn calls notificationsAPIList with pageParam', async () => {
+  it("queryFn calls notificationsAPIList with pageParam", async () => {
     const options = getNotificationsQueryOptions();
-    const result = await (options.queryFn! as any)({ pageParam: { limit: 10, offset: 'abc' } });
-    expect(mockList).toHaveBeenCalledWith({ limit: 10, offset: 'abc' });
-    expect(result).toEqual({ data: { items: [], pageInfo: { endCursor: '' } } });
+    const result = await (options.queryFn! as AnyFunction)({
+      pageParam: { limit: 10, offset: "abc" },
+    });
+    expect(mockList).toHaveBeenCalledWith({ limit: 10, offset: "abc" });
+    expect(result).toEqual({
+      data: { items: [], pageInfo: { endCursor: "" } },
+    });
   });
 
-  it('select flattens pages into Event[]', () => {
+  it("select flattens pages into Event[]", () => {
     const options = getNotificationsQueryOptions();
     const data = {
       pageParams: [],
@@ -36,23 +51,35 @@ describe('getNotificationsQueryOptions', () => {
         { data: { items: [{ id: 3 }] } },
       ],
     };
-    expect((options.select! as any)(data)).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    expect((options.select! as AnyFunction)(data)).toEqual([
+      { id: 1 },
+      { id: 2 },
+      { id: 3 },
+    ]);
   });
 
-  it('getNextPageParam returns undefined when endCursor is empty', () => {
+  it("getNextPageParam returns undefined when endCursor is empty", () => {
     const options = getNotificationsQueryOptions();
-    const lastPage = { data: { items: [], pageInfo: { endCursor: '' } } };
-    expect((options.getNextPageParam! as any)(lastPage)).toBeUndefined();
+    const lastPage = { data: { items: [], pageInfo: { endCursor: "" } } };
+    expect(
+      (options.getNextPageParam! as AnyFunction)(lastPage),
+    ).toBeUndefined();
   });
 
-  it('getNextPageParam returns offset object when endCursor is present', () => {
+  it("getNextPageParam returns offset object when endCursor is present", () => {
     const options = getNotificationsQueryOptions();
-    const lastPage = { data: { items: [], pageInfo: { endCursor: 'xyz' } } };
-    expect((options.getNextPageParam! as any)(lastPage)).toEqual({ limit: 10, offset: 'xyz' });
+    const lastPage = { data: { items: [], pageInfo: { endCursor: "xyz" } } };
+    expect((options.getNextPageParam! as AnyFunction)(lastPage)).toEqual({
+      limit: 10,
+      offset: "xyz",
+    });
   });
 
-  it('refetchNotifications calls refetchQueries', () => {
-    const mockClient = { refetchQueries: vi.fn() } as any;
+  it("refetchNotifications calls refetchQueries", () => {
+    const mockClient = { refetchQueries: vi.fn() } as Pick<
+      QueryClient,
+      "refetchQueries"
+    >;
     refetchNotifications(mockClient);
     expect(mockClient.refetchQueries).toHaveBeenCalled();
   });

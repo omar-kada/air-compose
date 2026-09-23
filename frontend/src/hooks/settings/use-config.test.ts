@@ -1,16 +1,16 @@
 const mockFn = vi.hoisted(() => vi.fn());
 
-vi.mock('@/api/api', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/api/api')>();
+vi.mock("@/api/api", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/api/api")>();
   return { ...original, getConfigAPIGetQueryOptions: mockFn };
 });
 
-import { getConfigQueryOptions } from './use-config';
+import { getConfigQueryOptions } from "./use-config";
 
-describe('getConfigQueryOptions', () => {
+describe("getConfigQueryOptions", () => {
   beforeEach(() => mockFn.mockClear());
 
-  it('passes select, gcTime, and enabled to API', () => {
+  it("passes select, gcTime, and enabled to API", () => {
     getConfigQueryOptions({ enabled: true });
     expect(mockFn).toHaveBeenCalledWith({
       query: {
@@ -21,16 +21,18 @@ describe('getConfigQueryOptions', () => {
     });
   });
 
-  it('passes enabled=false through', () => {
+  it("passes enabled=false through", () => {
     getConfigQueryOptions({ enabled: false });
     expect(mockFn).toHaveBeenCalledWith(
-      expect.objectContaining({ query: expect.objectContaining({ enabled: false }) }),
+      expect.objectContaining({
+        query: expect.objectContaining({ enabled: false }),
+      }),
     );
   });
 
-  it('select extracts data.data from response', () => {
+  it("select extracts data.data from response", () => {
     getConfigQueryOptions({ enabled: true });
     const select = mockFn.mock.calls[0][0].query.select;
-    expect(select({ data: { repo: 'test' } })).toEqual({ repo: 'test' });
+    expect(select({ data: { repo: "test" } })).toEqual({ repo: "test" });
   });
 });
