@@ -5,7 +5,7 @@ describe('createSocketEmitter', () => {
     current: {
       readyState,
       send: vi.fn(),
-    } as unknown as WebSocket,
+    } as any,
   });
 
   it('emit sends message when socket is OPEN', () => {

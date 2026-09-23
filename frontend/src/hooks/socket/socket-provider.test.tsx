@@ -51,11 +51,11 @@ describe('WebSocketProvider', () => {
   });
 
   it('creates WebSocket when enabled is true', async () => {
-    const origWS = (global as any).WebSocket;
-    const MockWebSocket = vi.fn(function(this: any, url: string) {
+    const origWS = (globalThis as any).WebSocket;
+    const MockWebSocket = vi.fn(function(this: any, _url: string) {
       this.readyState = 1; this.send = vi.fn(); this.close = vi.fn();
     });
-    (global as any).WebSocket = MockWebSocket;
+    (globalThis as any).WebSocket = MockWebSocket;
     try {
       render(
         <QueryClientProvider client={new QueryClient()}>
@@ -68,16 +68,16 @@ describe('WebSocketProvider', () => {
         expect(MockWebSocket).toHaveBeenCalledWith('ws://test');
       });
     } finally {
-      (global as any).WebSocket = origWS;
+      (globalThis as any).WebSocket = origWS;
     }
   });
 
   it('cleans up WebSocket on unmount', async () => {
-    const origWS = (global as any).WebSocket;
+    const origWS = (globalThis as any).WebSocket;
     const MockWebSocket = vi.fn(function(this: any) {
       this.readyState = 1; this.send = vi.fn(); this.close = vi.fn();
     });
-    (global as any).WebSocket = MockWebSocket;
+    (globalThis as any).WebSocket = MockWebSocket;
     try {
       const { unmount } = render(
         <QueryClientProvider client={new QueryClient()}>
@@ -93,7 +93,7 @@ describe('WebSocketProvider', () => {
       unmount();
       expect(socket.close).toHaveBeenCalled();
     } finally {
-      (global as any).WebSocket = origWS;
+      (globalThis as any).WebSocket = origWS;
     }
   });
 });

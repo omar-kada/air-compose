@@ -22,32 +22,32 @@ describe('getDeploymentOptions', () => {
 
   it('select extracts data.data', () => {
     getDeploymentOptions('id');
-    const select = mockFn.mock.calls[0][1].query.select;
+    const select = (mockFn.mock.calls[0] as any)[1].query.select;
     expect(select({ data: { id: 1 } })).toEqual({ id: 1 });
     expect(select({ data: null })).toBeNull();
   });
 
   it('staleTime returns 500 for running status', () => {
     getDeploymentOptions('id');
-    const staleTime = mockFn.mock.calls[0][1].query.staleTime;
+    const staleTime = (mockFn.mock.calls[0] as any)[1].query.staleTime;
     expect(staleTime({ state: { data: { data: { status: DeploymentStatus.running } } } })).toBe(500);
   });
 
   it('staleTime returns Infinity for error status', () => {
     getDeploymentOptions('id');
-    const staleTime = mockFn.mock.calls[0][1].query.staleTime;
+    const staleTime = (mockFn.mock.calls[0] as any)[1].query.staleTime;
     expect(staleTime({ state: { data: { data: { status: DeploymentStatus.error } } } })).toBe(Infinity);
   });
 
   it('staleTime returns Infinity for success status', () => {
     getDeploymentOptions('id');
-    const staleTime = mockFn.mock.calls[0][1].query.staleTime;
+    const staleTime = (mockFn.mock.calls[0] as any)[1].query.staleTime;
     expect(staleTime({ state: { data: { data: { status: DeploymentStatus.success } } } })).toBe(Infinity);
   });
 
   it('staleTime returns 10000 for default status', () => {
     getDeploymentOptions('id');
-    const staleTime = mockFn.mock.calls[0][1].query.staleTime;
-    expect(staleTime({ state: { data: { data: { status: DeploymentStatus.building } } } })).toBe(10000);
+    const staleTime = (mockFn.mock.calls[0] as any)[1].query.staleTime;
+    expect(staleTime({ state: { data: { data: { status: DeploymentStatus.planned } } } })).toBe(10000);
   });
 });
