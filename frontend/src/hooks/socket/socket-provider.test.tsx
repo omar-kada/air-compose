@@ -63,7 +63,8 @@ describe("WebSocketProvider", () => {
       this.send = vi.fn();
       this.close = vi.fn();
     });
-    (globalThis as { WebSocket: typeof WebSocket }).WebSocket = MockWebSocket;
+    (globalThis as { WebSocket: typeof WebSocket }).WebSocket =
+      MockWebSocket as unknown as typeof WebSocket;
     try {
       render(
         <QueryClientProvider client={new QueryClient()}>
@@ -87,7 +88,8 @@ describe("WebSocketProvider", () => {
       this.send = vi.fn();
       this.close = vi.fn();
     });
-    (globalThis as { WebSocket: typeof WebSocket }).WebSocket = MockWebSocket;
+    (globalThis as { WebSocket: typeof WebSocket }).WebSocket =
+      MockWebSocket as unknown as typeof WebSocket;
     try {
       const { unmount } = render(
         <QueryClientProvider client={new QueryClient()}>

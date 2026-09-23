@@ -26,7 +26,7 @@ describe("onLogEvent", () => {
     const setQueryData = vi.fn();
     const queryClient = { setQueryData } as Pick<QueryClient, "setQueryData">;
     const event = { kind: ServerMessageLogKind.log, value: "test log" };
-    onLogEvent(event as unknown as Record<string, unknown>, queryClient);
+    onLogEvent(event as unknown as Parameters<typeof onLogEvent>[0], queryClient);
     expect(setQueryData).toHaveBeenCalledWith(["logs"], expect.any(Function));
     const updater = setQueryData.mock.calls[0][1];
     expect(updater(["prev"])).toEqual(["prev", "test log"]);
@@ -40,7 +40,7 @@ describe("onLogEvent", () => {
       kind: ServerMessagePreviousLogsKind.previousLogs,
       value: ["log1", "log2"],
     };
-    onLogEvent(event as unknown as Record<string, unknown>, queryClient);
+    onLogEvent(event as unknown as Parameters<typeof onLogEvent>[0], queryClient);
     expect(setQueryData).toHaveBeenCalledWith(["logs"], ["log1", "log2"]);
   });
 });

@@ -10,8 +10,8 @@ vi.mock("sonner", async () => {
 
 import { toast } from "sonner";
 import { wsToast, wsToastOnStatus } from "./socket-toast";
+import type { TFunction } from "react-i18next";
 
-import type { AnyFunction } from "@/tests/test-utils";
 describe("wsToast", () => {
   beforeEach(() => {
     vi.mocked(toast.success).mockClear();
@@ -21,22 +21,22 @@ describe("wsToast", () => {
   });
 
   it("connected calls toast.success", () => {
-    wsToast.connected(vi.fn() as AnyFunction);
+    wsToast.connected(vi.fn() as unknown as TFunction);
     expect(vi.mocked(toast.success)).toHaveBeenCalled();
   });
 
   it("reconnecting calls toast.loading", () => {
-    wsToast.reconnecting(vi.fn() as AnyFunction, 1, 10);
+    wsToast.reconnecting(vi.fn() as unknown as TFunction, 1, 10);
     expect(vi.mocked(toast.loading)).toHaveBeenCalled();
   });
 
   it("failed calls toast.error", () => {
-    wsToast.failed(vi.fn() as AnyFunction);
+    wsToast.failed(vi.fn() as unknown as TFunction);
     expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
 
   it("dismiss calls toast.dismiss", () => {
-    wsToast.connected(vi.fn() as AnyFunction);
+    wsToast.connected(vi.fn() as unknown as TFunction);
     wsToast.dismiss();
     expect(vi.mocked(toast.dismiss)).toHaveBeenCalled();
   });
@@ -44,7 +44,7 @@ describe("wsToast", () => {
 
 describe("wsToastOnStatus", () => {
   beforeEach(() => {
-    wsToast.connected(vi.fn() as AnyFunction);
+    wsToast.connected(vi.fn() as unknown as TFunction);
     wsToast.dismiss();
     vi.mocked(toast.success).mockClear();
     vi.mocked(toast.error).mockClear();
@@ -53,28 +53,28 @@ describe("wsToastOnStatus", () => {
   });
 
   it("dismisses on off status", () => {
-    wsToast.connected(vi.fn() as AnyFunction);
-    wsToastOnStatus(vi.fn() as AnyFunction, "connected", "off");
+    wsToast.connected(vi.fn() as unknown as TFunction);
+    wsToastOnStatus(vi.fn() as unknown as TFunction, "connected", "off");
     expect(vi.mocked(toast.dismiss)).toHaveBeenCalled();
   });
 
   it("shows connected toast when reconnecting->connected", () => {
-    wsToastOnStatus(vi.fn() as AnyFunction, "reconnecting", "connected");
+    wsToastOnStatus(vi.fn() as unknown as TFunction, "reconnecting", "connected");
     expect(vi.mocked(toast.success)).toHaveBeenCalled();
   });
 
   it("dismisses when connected from non-reconnecting", () => {
-    wsToastOnStatus(vi.fn() as AnyFunction, "off", "connected");
+    wsToastOnStatus(vi.fn() as unknown as TFunction, "off", "connected");
     expect(vi.mocked(toast.success)).not.toHaveBeenCalled();
   });
 
   it("shows reconnecting toast", () => {
-    wsToastOnStatus(vi.fn() as AnyFunction, "connected", "reconnecting", 1, 10);
+    wsToastOnStatus(vi.fn() as unknown as TFunction, "connected", "reconnecting", 1, 10);
     expect(vi.mocked(toast.loading)).toHaveBeenCalled();
   });
 
   it("shows failed toast", () => {
-    wsToastOnStatus(vi.fn() as AnyFunction, "connected", "failed");
+    wsToastOnStatus(vi.fn() as unknown as TFunction, "connected", "failed");
     expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
 });
