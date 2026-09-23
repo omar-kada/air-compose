@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { AxiosError } from 'axios';
+import type { Error as ApiError } from '@/api';
 import { ErrorAlert } from './error-alert';
 
 vi.mock('react-i18next', async () => {
@@ -14,7 +15,8 @@ describe('ErrorAlert', () => {
   });
 
   it('renders translated title and message for plain Error', () => {
-    render(<ErrorAlert title="ERROR.TITLE" error={new Error('Something broke')} />);
+    const error: ApiError = { code: 'SERVER_ERROR', message: 'Something broke' };
+    render(<ErrorAlert title="ERROR.TITLE" error={error} />);
     expect(screen.getByText('translated:ERROR.TITLE')).toBeTruthy();
     expect(screen.getByText('translated:Something broke')).toBeTruthy();
   });
@@ -23,7 +25,7 @@ describe('ErrorAlert', () => {
     const axiosError = {
       response: { data: { message: 'Server error' } },
       message: 'Network Error',
-    } as unknown as AxiosError;
+    } as unknown as AxiosError<ApiError>;
     render(<ErrorAlert title="ERROR.TITLE" error={axiosError} />);
     expect(screen.getByText('translated:Server error')).toBeTruthy();
   });
@@ -32,7 +34,7 @@ describe('ErrorAlert', () => {
     const axiosError = {
       response: { data: {} },
       message: 'Fallback error',
-    } as unknown as AxiosError;
+    } as unknown as AxiosError<ApiError>;
     render(<ErrorAlert title="ERROR.TITLE" error={axiosError} />);
     expect(screen.getByText('translated:Fallback error')).toBeTruthy();
   });
@@ -41,7 +43,7 @@ describe('ErrorAlert', () => {
     const axiosError = {
       response: { data: { message: '' } },
       message: '',
-    } as unknown as AxiosError;
+    } as unknown as AxiosError<ApiError>;
     render(<ErrorAlert title="ERROR.TITLE" error={axiosError} />);
     expect(screen.getByText('translated:ERROR.TITLE')).toBeTruthy();
     expect(document.querySelector('[data-slot="alert-description"]')).toBeNull();
