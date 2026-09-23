@@ -61,7 +61,7 @@ describe('ConfirmationDialog', () => {
   });
 
   it('shows spinner during loading and closes after promise resolves', async () => {
-    let resolveFn: () => void;
+    let resolveFn: () => void = () => {};
     const onConfirm = vi.fn().mockImplementation(
       () =>
         new Promise<void>((resolve) => {
@@ -82,7 +82,7 @@ describe('ConfirmationDialog', () => {
       const confirmButton = screen.getByRole('button', { name: /CONFIRM/ });
       expect(confirmButton.querySelector('[aria-label="Loading"]')).not.toBeNull();
     });
-    resolveFn!();
+    resolveFn();
     await waitFor(() => {
       expect(screen.queryByText('Confirm?')).toBeNull();
     });
