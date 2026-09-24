@@ -12,6 +12,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
+      exclude: [
+        'src/api/**',
+        'src/i18n.ts',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/query-client/**',
+        'src/hooks/index.ts',
+        'src/components/**/index.ts',
+      ],
     },
   },
   resolve: {
