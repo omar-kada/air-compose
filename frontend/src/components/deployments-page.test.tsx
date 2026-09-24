@@ -19,15 +19,13 @@ vi.mock('@/hooks', () => ({
   useSync: () => ({ sync: mockSync }),
 }));
 
-vi.mock('@/lib', () => ({
-  useDeploymentNavigate: () => mockDeployNavigate,
-  ROUTES: {
-    DEPLOYMENTS: '/deployments',
-    STATUS: '/status',
-    LOGS: '/logs',
-    CONFIG: '/config',
-  },
-}));
+vi.mock('@/lib', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, unknown>),
+    useDeploymentNavigate: () => mockDeployNavigate,
+  };
+});
 
 vi.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
@@ -55,31 +53,6 @@ vi.mock('./deployment', () => ({
   DeploymentToolbar: () => <div data-slot="deployment-toolbar" />,
 }));
 
-vi.mock('./view', () => ({
-  InfoEmpty: ({ title, children }: { title: string; children?: React.ReactNode }) => (
-    <div data-slot="info-empty" data-title={title}>
-      {children}
-    </div>
-  ),
-}));
-
-vi.mock('./view/aside-layout', () => ({
-  AsideLayout: ({
-    children,
-    header,
-    aside,
-  }: {
-    children: React.ReactNode;
-    header: React.ReactNode;
-    aside: React.ReactNode;
-  }) => (
-    <div data-slot="aside-layout">
-      <div data-slot="aside-header">{header}</div>
-      <div data-slot="aside-aside">{aside}</div>
-      <div data-slot="aside-main">{children}</div>
-    </div>
-  ),
-}));
 
 describe('DeploymentsPage', () => {
   beforeEach(() => {
@@ -97,7 +70,7 @@ describe('DeploymentsPage', () => {
   it('renders InfoEmpty with sync button when no deployments', () => {
     mockUseInfiniteQuery.mockReturnValue({ data: [], isPending: false, error: null });
     const { container } = render(<DeploymentsPage />);
-    expect(container.querySelector('[data-slot="info-empty"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="empty"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-slot="button"]')).toHaveLength(1);
     expect(screen.getByText('translated:ACTION.SYNC_NOW')).toBeTruthy();
   });

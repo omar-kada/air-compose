@@ -18,35 +18,14 @@ vi.mock('@/hooks', () => ({
   useFilteredQuery: mockUseFilteredQuery,
 }));
 
-vi.mock('@/lib', () => ({
-  ServiceLogo: () => <div data-slot="service-logo" />,
-}));
 
-vi.mock('./view', () => ({
-  ErrorAlert: ({ error }: { error?: unknown }) => (error ? <div data-slot="error-alert" /> : null),
-  HeaderLayout: ({ header, children }: { header: React.ReactNode; children: React.ReactNode }) => (
-    <div data-slot="header-layout">
-      <div data-slot="header">{header}</div>
-      <div data-slot="content">{children}</div>
-    </div>
-  ),
-  InfoEmpty: ({ title }: { title: string }) => <div data-slot="info-empty">{title}</div>,
-}));
 
 vi.mock('./status', () => ({
   ServiceStatus: () => <div data-slot="service-status" />,
   ServiceStatusSkeleton: () => <div data-slot="service-status-skeleton" />,
 }));
 
-vi.mock('./ui/scroll-area', () => ({
-  ScrollArea: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="scroll-area">{children}</div>
-  ),
-}));
 
-vi.mock('./ui/skeleton', () => ({
-  Skeleton: () => <div data-slot="skeleton" />,
-}));
 
 describe('StatusPage', () => {
   beforeEach(() => {
@@ -78,7 +57,7 @@ describe('StatusPage', () => {
   it('renders info empty when no data', () => {
     mockUseFilteredQuery.mockReturnValue({ data: {}, isPending: false, error: null });
     render(<StatusPage />);
-    expect(document.querySelector('[data-slot="info-empty"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="empty"]')).not.toBeNull();
   });
 
   it('renders error alert when there is an error', () => {
@@ -88,6 +67,6 @@ describe('StatusPage', () => {
       error: new Error('Failed to load'),
     });
     render(<StatusPage />);
-    expect(document.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="alert"]')).not.toBeNull();
   });
 });

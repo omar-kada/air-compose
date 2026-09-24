@@ -17,11 +17,7 @@ vi.mock('@/hooks', () => ({
   getDeploymentOptions: (id: string) => ({ queryKey: ['deployment', id] }),
   getDeploymentsQueryOptions: () => ({ queryKey: ['deployments'] }),
   useFilteredQuery: (...args: unknown[]) => mockUseFilteredQuery(...args),
-}));
-
-vi.mock('@/lib', () => ({
-  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
-  ROUTES: { DEPLOYMENT: (id: string) => `/deployments/${id}` },
+  useRelativeTime: (time: string) => time,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -56,16 +52,6 @@ vi.mock('./deployment-event-log', () => ({
   ),
 }));
 
-vi.mock('../ui/scroll-area', () => ({
-  ScrollArea: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="scroll-area">{children}</div>
-  ),
-}));
-
-vi.mock('../view', () => ({
-  ErrorAlert: ({ error }: { error?: unknown }) => (error ? <div data-slot="error-alert" /> : null),
-  HumanTime: ({ time }: { time: string }) => <div data-slot="human-time" data-time={time} />,
-}));
 
 const mockDeployment: DeploymentWithDetails = {
   id: 'dep1',
@@ -142,7 +128,7 @@ describe('DeploymentDetail', () => {
       refetch: vi.fn(),
     });
     const { container } = render(<DeploymentDetail id="dep1" />);
-    expect(container.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="alert"]')).not.toBeNull();
   });
 
   it('renders spinner when fetching and deployment is running', () => {
@@ -196,9 +182,7 @@ describe('DeploymentDetail', () => {
       isFetching: false,
       refetch: vi.fn(),
     });
-    const { container } = render(<DeploymentDetail id="dep1" />);
-    const humanTime = container.querySelector('[data-slot="human-time"]');
-    expect(humanTime).not.toBeNull();
-    expect(humanTime?.getAttribute('data-time')).toBe('2024-01-01T00:00:00Z');
+    render(<DeploymentDetail id="dep1" />);
+    expect(screen.getByText('2024-01-01T00:00:00Z')).toBeTruthy();
   });
 });

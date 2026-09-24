@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ConfigPage } from './config-page';
+import React from 'react';
 
 const { mockUseFilteredQuery, mockUpdateConfig } = vi.hoisted(() => ({
   mockUseFilteredQuery: vi.fn(),
@@ -14,49 +15,36 @@ vi.mock('react-i18next', async () => {
 vi.mock('@/hooks', () => ({
   getConfigQueryOptions: () => ({ queryKey: ['config'] }),
   getFeaturesQueryOptions: () => ({ queryKey: ['features'] }),
-  useFilteredQuery: (...args) => mockUseFilteredQuery(...args),
+  useFilteredQuery: (...args: unknown[]) => mockUseFilteredQuery(...args),
   useIsMobile: () => false,
   useUpdateConfig: () => ({ updateConfig: mockUpdateConfig, isPending: false }),
 }));
 
-vi.mock('@/lib', () => ({
-  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({
+    refetchQueries: vi.fn(),
+  }),
 }));
 
-vi.mock('@hookform/resolvers/zod', () => ({
-  zodResolver: () => () => ({ values: undefined, errors: {} }),
-}));
-
-vi.mock('./config', () => ({
-  ConfigForm: () => <div data-slot="config-form" />,
-  ConfigViewer: () => <div data-slot="config-viewer" />,
-  formSchema: undefined,
-  fromConfig: () => ({ globalEnvVars: [], services: [] }),
-  toConfig: () => ({}),
-  toYaml: () => '',
-}));
-
-vi.mock('./ui/toggle', () => ({
-  Toggle: ({ pressed, children }: { pressed?: boolean; children: React.ReactNode }) => (
-    <button data-slot="toggle" data-pressed={pressed}>
+vi.mock('react-router-dom', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to} data-slot="link">
       {children}
-    </button>
+    </a>
   ),
 }));
 
-vi.mock('./view', () => ({
-  ErrorAlert: ({ error }: { error?: unknown }) =>
-    error ? <div data-slot="error-alert" /> : null,
-  HeaderLayout: ({ children, header }: { children: React.ReactNode; header: React.ReactNode }) => (
-    <div data-slot="header-layout">
-      {header}
-      {children}
-    </div>
-  ),
-  InfoEmpty: ({ title, details }: { title: string; details: string }) => (
-    <div data-slot="info-empty" data-title={title} data-details={details} />
-  ),
-}));
+// ConfigForm and ConfigViewer are stubbed because they require FormProvider and
+// ThemeProvider context wrappers that ConfigPage does not provide. Everything else
+// from ./config (formSchema, fromConfig, toConfig, toYaml) uses real implementations.
+vi.mock('./config', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, unknown>),
+    ConfigForm: () => <div data-slot="config-form" />,
+    ConfigViewer: () => <div data-slot="config-viewer" />,
+  };
+});
 
 describe('ConfigPage', () => {
   beforeEach(() => {
@@ -77,7 +65,7 @@ describe('ConfigPage', () => {
       error: null,
     });
     const { container } = render(<ConfigPage />);
-    expect(container.querySelector('[data-slot="info-empty"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="empty"]')).not.toBeNull();
   });
 
   it('renders config form and viewer when config is loaded', () => {
@@ -97,8 +85,8 @@ describe('ConfigPage', () => {
       isPending: false,
       error: null,
     });
-    const { container } = render(<ConfigPage />);
-    expect(container.querySelector('[data-slot="button"]')).not.toBeNull();
+    render(<ConfigPage />);
+    expect(screen.getByRole('button', { name: 'translated:ACTION.SAVE' })).toBeTruthy();
   });
 
   it('shows error alert when config query has error', () => {
@@ -108,6 +96,6 @@ describe('ConfigPage', () => {
       error: new Error('Failed to load'),
     });
     const { container } = render(<ConfigPage />);
-    expect(container.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="alert"]')).not.toBeNull();
   });
 });

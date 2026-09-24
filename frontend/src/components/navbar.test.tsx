@@ -7,21 +7,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/lib', () => ({
-  ROUTES: {
-    DEPLOYMENTS: '/deployments',
-    STATUS: '/status',
-    LOGS: '/logs',
-    CONFIG: '/config',
-  },
-}));
 
-vi.mock('./view', () => ({
-  NavbarElement: ({ label, path }: { label: string; path: string }) => (
-    <a href={path} data-slot="navbar-element">
-      {label}
-    </a>
+vi.mock('react-router-dom', () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to} data-slot="link">{children}</a>
   ),
+  useMatch: () => null,
 }));
 
 describe('NavBar', () => {
@@ -29,16 +20,16 @@ describe('NavBar', () => {
     render(<NavBar />);
     expect(screen.getAllByRole('link')).toHaveLength(4);
     expect(
-      screen.getByRole('link', { name: 'DEPLOYMENTS.DEPLOYMENTS' }).getAttribute('href'),
+      screen.getByRole('link', { name: 't:DEPLOYMENTS.DEPLOYMENTS' }).getAttribute('href'),
     ).toBe('/deployments');
     expect(
-      screen.getByRole('link', { name: 'STATUS.STATUS' }).getAttribute('href'),
+      screen.getByRole('link', { name: 't:STATUS.STATUS' }).getAttribute('href'),
     ).toBe('/status');
     expect(
-      screen.getByRole('link', { name: 'LOGS.LOGS' }).getAttribute('href'),
+      screen.getByRole('link', { name: 't:LOGS.LOGS' }).getAttribute('href'),
     ).toBe('/logs');
     expect(
-      screen.getByRole('link', { name: 'CONFIGURATION.CONFIGURATION' }).getAttribute('href'),
+      screen.getByRole('link', { name: 't:CONFIGURATION.CONFIGURATION' }).getAttribute('href'),
     ).toBe('/config');
   });
 });

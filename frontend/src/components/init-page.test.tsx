@@ -18,9 +18,6 @@ vi.mock('@/hooks', () => ({
   useUpdateSettings: () => ({ updateSettings: mockUpdateSettings }),
 }));
 
-vi.mock('@/lib', () => ({
-  ROUTES: { ROOT: '/' },
-}));
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
@@ -34,9 +31,6 @@ vi.mock('./onboarding', () => ({
   OnboardingForm: () => <div data-slot="onboarding-form" />,
 }));
 
-vi.mock('./view', () => ({
-  ErrorAlert: ({ error }: { error?: unknown }) => (error ? <div data-slot="error-alert" /> : null),
-}));
 
 describe('InitPage', () => {
   beforeEach(() => {
@@ -97,7 +91,7 @@ describe('InitPage', () => {
       return { data: { initialized: false }, isPending: false, error: null };
     });
     render(<InitPage />);
-    expect(document.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="alert"]')).not.toBeNull();
   });
 
   it('renders state error alert when state query fails', () => {
@@ -111,7 +105,7 @@ describe('InitPage', () => {
       return { data: undefined, isPending: false, error: new Error('State error') };
     });
     render(<InitPage />);
-    expect(document.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="alert"]')).not.toBeNull();
   });
 
   it('navigates to root when state is initialized', async () => {

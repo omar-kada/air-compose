@@ -8,12 +8,6 @@ vi.mock('react-i18next', async () => {
   return createI18nMock();
 });
 
-vi.mock('@/lib', () => ({
-  ServiceLogo: ({ service }: { service: string }) => (
-    <div data-slot="service-logo" data-service={service} />
-  ),
-}));
-
 vi.mock('./env-vars-array-form', () => ({
   EnvVarArrayForm: () => <div data-slot="env-vars-array-form" />,
 }));
@@ -38,11 +32,11 @@ function TestWrapper({ disabled }: { disabled?: boolean }) {
 }
 
 describe('ServiceCard', () => {
-  it('renders service logo with service name', () => {
+  it('renders service logo for the service', () => {
     const { container } = render(<TestWrapper />);
-    const logo = container.querySelector('[data-slot="service-logo"]');
-    expect(logo).not.toBeNull();
-    expect(logo?.getAttribute('data-service')).toBe('web');
+    const avatar = container.querySelector('[data-slot="avatar"]');
+    expect(avatar).not.toBeNull();
+    expect(avatar?.querySelector('img')).not.toBeNull();
   });
 
   it('renders env vars form', () => {

@@ -24,10 +24,6 @@ vi.mock('@/hooks/theme-provider', () => ({
   useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
 }));
 
-vi.mock('@/lib', () => ({
-  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
-}));
-
 vi.mock('./notifications', () => ({
   NotificationSheet: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="notification-sheet">{children}</div>

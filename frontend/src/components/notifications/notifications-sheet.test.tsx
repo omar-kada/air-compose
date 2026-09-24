@@ -17,19 +17,18 @@ vi.mock('@/hooks', () => ({
   useResetUnreadCount: () => mockUseResetUnreadCount,
 }));
 
-vi.mock('@/lib', () => ({
-  useDeploymentNavigate: () => mockDeployNavigate,
-}));
+vi.mock('@/lib', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as Record<string, unknown>),
+    useDeploymentNavigate: () => mockDeployNavigate,
+  };
+});
 
 vi.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
 }));
 
-vi.mock('@/components/ui/scroll-area', () => ({
-  ScrollArea: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="scroll-area">{children}</div>
-  ),
-}));
 
 vi.mock('./notifications-list', () => ({
   NotificationList: ({ onNotificationClick }: { onNotificationClick: (e: unknown) => void }) => (

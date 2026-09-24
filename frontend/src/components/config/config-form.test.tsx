@@ -8,10 +8,6 @@ vi.mock('react-i18next', async () => {
   return createI18nMock();
 });
 
-vi.mock('@/lib', () => ({
-  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
-}));
-
 vi.mock('./service-card', () => ({
   ServiceCard: ({ service, onRemove }: { service: { name: string }; onRemove: () => void }) => (
     <div data-slot="service-card" data-name={service.name}>
