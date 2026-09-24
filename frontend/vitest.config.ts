@@ -12,6 +12,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
+      exclude: [
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/coverage/**',
+        'src/api/**',
+        'src/i18n.ts',
+        'src/main.tsx',
+        'src/query-client/**',
+        'src/hooks/index.ts',
+        'src/components/**/index.ts',
+      ],
     },
   },
   resolve: {
