@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { DeploymentDetail } from './deployment-detail';
-import type { Deployment, DeploymentStatus } from '@/api/api';
+import type { DeploymentWithDetails, DeploymentStatus } from '@/api/api';
 
 const { mockUseFilteredQuery } = vi.hoisted(() => ({
   mockUseFilteredQuery: vi.fn(),
@@ -73,17 +73,19 @@ vi.mock('../view', () => ({
   HumanTime: ({ time }: { time: string }) => <div data-slot="human-time" data-time={time} />,
 }));
 
-const mockDeployment: Deployment = {
+const mockDeployment: DeploymentWithDetails = {
   id: 'dep1',
   title: 'My Deployment',
-  stack: 'main',
-  status: 'done' as DeploymentStatus,
   author: 'John Doe',
   time: '2024-01-01T00:00:00Z',
-  repo: 'owner/repo',
-  branch: 'feature-branch',
+  endTime: '',
+  diff: '',
+  status: 'done' as DeploymentStatus,
   files: [],
   events: [],
+  commit: 'abc123',
+  repo: 'owner/repo',
+  branch: 'main',
 };
 
 describe('DeploymentDetail', () => {
