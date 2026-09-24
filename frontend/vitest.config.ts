@@ -26,6 +26,7 @@ export default defineConfig({
         'src/query-client/**',
         'src/hooks/index.ts',
         'src/components/**/index.ts',
+        'src/tests/**',
       ],
     },
   },
