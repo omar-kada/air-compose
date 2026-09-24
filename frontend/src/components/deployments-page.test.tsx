@@ -1,10 +1,11 @@
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { DeploymentsPage } from './deployments-page';
 
-const { mockUseInfiniteQuery, mockUseParams, mockSync } = vi.hoisted(() => ({
+const { mockUseInfiniteQuery, mockUseParams, mockSync, mockDeployNavigate } = vi.hoisted(() => ({
   mockUseInfiniteQuery: vi.fn(),
   mockUseParams: vi.fn(),
   mockSync: vi.fn(),
+  mockDeployNavigate: vi.fn(),
 }));
 
 vi.mock('react-i18next', async () => {
@@ -19,7 +20,7 @@ vi.mock('@/hooks', () => ({
 }));
 
 vi.mock('@/lib', () => ({
-  useDeploymentNavigate: () => vi.fn(),
+  useDeploymentNavigate: () => mockDeployNavigate,
   ROUTES: {
     DEPLOYMENTS: '/deployments',
     STATUS: '/status',
@@ -37,7 +38,18 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('./deployment', () => ({
-  DeploymentList: () => <div data-slot="deployment-list" />,
+  DeploymentList: ({ onSelect }: { onSelect?: (item: unknown) => void }) => (
+    <div data-slot="deployment-list">
+      {onSelect && (
+        <button
+          data-slot="select-deployment"
+          onClick={() => onSelect({ id: 'dep1', title: 'D1', stack: 'main', status: 'done' })}
+        >
+          Select
+        </button>
+      )}
+    </div>
+  ),
   DeploymentDetail: ({ id }: { id: string }) => <div data-slot="deployment-detail" data-id={id} />,
   DeploymentDetailSkeleton: () => <div data-slot="deployment-detail-skeleton" />,
   DeploymentToolbar: () => <div data-slot="deployment-toolbar" />,
@@ -134,5 +146,32 @@ describe('DeploymentsPage', () => {
     });
     const { container } = render(<DeploymentsPage />);
     expect(container.querySelector('[data-slot="arrow-left-icon"]')).not.toBeNull();
+  });
+
+  it('navigates back when back button is clicked', () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ id: 'dep1', title: 'D1', stack: 'main', status: 'done' }],
+      isPending: false,
+      error: null,
+    });
+    mockDeployNavigate.mockClear();
+    const { container } = render(<DeploymentsPage />);
+    const backButton = Array.from(container.querySelectorAll('[data-slot="button"]')).find(
+      (btn) => btn.querySelector('[data-slot="arrow-left-icon"]') !== null,
+    ) as HTMLElement;
+    fireEvent.click(backButton);
+    expect(mockDeployNavigate).toHaveBeenCalledWith();
+  });
+
+  it('navigates to deployment when selected from list', () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ id: 'dep1', title: 'D1', stack: 'main', status: 'done' }],
+      isPending: false,
+      error: null,
+    });
+    mockDeployNavigate.mockClear();
+    const { container } = render(<DeploymentsPage />);
+    fireEvent.click(container.querySelector('[data-slot="select-deployment"]') as HTMLElement);
+    expect(mockDeployNavigate).toHaveBeenCalledWith('dep1');
   });
 });

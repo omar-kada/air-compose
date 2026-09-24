@@ -33,7 +33,11 @@ vi.mock('@/components/ui/scroll-area', () => ({
 
 vi.mock('./notifications-list', () => ({
   NotificationList: ({ onNotificationClick }: { onNotificationClick: (e: unknown) => void }) => (
-    <div data-slot="notification-list" data-has-click-handler={!!onNotificationClick} />
+    <div
+      data-slot="notification-list"
+      data-has-click-handler={!!onNotificationClick}
+      onClick={() => onNotificationClick?.({ objectId: 'dep1' })}
+    />
   ),
 }));
 
@@ -105,5 +109,19 @@ describe('NotificationSheet', () => {
     await waitFor(() => {
       expect(mockUseResetUnreadCount).toHaveBeenCalled();
     });
+  });
+
+  it('navigates to deployment when notification is clicked', async () => {
+    const { container } = render(
+      <NotificationSheet>
+        <button data-slot="trigger">Open</button>
+      </NotificationSheet>,
+    );
+    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
+    await waitFor(() => {
+      expect(document.querySelector('[data-slot="notification-list"]')).not.toBeNull();
+    });
+    fireEvent.click(document.querySelector('[data-slot="notification-list"]') as HTMLElement);
+    expect(mockDeployNavigate).toHaveBeenCalledWith('dep1');
   });
 });

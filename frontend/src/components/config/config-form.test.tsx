@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import type { FormValues } from './config-form-schema';
 import { ConfigForm } from './config-form';
@@ -17,8 +17,12 @@ vi.mock('@/lib', () => ({
 }));
 
 vi.mock('./service-card', () => ({
-  ServiceCard: ({ service }: { service: { name: string } }) => (
-    <div data-slot="service-card" data-name={service.name} />
+  ServiceCard: ({ service, onRemove }: { service: { name: string }; onRemove: () => void }) => (
+    <div data-slot="service-card" data-name={service.name}>
+      <button data-slot="remove-service" onClick={onRemove}>
+        Remove
+      </button>
+    </div>
   ),
 }));
 
@@ -98,5 +102,17 @@ describe('ConfigForm', () => {
     }
     const { container } = render(<TestWrapperMulti />);
     expect(container.querySelectorAll('[data-slot="service-card"]')).toHaveLength(2);
+  });
+
+  it('adds a new service when Add Service button is clicked', () => {
+    const { container } = render(<TestWrapper />);
+    fireEvent.click(container.querySelector('[data-slot="button"]') as HTMLElement);
+    expect(container.querySelectorAll('[data-slot="service-card"]')).toHaveLength(2);
+  });
+
+  it('removes a service when Remove button is clicked', () => {
+    const { container } = render(<TestWrapper />);
+    fireEvent.click(container.querySelector('[data-slot="remove-service"]') as HTMLElement);
+    expect(container.querySelectorAll('[data-slot="service-card"]')).toHaveLength(0);
   });
 });
