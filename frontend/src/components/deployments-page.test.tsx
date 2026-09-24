@@ -1,0 +1,138 @@
+import { render } from '@testing-library/react';
+import { DeploymentsPage } from './deployments-page';
+
+const { mockUseInfiniteQuery, mockUseParams, mockSync } = vi.hoisted(() => ({
+  mockUseInfiniteQuery: vi.fn(),
+  mockUseParams: vi.fn(),
+  mockSync: vi.fn(),
+}));
+
+vi.mock('react-i18next', async () => {
+  const { createI18nMock } = await import('@/tests/mock-factories');
+  return createI18nMock();
+});
+
+vi.mock('@/hooks', () => ({
+  getDeploymentsQueryOptions: () => ({ queryKey: ['deployments'] }),
+  useIsMobile: () => false,
+  useSync: () => ({ sync: mockSync }),
+}));
+
+vi.mock('@/lib', () => ({
+  useDeploymentNavigate: () => vi.fn(),
+  ROUTES: {
+    DEPLOYMENTS: '/deployments',
+    STATUS: '/status',
+    LOGS: '/logs',
+    CONFIG: '/config',
+  },
+}));
+
+vi.mock('@tanstack/react-query', () => ({
+  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
+}));
+
+vi.mock('react-router-dom', () => ({
+  useParams: () => mockUseParams(),
+}));
+
+vi.mock('./deployment', () => ({
+  DeploymentList: () => <div data-slot="deployment-list" />,
+  DeploymentDetail: ({ id }: { id: string }) => <div data-slot="deployment-detail" data-id={id} />,
+  DeploymentDetailSkeleton: () => <div data-slot="deployment-detail-skeleton" />,
+  DeploymentToolbar: () => <div data-slot="deployment-toolbar" />,
+}));
+
+vi.mock('./ui/button', () => ({
+  Button: ({
+    onClick,
+    children,
+    ...props
+  }: {
+    onClick?: () => void;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <button onClick={onClick} data-slot="button" {...props}>
+      {children}
+    </button>
+  ),
+}));
+
+vi.mock('./ui/separator', () => ({
+  Separator: () => <div data-slot="separator" />,
+}));
+
+vi.mock('./view', () => ({
+  InfoEmpty: ({ title, children }: { title: string; children?: React.ReactNode }) => (
+    <div data-slot="info-empty" data-title={title}>
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('./view/aside-layout', () => ({
+  AsideLayout: ({
+    children,
+    header,
+    aside,
+  }: {
+    children: React.ReactNode;
+    header: React.ReactNode;
+    aside: React.ReactNode;
+  }) => (
+    <div data-slot="aside-layout">
+      <div data-slot="aside-header">{header}</div>
+      <div data-slot="aside-aside">{aside}</div>
+      <div data-slot="aside-main">{children}</div>
+    </div>
+  ),
+}));
+
+vi.mock('lucide-react', () => ({
+  ArrowLeft: () => <svg data-slot="arrow-left-icon" />,
+  CloudSync: () => <svg data-slot="cloud-sync-icon" />,
+}));
+
+describe('DeploymentsPage', () => {
+  beforeEach(() => {
+    mockUseParams.mockReturnValue({});
+    mockUseInfiniteQuery.mockReturnValue({ data: undefined, isPending: true, error: null });
+    mockSync.mockClear();
+  });
+
+  it('renders skeleton while loading', () => {
+    const { container } = render(<DeploymentsPage />);
+    expect(container.querySelector('[data-slot="deployment-detail-skeleton"]')).not.toBeNull();
+  });
+
+  it('renders InfoEmpty with sync button when no deployments', () => {
+    mockUseInfiniteQuery.mockReturnValue({ data: [], isPending: false, error: null });
+    const { container } = render(<DeploymentsPage />);
+    expect(container.querySelector('[data-slot="info-empty"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-slot="button"]')).toHaveLength(1);
+    expect(container.querySelector('[data-slot="cloud-sync-icon"]')).not.toBeNull();
+  });
+
+  it('renders DeploymentList and DeploymentDetail when loaded', () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ id: 'dep1', title: 'D1', stack: 'main', status: 'done' }],
+      isPending: false,
+      error: null,
+    });
+    const { container } = render(<DeploymentsPage />);
+    expect(container.querySelector('[data-slot="deployment-list"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="deployment-detail"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="deployment-toolbar"]')).not.toBeNull();
+  });
+
+  it('renders back button with ArrowLeft icon', () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ id: 'dep1', title: 'D1', stack: 'main', status: 'done' }],
+      isPending: false,
+      error: null,
+    });
+    const { container } = render(<DeploymentsPage />);
+    expect(container.querySelector('[data-slot="arrow-left-icon"]')).not.toBeNull();
+  });
+});
