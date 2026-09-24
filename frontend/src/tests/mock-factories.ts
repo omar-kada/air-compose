@@ -21,6 +21,8 @@ export function createSonnerMock() {
       success: vi.fn(),
       error: vi.fn(),
       loading: vi.fn(),
+      promise: vi.fn(),
+      dismiss: vi.fn(),
     },
   };
 }
