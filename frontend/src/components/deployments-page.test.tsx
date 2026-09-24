@@ -55,18 +55,6 @@ vi.mock('./deployment', () => ({
   DeploymentToolbar: () => <div data-slot="deployment-toolbar" />,
 }));
 
-vi.mock('./ui/button', () => ({
-  Button: ({ onClick, children, ...props }: { onClick?: () => void; children: React.ReactNode; [key: string]: unknown }) => (
-    <button onClick={onClick} data-slot="button" {...props}>
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock('./ui/separator', () => ({
-  Separator: () => <div data-slot="separator" />,
-}));
-
 vi.mock('./view', () => ({
   InfoEmpty: ({ title, children }: { title: string; children?: React.ReactNode }) => (
     <div data-slot="info-empty" data-title={title}>

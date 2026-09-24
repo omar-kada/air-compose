@@ -14,7 +14,7 @@ vi.mock('react-i18next', async () => {
 vi.mock('@/hooks', () => ({
   getConfigQueryOptions: () => ({ queryKey: ['config'] }),
   getFeaturesQueryOptions: () => ({ queryKey: ['features'] }),
-  useFilteredQuery: (...args: unknown[]) => mockUseFilteredQuery(...args),
+  useFilteredQuery: (...args) => mockUseFilteredQuery(...args),
   useIsMobile: () => false,
   useUpdateConfig: () => ({ updateConfig: mockUpdateConfig, isPending: false }),
 }));
@@ -36,40 +36,6 @@ vi.mock('./config', () => ({
   toYaml: () => '',
 }));
 
-vi.mock('./ui/alert', () => ({
-  Alert: ({ children }: { children: React.ReactNode }) => <div data-slot="alert">{children}</div>,
-  AlertDescription: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="alert-description">{children}</div>
-  ),
-  AlertTitle: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="alert-title">{children}</div>
-  ),
-}));
-
-vi.mock('./ui/button', () => ({
-  Button: ({
-    onClick,
-    children,
-    ...props
-  }: {
-    onClick?: () => void;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
-    <button onClick={onClick} data-slot="button" {...props}>
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock('./ui/skeleton', () => ({
-  Skeleton: () => <div data-slot="skeleton" />,
-}));
-
-vi.mock('./ui/spinner', () => ({
-  Spinner: () => <div data-slot="spinner" />,
-}));
-
 vi.mock('./ui/toggle', () => ({
   Toggle: ({ pressed, children }: { pressed?: boolean; children: React.ReactNode }) => (
     <button data-slot="toggle" data-pressed={pressed}>
@@ -79,7 +45,8 @@ vi.mock('./ui/toggle', () => ({
 }));
 
 vi.mock('./view', () => ({
-  ErrorAlert: ({ error }: { error?: unknown }) => (error ? <div data-slot="error-alert" /> : null),
+  ErrorAlert: ({ error }: { error?: unknown }) =>
+    error ? <div data-slot="error-alert" /> : null,
   HeaderLayout: ({ children, header }: { children: React.ReactNode; header: React.ReactNode }) => (
     <div data-slot="header-layout">
       {header}

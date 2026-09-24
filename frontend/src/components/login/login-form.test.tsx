@@ -7,10 +7,6 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/spinner', () => ({
-  Spinner: () => <div data-slot="spinner" className="animate-spin" />,
-}));
-
 describe('LoginForm', () => {
   const mockOnSubmit = vi.fn();
 
@@ -35,14 +31,14 @@ describe('LoginForm', () => {
 
   it('renders spinner when loading and disables submit', () => {
     const { container } = render(<LoginForm onSubmit={mockOnSubmit} loading={true} />);
-    expect(container.querySelector('[data-slot="spinner"]')).not.toBeNull();
+    expect(screen.getByRole('status')).toBeTruthy();
     const button = screen.getByRole('button', { name: 't:LOGIN.FORM.SUBMIT' });
     expect(button.hasAttribute('disabled')).toBe(true);
   });
 
   it('hides spinner when not loading', () => {
-    const { container } = render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
-    expect(container.querySelector('[data-slot="spinner"]')).toBeNull();
+    render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('toggles password visibility', () => {

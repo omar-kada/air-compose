@@ -26,29 +26,6 @@ vi.mock('./env-vars-array-form', () => ({
   EnvVarArrayForm: () => <div data-slot="env-vars-array-form" />,
 }));
 
-vi.mock('@/components/ui/button', () => ({
-  Button: ({
-    onClick,
-    children,
-    disabled,
-  }: {
-    onClick?: () => void;
-    children: React.ReactNode;
-    disabled?: boolean;
-  }) => (
-    <button onClick={onClick} disabled={disabled} data-slot="button">
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock('@/components/ui/card', () => ({
-  Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card">{children}</div>,
-  CardContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="card-content">{children}</div>
-  ),
-}));
-
 function TestWrapper({ disabled }: { disabled?: boolean }) {
   const form = useForm<FormValues>({
     defaultValues: {

@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { DeploymentDetail } from './deployment-detail';
 import type { DeploymentWithDetails, DeploymentStatus } from '@/api/api';
 
@@ -60,14 +60,6 @@ vi.mock('../ui/scroll-area', () => ({
   ScrollArea: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="scroll-area">{children}</div>
   ),
-}));
-
-vi.mock('../ui/skeleton', () => ({
-  Skeleton: () => <div data-slot="skeleton" />,
-}));
-
-vi.mock('../ui/spinner', () => ({
-  Spinner: () => <div data-slot="spinner" />,
 }));
 
 vi.mock('../view', () => ({
@@ -163,8 +155,8 @@ describe('DeploymentDetail', () => {
       isFetching: true,
       refetch: mockRefetch,
     });
-    const { container } = render(<DeploymentDetail id="dep1" />);
-    expect(container.querySelector('[data-slot="spinner"]')).not.toBeNull();
+    render(<DeploymentDetail id="dep1" />);
+    expect(screen.getByRole('status')).toBeTruthy();
   });
 
   it('refetches when deployment status is running', () => {

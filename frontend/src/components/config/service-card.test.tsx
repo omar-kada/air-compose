@@ -18,51 +18,6 @@ vi.mock('./env-vars-array-form', () => ({
   EnvVarArrayForm: () => <div data-slot="env-vars-array-form" />,
 }));
 
-vi.mock('@/components/ui/button', () => ({
-  Button: ({
-    onClick,
-    children,
-    disabled,
-  }: {
-    onClick?: () => void;
-    children: React.ReactNode;
-    disabled?: boolean;
-  }) => (
-    <button onClick={onClick} disabled={disabled} data-slot="button">
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock('@/components/ui/card', () => ({
-  Card: ({ children }: { children: React.ReactNode }) => <div data-slot="card">{children}</div>,
-  CardAction: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="card-action">{children}</div>
-  ),
-  CardContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="card-content">{children}</div>
-  ),
-  CardHeader: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="card-header">{children}</div>
-  ),
-  CardTitle: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="card-title">{children}</div>
-  ),
-}));
-
-vi.mock('../ui/input', () => ({
-  Input: (props: Record<string, unknown>) => <input data-slot="input" {...props} />,
-}));
-
-vi.mock('../ui/field', () => ({
-  Field: ({ children }: { children: React.ReactNode }) => <div data-slot="field">{children}</div>,
-  FieldError: ({ errors }: { errors?: Array<{ message?: string }> }) =>
-    errors?.length ? <div data-slot="field-error" /> : null,
-  FieldGroup: ({ children }: { children: React.ReactNode }) => (
-    <div data-slot="field-group">{children}</div>
-  ),
-}));
-
 function TestWrapper({ disabled }: { disabled?: boolean }) {
   const form = useForm<FormValues>({
     defaultValues: {
