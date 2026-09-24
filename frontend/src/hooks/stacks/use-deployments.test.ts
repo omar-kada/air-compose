@@ -75,10 +75,7 @@ describe("getDeploymentsQueryOptions", () => {
   });
 
   it("refetchDeployments calls refetchQueries with query options", () => {
-    const mockClient = { refetchQueries: vi.fn() } as Pick<
-      QueryClient,
-      "refetchQueries"
-    >;
+    const mockClient = { refetchQueries: vi.fn() } as unknown as QueryClient;
     refetchDeployments(mockClient);
     expect(mockClient.refetchQueries).toHaveBeenCalled();
   });

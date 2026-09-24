@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 const mockGetKey = vi.hoisted(() => vi.fn(() => ["state-key"]));
 const mockGetOpts = vi.hoisted(() => vi.fn((opts) => opts));
 
@@ -19,7 +20,7 @@ describe("getStateQueryOptions", () => {
   it("passes select, refetchInterval, staleTime, gcTime to API", () => {
     getStateQueryOptions();
     expect(mockGetOpts).toHaveBeenCalledTimes(1);
-    const queryOpts = (mockGetOpts as unknown as vi.Mock).mock.calls[0][0];
+    const queryOpts = (mockGetOpts as unknown as Mock).mock.calls[0][0];
     const query = queryOpts.query;
     expect(query.select).toBeInstanceOf(Function);
     expect(query.refetchInterval).toBeInstanceOf(Function);
@@ -30,7 +31,7 @@ describe("getStateQueryOptions", () => {
 
   it("select extracts data.data", () => {
     getStateQueryOptions();
-    const select = (mockGetOpts as unknown as vi.Mock).mock.calls[0][0].query
+    const select = (mockGetOpts as unknown as Mock).mock.calls[0][0].query
       .select;
     expect(select({ data: { status: "running" } })).toEqual({
       status: "running",
@@ -39,7 +40,7 @@ describe("getStateQueryOptions", () => {
 
   it("refetchInterval returns diffMs for future nextDeploy", () => {
     getStateQueryOptions();
-    const refetchInterval = (mockGetOpts as unknown as vi.Mock).mock.calls[0][0]
+    const refetchInterval = (mockGetOpts as unknown as Mock).mock.calls[0][0]
       .query.refetchInterval;
     const future = new Date(Date.now() + 50_000).toISOString();
     const result = refetchInterval({
@@ -51,7 +52,7 @@ describe("getStateQueryOptions", () => {
 
   it("refetchInterval returns 60000 for past nextDeploy", () => {
     getStateQueryOptions();
-    const refetchInterval = (mockGetOpts as unknown as vi.Mock).mock.calls[0][0]
+    const refetchInterval = (mockGetOpts as unknown as Mock).mock.calls[0][0]
       .query.refetchInterval;
     const past = new Date(Date.now() - 10_000).toISOString();
     expect(
@@ -61,16 +62,13 @@ describe("getStateQueryOptions", () => {
 
   it("refetchInterval returns 60000 when nextDeploy is absent", () => {
     getStateQueryOptions();
-    const refetchInterval = (mockGetOpts as unknown as vi.Mock).mock.calls[0][0]
+    const refetchInterval = (mockGetOpts as unknown as Mock).mock.calls[0][0]
       .query.refetchInterval;
     expect(refetchInterval({ state: { data: { data: {} } } })).toBe(60000);
   });
 
   it("refetchState calls refetchQueries with getStateAPIGetQueryKey", () => {
-    const mockClient = { refetchQueries: vi.fn() } as Pick<
-      QueryClient,
-      "refetchQueries"
-    >;
+    const mockClient = { refetchQueries: vi.fn() } as unknown as QueryClient;
     refetchState(mockClient);
     expect(mockGetKey).toHaveBeenCalled();
     expect(mockClient.refetchQueries).toHaveBeenCalled();

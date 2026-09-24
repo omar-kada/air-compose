@@ -18,7 +18,7 @@ describe("useUnreadNotificationCount", () => {
 describe("incrementUnreadCount", () => {
   it("increments the unread count", () => {
     const setQueryData = vi.fn();
-    incrementUnreadCount({ setQueryData } as Pick<QueryClient, "setQueryData">);
+    incrementUnreadCount({ setQueryData } as unknown as QueryClient);
     expect(setQueryData).toHaveBeenCalledWith(
       UNREAD_NOTIFICATION_COUNT_KEY,
       expect.any(Function),
