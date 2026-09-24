@@ -91,13 +91,6 @@ vi.mock('./view', () => ({
   ),
 }));
 
-vi.mock('lucide-react', () => ({
-  AlertCircleIcon: () => <svg data-slot="alert-icon" />,
-  Code: () => <svg data-slot="code-icon" />,
-  RotateCcw: () => <svg data-slot="rotate-icon" />,
-  Save: () => <svg data-slot="save-icon" />,
-}));
-
 describe('ConfigPage', () => {
   beforeEach(() => {
     mockUseFilteredQuery.mockReset();

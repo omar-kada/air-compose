@@ -154,6 +154,7 @@ describe('DeploymentDetail', () => {
   });
 
   it('renders spinner when fetching and deployment is running', () => {
+    vi.useFakeTimers();
     const runningDeployment = { ...mockDeployment, status: 'running' as DeploymentStatus };
     mockUseFilteredQuery.mockReturnValue({
       data: runningDeployment,

@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { DeploymentsPage } from './deployments-page';
 
 const { mockUseInfiniteQuery, mockUseParams, mockSync, mockDeployNavigate } = vi.hoisted(() => ({
@@ -56,15 +56,7 @@ vi.mock('./deployment', () => ({
 }));
 
 vi.mock('./ui/button', () => ({
-  Button: ({
-    onClick,
-    children,
-    ...props
-  }: {
-    onClick?: () => void;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
+  Button: ({ onClick, children, ...props }: { onClick?: () => void; children: React.ReactNode; [key: string]: unknown }) => (
     <button onClick={onClick} data-slot="button" {...props}>
       {children}
     </button>
@@ -101,16 +93,12 @@ vi.mock('./view/aside-layout', () => ({
   ),
 }));
 
-vi.mock('lucide-react', () => ({
-  ArrowLeft: () => <svg data-slot="arrow-left-icon" />,
-  CloudSync: () => <svg data-slot="cloud-sync-icon" />,
-}));
-
 describe('DeploymentsPage', () => {
   beforeEach(() => {
     mockUseParams.mockReturnValue({});
     mockUseInfiniteQuery.mockReturnValue({ data: undefined, isPending: true, error: null });
     mockSync.mockClear();
+    mockDeployNavigate.mockClear();
   });
 
   it('renders skeleton while loading', () => {
@@ -123,7 +111,7 @@ describe('DeploymentsPage', () => {
     const { container } = render(<DeploymentsPage />);
     expect(container.querySelector('[data-slot="info-empty"]')).not.toBeNull();
     expect(container.querySelectorAll('[data-slot="button"]')).toHaveLength(1);
-    expect(container.querySelector('[data-slot="cloud-sync-icon"]')).not.toBeNull();
+    expect(screen.getByText('translated:ACTION.SYNC_NOW')).toBeTruthy();
   });
 
   it('renders DeploymentList and DeploymentDetail when loaded', () => {
@@ -144,8 +132,8 @@ describe('DeploymentsPage', () => {
       isPending: false,
       error: null,
     });
-    const { container } = render(<DeploymentsPage />);
-    expect(container.querySelector('[data-slot="arrow-left-icon"]')).not.toBeNull();
+    render(<DeploymentsPage />);
+    expect(screen.getByText('translated:ACTION.BACK')).toBeTruthy();
   });
 
   it('navigates back when back button is clicked', () => {
@@ -154,12 +142,8 @@ describe('DeploymentsPage', () => {
       isPending: false,
       error: null,
     });
-    mockDeployNavigate.mockClear();
-    const { container } = render(<DeploymentsPage />);
-    const backButton = Array.from(container.querySelectorAll('[data-slot="button"]')).find(
-      (btn) => btn.querySelector('[data-slot="arrow-left-icon"]') !== null,
-    ) as HTMLElement;
-    fireEvent.click(backButton);
+    render(<DeploymentsPage />);
+    fireEvent.click(screen.getByText('translated:ACTION.BACK').closest('button') as HTMLElement);
     expect(mockDeployNavigate).toHaveBeenCalledWith();
   });
 
@@ -169,9 +153,8 @@ describe('DeploymentsPage', () => {
       isPending: false,
       error: null,
     });
-    mockDeployNavigate.mockClear();
-    const { container } = render(<DeploymentsPage />);
-    fireEvent.click(container.querySelector('[data-slot="select-deployment"]') as HTMLElement);
+    render(<DeploymentsPage />);
+    fireEvent.click(screen.getByText('Select').closest('button') as HTMLElement);
     expect(mockDeployNavigate).toHaveBeenCalledWith('dep1');
   });
 });

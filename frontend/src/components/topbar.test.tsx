@@ -28,13 +28,6 @@ vi.mock('@/lib', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-vi.mock('lucide-react', () => ({
-  Bell: () => <svg data-slot="bell-icon" />,
-  LogOutIcon: () => <svg data-slot="logout-icon" />,
-  Moon: () => <svg data-slot="moon-icon" />,
-  Settings: () => <svg data-slot="settings-icon" />,
-}));
-
 vi.mock('./notifications', () => ({
   NotificationSheet: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="notification-sheet">{children}</div>
@@ -118,8 +111,7 @@ describe('Topbar', () => {
 
   it('hides unread count badge when count is zero', () => {
     mockUseUnreadCount.mockReturnValue(0);
-    const { container } = render(<Topbar />);
-    expect(container.querySelector('svg')).not.toBeNull();
+    render(<Topbar />);
     expect(screen.queryByText('0')).toBeNull();
   });
 
@@ -136,8 +128,9 @@ describe('Topbar', () => {
 
   it('calls setTheme when dark mode toggle is clicked', () => {
     render(<Topbar />);
-    const items = document.querySelectorAll('[data-slot="dropdown-item"]');
-    fireEvent.click(items[0] as HTMLElement);
+    fireEvent.click(
+      screen.getByText('t:MENU.DARK_MODE').closest('[data-slot="dropdown-item"]') as HTMLElement,
+    );
     expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
 });

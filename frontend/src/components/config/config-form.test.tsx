@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import type { FormValues } from './config-form-schema';
 import { ConfigForm } from './config-form';
@@ -7,10 +7,6 @@ vi.mock('react-i18next', async () => {
   const { createI18nMock } = await import('@/tests/mock-factories');
   return createI18nMock();
 });
-
-vi.mock('lucide-react', () => ({
-  Plus: () => <svg data-slot="plus-icon" />,
-}));
 
 vi.mock('@/lib', () => ({
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -68,7 +64,7 @@ describe('ConfigForm', () => {
     const { container } = render(<TestWrapper />);
     const cards = container.querySelectorAll('[data-slot="service-card"]');
     expect(cards).toHaveLength(1);
-    expect(cards[0]?.getAttribute('data-name')).toBe('web');
+    expect(container.querySelector('[data-slot="service-card"][data-name="web"]')).not.toBeNull();
   });
 
   it('renders global env vars form', () => {
@@ -77,14 +73,13 @@ describe('ConfigForm', () => {
   });
 
   it('renders add service button when not disabled', () => {
-    const { container } = render(<TestWrapper />);
-    expect(container.querySelector('[data-slot="button"]')).not.toBeNull();
-    expect(container.textContent).toContain('translated:CONFIGURATION.FORM.ADD_SERVICE');
+    render(<TestWrapper />);
+    expect(screen.getByText('translated:CONFIGURATION.FORM.ADD_SERVICE')).toBeTruthy();
   });
 
   it('hides add service button when disabled', () => {
-    const { container } = render(<TestWrapper disabled={true} />);
-    expect(container.querySelector('[data-slot="button"]')).toBeNull();
+    render(<TestWrapper disabled={true} />);
+    expect(screen.queryByText('translated:CONFIGURATION.FORM.ADD_SERVICE')).toBeNull();
   });
 
   it('renders multiple service cards', () => {
@@ -106,7 +101,9 @@ describe('ConfigForm', () => {
 
   it('adds a new service when Add Service button is clicked', () => {
     const { container } = render(<TestWrapper />);
-    fireEvent.click(container.querySelector('[data-slot="button"]') as HTMLElement);
+    fireEvent.click(
+      screen.getByText('translated:CONFIGURATION.FORM.ADD_SERVICE').closest('button') as HTMLElement,
+    );
     expect(container.querySelectorAll('[data-slot="service-card"]')).toHaveLength(2);
   });
 

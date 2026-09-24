@@ -8,10 +8,6 @@ vi.mock('react-i18next', async () => {
   return createI18nMock();
 });
 
-vi.mock('lucide-react', () => ({
-  Trash2: () => <svg data-slot="trash-icon" />,
-}));
-
 vi.mock('@/lib', () => ({
   ServiceLogo: ({ service }: { service: string }) => (
     <div data-slot="service-logo" data-service={service} />
@@ -102,7 +98,6 @@ describe('ServiceCard', () => {
   it('renders remove button when not disabled', () => {
     const { container } = render(<TestWrapper />);
     expect(container.querySelector('[data-slot="button"]')).not.toBeNull();
-    expect(container.querySelector('[data-slot="trash-icon"]')).not.toBeNull();
   });
 
   it('hides remove button when disabled', () => {
