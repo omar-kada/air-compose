@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Topbar } from './topbar';
 
-const { mockUseUser, mockUseUnreadCount, mockLogout } = vi.hoisted(() => ({
+const { mockUseUser, mockUseUnreadCount, mockLogout, mockSetTheme } = vi.hoisted(() => ({
   mockUseUser: vi.fn(),
   mockUseUnreadCount: vi.fn(),
   mockLogout: vi.fn(),
+  mockSetTheme: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/hooks', () => ({
 }));
 
 vi.mock('@/hooks/theme-provider', () => ({
-  useTheme: () => ({ theme: 'light', setTheme: vi.fn() }),
+  useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
 }));
 
 vi.mock('@/lib', () => ({
@@ -101,6 +102,7 @@ describe('Topbar', () => {
     mockUseUser.mockReturnValue({ data: { username: 'testuser', email: 'test@test.com' } });
     mockUseUnreadCount.mockReturnValue(0);
     mockLogout.mockClear();
+    mockSetTheme.mockClear();
   });
 
   it('renders the logo', () => {
@@ -130,5 +132,12 @@ describe('Topbar', () => {
     mockUseUser.mockReturnValueOnce({ data: null });
     const { container } = render(<Topbar />);
     expect(container.querySelector('[data-slot="avatar"]')).toBeNull();
+  });
+
+  it('calls setTheme when dark mode toggle is clicked', () => {
+    render(<Topbar />);
+    const items = document.querySelectorAll('[data-slot="dropdown-item"]');
+    fireEvent.click(items[0] as HTMLElement);
+    expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
 });

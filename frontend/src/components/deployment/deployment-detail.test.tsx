@@ -2,8 +2,10 @@ import { render } from '@testing-library/react';
 import { DeploymentDetail } from './deployment-detail';
 import type { DeploymentWithDetails, DeploymentStatus } from '@/api/api';
 
-const { mockUseFilteredQuery } = vi.hoisted(() => ({
+const { mockUseFilteredQuery, mockRefetch, mockRefetchQueries } = vi.hoisted(() => ({
   mockUseFilteredQuery: vi.fn(),
+  mockRefetch: vi.fn(),
+  mockRefetchQueries: vi.fn(),
 }));
 
 vi.mock('react-i18next', async () => {
@@ -24,7 +26,7 @@ vi.mock('@/lib', () => ({
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
-    refetchQueries: vi.fn(),
+    refetchQueries: mockRefetchQueries,
   }),
 }));
 
@@ -91,6 +93,12 @@ const mockDeployment: DeploymentWithDetails = {
 describe('DeploymentDetail', () => {
   beforeEach(() => {
     mockUseFilteredQuery.mockClear();
+    mockRefetch.mockClear();
+    mockRefetchQueries.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders skeleton when loading', () => {
@@ -152,10 +160,26 @@ describe('DeploymentDetail', () => {
       error: null,
       isPending: false,
       isFetching: true,
-      refetch: vi.fn(),
+      refetch: mockRefetch,
     });
     const { container } = render(<DeploymentDetail id="dep1" />);
     expect(container.querySelector('[data-slot="spinner"]')).not.toBeNull();
+  });
+
+  it('refetches when deployment status is running', () => {
+    vi.useFakeTimers();
+    const runningDeployment = { ...mockDeployment, status: 'running' as DeploymentStatus };
+    mockUseFilteredQuery.mockReturnValue({
+      data: runningDeployment,
+      error: null,
+      isPending: false,
+      isFetching: false,
+      refetch: mockRefetch,
+    });
+    render(<DeploymentDetail id="dep1" />);
+    vi.advanceTimersByTime(1000);
+    expect(mockRefetch).toHaveBeenCalled();
+    expect(mockRefetchQueries).toHaveBeenCalled();
   });
 
   it('renders deployment diff and event log', () => {

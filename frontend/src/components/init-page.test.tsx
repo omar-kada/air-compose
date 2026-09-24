@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { InitPage } from './init-page';
 
 const { mockUseQuery, mockUpdateSettings, mockNavigate } = vi.hoisted(() => ({
@@ -112,5 +112,18 @@ describe('InitPage', () => {
     });
     render(<InitPage />);
     expect(document.querySelector('[data-slot="error-alert"]')).not.toBeNull();
+  });
+
+  it('navigates to root when state is initialized', async () => {
+    mockUseQuery.mockReset();
+    mockUseQuery.mockReturnValue({
+      data: { initialized: true, services: [], cron: '', retriesOnUnhealthy: 3, retryDelay: 5 },
+      isPending: false,
+      error: null,
+    });
+    render(<InitPage />);
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalled();
+    });
   });
 });
