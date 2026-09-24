@@ -1,16 +1,16 @@
 const mockFn = vi.hoisted(() => vi.fn());
 
-vi.mock("@/api/api", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@/api/api")>();
+vi.mock('@/api/api', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/api/api')>();
   return { ...original, getFeaturesAPIGetQueryOptions: mockFn };
 });
 
-import { getFeaturesQueryOptions } from "./use-features";
+import { getFeaturesQueryOptions } from './use-features';
 
-describe("getFeaturesQueryOptions", () => {
+describe('getFeaturesQueryOptions', () => {
   beforeEach(() => mockFn.mockClear());
 
-  it("passes select, staleTime=Infinity, gcTime to API", () => {
+  it('passes select, staleTime=Infinity, gcTime to API', () => {
     getFeaturesQueryOptions();
     expect(mockFn).toHaveBeenCalledWith({
       query: {
@@ -21,7 +21,7 @@ describe("getFeaturesQueryOptions", () => {
     });
   });
 
-  it("select returns data.data or empty object", () => {
+  it('select returns data.data or empty object', () => {
     getFeaturesQueryOptions();
     const select = mockFn.mock.calls[0][0].query.select;
     expect(select({ data: { feature: true } })).toEqual({ feature: true });

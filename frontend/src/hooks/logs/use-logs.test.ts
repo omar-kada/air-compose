@@ -1,52 +1,46 @@
-vi.mock("..", () => ({
+vi.mock('..', () => ({
   useWs: vi.fn(() => ({ startLogs: vi.fn(), endLogs: vi.fn() })),
-  useWsStatusQuery: vi.fn(() => ({ data: "connected" })),
+  useWsStatusQuery: vi.fn(() => ({ data: 'connected' })),
 }));
 
-import { useLogs, onLogEvent, getLogsQueryKey } from "./use-logs";
-import type { QueryClient } from "@tanstack/react-query";
-import { ServerMessageLogKind, ServerMessagePreviousLogsKind } from "@/api";
-import { renderHookWithQuery } from "@/tests/test-utils";
+import { useLogs, onLogEvent, getLogsQueryKey } from './use-logs';
+import type { QueryClient } from '@tanstack/react-query';
+import { ServerMessageLogKind, ServerMessagePreviousLogsKind } from '@/api';
+import { renderHookWithQuery } from '@/tests/test-utils';
 
-describe("getLogsQueryKey", () => {
+describe('getLogsQueryKey', () => {
   it('returns ["logs"]', () => {
-    expect(getLogsQueryKey()).toEqual(["logs"]);
+    expect(getLogsQueryKey()).toEqual(['logs']);
   });
 });
 
-describe("useLogs", () => {
-  it("returns query result", () => {
+describe('useLogs', () => {
+  it('returns query result', () => {
     const { result } = renderHookWithQuery(() => useLogs(0));
     expect(result.current).toBeDefined();
   });
 });
 
-describe("onLogEvent", () => {
-  it("appends log events via updater", () => {
+describe('onLogEvent', () => {
+  it('appends log events via updater', () => {
     const setQueryData = vi.fn();
     const queryClient = { setQueryData } as unknown as QueryClient;
-    const event = { kind: ServerMessageLogKind.log, value: "test log" };
-    onLogEvent(
-      event as unknown as Parameters<typeof onLogEvent>[0],
-      queryClient,
-    );
-    expect(setQueryData).toHaveBeenCalledWith(["logs"], expect.any(Function));
+    const event = { kind: ServerMessageLogKind.log, value: 'test log' };
+    onLogEvent(event as unknown as Parameters<typeof onLogEvent>[0], queryClient);
+    expect(setQueryData).toHaveBeenCalledWith(['logs'], expect.any(Function));
     const updater = setQueryData.mock.calls[0][1];
-    expect(updater(["prev"])).toEqual(["prev", "test log"]);
-    expect(updater([])).toEqual(["test log"]);
+    expect(updater(['prev'])).toEqual(['prev', 'test log']);
+    expect(updater([])).toEqual(['test log']);
   });
 
-  it("replaces data with previousLogs value", () => {
+  it('replaces data with previousLogs value', () => {
     const setQueryData = vi.fn();
     const queryClient = { setQueryData } as unknown as QueryClient;
     const event = {
       kind: ServerMessagePreviousLogsKind.previousLogs,
-      value: ["log1", "log2"],
+      value: ['log1', 'log2'],
     };
-    onLogEvent(
-      event as unknown as Parameters<typeof onLogEvent>[0],
-      queryClient,
-    );
-    expect(setQueryData).toHaveBeenCalledWith(["logs"], ["log1", "log2"]);
+    onLogEvent(event as unknown as Parameters<typeof onLogEvent>[0], queryClient);
+    expect(setQueryData).toHaveBeenCalledWith(['logs'], ['log1', 'log2']);
   });
 });

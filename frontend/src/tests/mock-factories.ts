@@ -10,7 +10,7 @@ export function createI18nMock() {
   return {
     useTranslation: () => ({
       t: (key: string) => `translated:${key}`,
-      i18n: { language: "en" },
+      i18n: { language: 'en' },
     }),
   };
 }
