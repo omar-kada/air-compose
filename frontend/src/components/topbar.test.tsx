@@ -10,17 +10,6 @@ const mockResetUnreadCount = vi.fn();
 
 const mockUser = { username: 'testuser', email: 'test@test.com' };
 
-const translations: Record<string, string> = {
-  APP_NAME: 'Air',
-  'MENU.LOGGED_AS': 'Logged in as:',
-  'MENU.DARK_MODE': 'Dark mode',
-  'MENU.SETTINGS': 'Settings',
-  'ACTION.SIGN_OUT': 'Sign out',
-  'NOTIFICATIONS.NOTIFICATIONS': 'Notifications',
-  'NOTIFICATIONS.DESCRIPTION': 'See your notifications below',
-  'NOTIFICATIONS.EMPTY': 'No notifications',
-};
-
 vi.mock('react-intersection-observer', () => ({
   useInView: () => ({ ref: vi.fn(), inView: false }),
 }));
@@ -35,7 +24,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => translations[key] ?? key,
+    t: (key: string) => key,
     i18n: { language: 'en' },
   }),
 }));
@@ -98,13 +87,8 @@ const openUserDropDown = async () => {
   await user.click(screen.getByRole('button', { name: /^T$/ }));
 };
 
-const findMenuItem = (label: string) => {
-  const needle = label.toLowerCase().replace(/\s+/g, '');
-  return screen.getAllByRole('menuitem').find((item) => {
-    const hay = item.textContent?.toLowerCase().replace(/\s+/g, '') ?? '';
-    return hay.includes(needle);
-  });
-};
+const findMenuItem = (key: string) =>
+  screen.getAllByRole('menuitem').find((item) => item.textContent?.includes(key));
 
 describe('Topbar', () => {
   beforeEach(() => {
@@ -133,19 +117,19 @@ describe('Topbar', () => {
   it('T4: renders settings menu item', async () => {
     renderTopbar();
     await openUserDropDown();
-    expect(findMenuItem('settings')).toBeTruthy();
+    expect(findMenuItem('MENU.SETTINGS')).toBeTruthy();
   });
 
   it('T5: renders dark mode toggle', async () => {
     renderTopbar();
     await openUserDropDown();
-    expect(findMenuItem('dark mode')).toBeTruthy();
+    expect(findMenuItem('MENU.DARK_MODE')).toBeTruthy();
   });
 
   it('T6: toggles theme when clicking dark mode', async () => {
     renderTopbar();
     await openUserDropDown();
-    const darkModeItem = findMenuItem('dark mode');
+    const darkModeItem = findMenuItem('MENU.DARK_MODE');
     if (!darkModeItem) throw new Error('dark mode menu item not found');
     await userEvent.click(darkModeItem);
     expect(mockSetTheme).toHaveBeenCalledWith('dark');
@@ -155,13 +139,13 @@ describe('Topbar', () => {
     renderTopbar();
     const bellButton = screen.getAllByRole('button')[0];
     await userEvent.click(bellButton);
-    expect(screen.getByText('Notifications')).toBeTruthy();
+    expect(screen.getByText('NOTIFICATIONS.NOTIFICATIONS')).toBeTruthy();
   });
 
   it('T8: signs out when clicking sign out', async () => {
     renderTopbar();
     await openUserDropDown();
-    const signOutItem = findMenuItem('sign out');
+    const signOutItem = findMenuItem('ACTION.SIGN_OUT');
     if (!signOutItem) throw new Error('sign out menu item not found');
     await userEvent.click(signOutItem);
     expect(mockLogout).toHaveBeenCalled();
