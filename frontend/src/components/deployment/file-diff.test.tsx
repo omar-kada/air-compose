@@ -1,69 +1,79 @@
-import { render, fireEvent } from '@testing-library/react';
-import { FileDiffView } from './file-diff';
+import { render, fireEvent } from "@testing-library/react";
+import { FileDiffView } from "./file-diff";
 
-vi.mock('react-i18next', () => ({
+vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => `t:${key}`,
   }),
 }));
 
-vi.mock('@/hooks', () => ({
+vi.mock("@/hooks", () => ({
   useIsMobile: () => false,
 }));
 
-vi.mock('@/hooks/theme-provider', () => ({
-  useTheme: () => ({ theme: 'light' }),
+vi.mock("@/hooks/theme-provider", () => ({
+  useTheme: () => ({ theme: "light" }),
 }));
 
-vi.mock('@git-diff-view/react', () => ({
+vi.mock("@git-diff-view/react", () => ({
   DiffView: () => <div data-slot="diff-view" />,
-  DiffModeEnum: { Unified: 'unified', Split: 'split' },
+  DiffModeEnum: { Unified: "unified", Split: "split" },
 }));
 
-vi.mock('lucide-react', () => ({
+vi.mock("lucide-react", () => ({
   ChevronDown: () => <svg data-slot="chevron-down" />,
   ChevronUp: () => <svg data-slot="chevron-up" />,
   FileDiff: () => <svg data-slot="file-diff-icon" />,
 }));
 
-describe('FileDiffView', () => {
-  const mockFileDiff = { oldFile: 'old.txt', newFile: 'new.txt', diff: '' };
+describe("FileDiffView", () => {
+  const mockFileDiff = { oldFile: "old.txt", newFile: "new.txt", diff: "" };
 
-  it('renders file name when collapsed', () => {
+  it("renders file name when collapsed", () => {
     const { container } = render(<FileDiffView fileDiff={mockFileDiff} />);
-    expect(container.textContent).toContain('old.txt');
-    expect(container.textContent).toContain('> new.txt');
-    expect(container.querySelector('[data-slot="chevron-down"]')).not.toBeNull();
+    expect(container.textContent).toContain("old.txt");
+    expect(container.textContent).toContain("> new.txt");
+    expect(
+      container.querySelector('[data-slot="chevron-down"]'),
+    ).not.toBeNull();
     expect(container.querySelector('[data-slot="diff-view"]')).toBeNull();
   });
 
-  it('renders same file name without arrow when oldFile equals newFile', () => {
+  it("renders same file name without arrow when oldFile equals newFile", () => {
     const { container } = render(
-      <FileDiffView fileDiff={{ oldFile: 'same.txt', newFile: 'same.txt', diff: '' }} />,
+      <FileDiffView
+        fileDiff={{ oldFile: "same.txt", newFile: "same.txt", diff: "" }}
+      />,
     );
-    expect(container.textContent).toContain('same.txt');
-    expect(container.textContent).not.toContain('> ');
+    expect(container.textContent).toContain("same.txt");
+    expect(container.textContent).not.toContain("> ");
   });
 
-  it('renders DiffView when autoOpen is true', () => {
-    const { container } = render(<FileDiffView fileDiff={mockFileDiff} autoOpen={true} />);
+  it("renders DiffView when autoOpen is true", () => {
+    const { container } = render(
+      <FileDiffView fileDiff={mockFileDiff} autoOpen />,
+    );
     expect(container.querySelector('[data-slot="diff-view"]')).not.toBeNull();
     expect(container.querySelector('[data-slot="chevron-up"]')).not.toBeNull();
     expect(container.querySelector('[data-slot="chevron-down"]')).toBeNull();
   });
 
-  it('applies className to the collapsible', () => {
-    const { container } = render(<FileDiffView fileDiff={mockFileDiff} className="custom-class" />);
+  it("applies className to the collapsible", () => {
+    const { container } = render(
+      <FileDiffView fileDiff={mockFileDiff} className="custom-class" />,
+    );
     const collapsible = container
       .querySelector('[data-slot="file-diff-icon"]')
       ?.closest('[class*="custom-class"]');
     expect(collapsible).not.toBeNull();
   });
 
-  it('toggles expand when trigger is clicked', () => {
+  it("toggles expand when trigger is clicked", () => {
     const { container } = render(<FileDiffView fileDiff={mockFileDiff} />);
     expect(container.querySelector('[data-slot="diff-view"]')).toBeNull();
-    const trigger = container.querySelector('[data-slot="file-diff-icon"]')?.closest('button');
+    const trigger = container
+      .querySelector('[data-slot="file-diff-icon"]')
+      ?.closest("button");
     expect(trigger).not.toBeNull();
     fireEvent.click(trigger as HTMLElement);
     expect(container.querySelector('[data-slot="diff-view"]')).not.toBeNull();
