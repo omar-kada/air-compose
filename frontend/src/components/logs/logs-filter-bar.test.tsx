@@ -4,7 +4,7 @@ import { Level } from '@/api';
 import { LogFilterBar } from './logs-filter-bar';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => `t:${key}` }),
+  useTranslation: () => ({ t: (key: string) => `translated:${key}` }),
 }));
 
 const makeProps = () => ({
@@ -23,7 +23,7 @@ describe('LogFilterBar', () => {
   it('notifies onTextChange when the text input changes', () => {
     const props = makeProps();
     render(<LogFilterBar {...props} />);
-    const input = screen.getByPlaceholderText('t:LOGS.FILTER_LOGS');
+    const input = screen.getByPlaceholderText('translated:LOGS.FILTER_LOGS');
     fireEvent.change(input, { target: { value: 'bar' } });
     expect(props.onTextChange).toHaveBeenCalledWith('bar');
   });
