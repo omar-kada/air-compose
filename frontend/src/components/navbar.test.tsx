@@ -7,10 +7,11 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-
 vi.mock('react-router-dom', () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-    <a href={to} data-slot="link">{children}</a>
+    <a href={to} data-slot="link">
+      {children}
+    </a>
   ),
   useMatch: () => null,
 }));
@@ -22,12 +23,10 @@ describe('NavBar', () => {
     expect(
       screen.getByRole('link', { name: 't:DEPLOYMENTS.DEPLOYMENTS' }).getAttribute('href'),
     ).toBe('/deployments');
-    expect(
-      screen.getByRole('link', { name: 't:STATUS.STATUS' }).getAttribute('href'),
-    ).toBe('/status');
-    expect(
-      screen.getByRole('link', { name: 't:LOGS.LOGS' }).getAttribute('href'),
-    ).toBe('/logs');
+    expect(screen.getByRole('link', { name: 't:STATUS.STATUS' }).getAttribute('href')).toBe(
+      '/status',
+    );
+    expect(screen.getByRole('link', { name: 't:LOGS.LOGS' }).getAttribute('href')).toBe('/logs');
     expect(
       screen.getByRole('link', { name: 't:CONFIGURATION.CONFIGURATION' }).getAttribute('href'),
     ).toBe('/config');

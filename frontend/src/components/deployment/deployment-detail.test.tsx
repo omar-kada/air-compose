@@ -52,7 +52,6 @@ vi.mock('./deployment-event-log', () => ({
   ),
 }));
 
-
 const mockDeployment: DeploymentWithDetails = {
   id: 'dep1',
   title: 'My Deployment',

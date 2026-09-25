@@ -18,14 +18,10 @@ vi.mock('@/hooks', () => ({
   useFilteredQuery: mockUseFilteredQuery,
 }));
 
-
-
 vi.mock('./status', () => ({
   ServiceStatus: () => <div data-slot="service-status" />,
   ServiceStatusSkeleton: () => <div data-slot="service-status-skeleton" />,
 }));
-
-
 
 describe('StatusPage', () => {
   beforeEach(() => {

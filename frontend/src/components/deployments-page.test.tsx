@@ -53,7 +53,6 @@ vi.mock('./deployment', () => ({
   DeploymentToolbar: () => <div data-slot="deployment-toolbar" />,
 }));
 
-
 describe('DeploymentsPage', () => {
   beforeEach(() => {
     mockUseParams.mockReturnValue({});

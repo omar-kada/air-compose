@@ -18,7 +18,6 @@ vi.mock('@/hooks', () => ({
   useUpdateSettings: () => ({ updateSettings: mockUpdateSettings }),
 }));
 
-
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
@@ -30,7 +29,6 @@ vi.mock('react-router-dom', () => ({
 vi.mock('./onboarding', () => ({
   OnboardingForm: () => <div data-slot="onboarding-form" />,
 }));
-
 
 describe('InitPage', () => {
   beforeEach(() => {
