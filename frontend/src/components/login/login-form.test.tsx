@@ -3,7 +3,7 @@ import { LoginForm } from './login-form';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
   }),
 }));
 
@@ -26,13 +26,13 @@ describe('LoginForm', () => {
 
   it('renders submit button', () => {
     render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
-    expect(screen.getByRole('button', { name: 't:LOGIN.FORM.SUBMIT' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'translated:LOGIN.FORM.SUBMIT' })).toBeTruthy();
   });
 
   it('renders spinner when loading and disables submit', () => {
     render(<LoginForm onSubmit={mockOnSubmit} loading />);
     expect(screen.getByRole('status')).toBeTruthy();
-    const button = screen.getByRole('button', { name: 't:LOGIN.FORM.SUBMIT' });
+    const button = screen.getByRole('button', { name: 'translated:LOGIN.FORM.SUBMIT' });
     expect(button.hasAttribute('disabled')).toBe(true);
   });
 
@@ -54,8 +54,8 @@ describe('LoginForm', () => {
 
   it('renders form fields with icons', () => {
     render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
-    expect(screen.getByText('t:LOGIN.FORM.username')).toBeTruthy();
-    expect(screen.getByText('t:LOGIN.FORM.password')).toBeTruthy();
+    expect(screen.getByText('translated:LOGIN.FORM.username')).toBeTruthy();
+    expect(screen.getByText('translated:LOGIN.FORM.password')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Show password' })).toBeTruthy();
   });
 });

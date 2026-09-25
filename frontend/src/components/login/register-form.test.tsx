@@ -3,7 +3,7 @@ import { RegisterForm } from './register-form';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
   }),
 }));
 
@@ -26,14 +26,14 @@ describe('RegisterForm', () => {
 
   it('renders submit button', () => {
     render(<RegisterForm onSubmit={mockOnSubmit} loading={false} />);
-    expect(screen.getByRole('button', { name: 't:REGISTER.FORM.SUBMIT' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'translated:REGISTER.FORM.SUBMIT' })).toBeTruthy();
   });
 
   it('renders spinner when loading and disables submit', () => {
     render(<RegisterForm onSubmit={mockOnSubmit} loading />);
     expect(screen.getByRole('status')).toBeTruthy();
     const button = screen.getByRole('button', {
-      name: 't:REGISTER.FORM.SUBMIT',
+      name: 'translated:REGISTER.FORM.SUBMIT',
     });
     expect(button.hasAttribute('disabled')).toBe(true);
   });

@@ -8,7 +8,7 @@ const { mockUseLogin, mockUseRegisteration } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -54,7 +54,7 @@ describe('LoginPage', () => {
 
   it('renders the page title', () => {
     render(<LoginPage />);
-    expect(screen.getByText('t:LOGIN.FORM.TITLE')).toBeTruthy();
+    expect(screen.getByText('translated:LOGIN.FORM.TITLE')).toBeTruthy();
   });
 
   it('renders the login form', () => {
@@ -64,13 +64,13 @@ describe('LoginPage', () => {
 
   it('does not render OIDC button when registration has no oidc', () => {
     render(<LoginPage />);
-    expect(screen.queryByText('t:LOGIN.FORM.LOGIN_WITH_OIDC')).toBeNull();
+    expect(screen.queryByText('translated:LOGIN.FORM.LOGIN_WITH_OIDC')).toBeNull();
   });
 
   it('renders OIDC button when registration has oidc', () => {
     mockUseRegisteration.mockReturnValue({ data: { oidc: true }, isPending: false });
     render(<LoginPage />);
-    expect(screen.getByText('t:LOGIN.FORM.LOGIN_WITH_OIDC')).toBeTruthy();
+    expect(screen.getByText('translated:LOGIN.FORM.LOGIN_WITH_OIDC')).toBeTruthy();
   });
 
   it('renders text separator when OIDC is available', () => {

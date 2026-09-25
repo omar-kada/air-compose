@@ -7,7 +7,7 @@ const { mockUseLogs } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -60,7 +60,7 @@ describe('LogsPage', () => {
   it('renders the header title', () => {
     mockUseLogs.mockReturnValue({ data: undefined, isPending: false, error: null });
     render(<LogsPage />);
-    expect(screen.getByText('t:LOGS.LOGS')).toBeTruthy();
+    expect(screen.getByText('translated:LOGS.LOGS')).toBeTruthy();
   });
 
   it('renders skeletons while loading', () => {

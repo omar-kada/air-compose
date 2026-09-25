@@ -3,7 +3,7 @@ import { NavBar } from './navbar';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
   }),
 }));
 
@@ -21,14 +21,18 @@ describe('NavBar', () => {
     render(<NavBar />);
     expect(screen.getAllByRole('link')).toHaveLength(4);
     expect(
-      screen.getByRole('link', { name: 't:DEPLOYMENTS.DEPLOYMENTS' }).getAttribute('href'),
+      screen.getByRole('link', { name: 'translated:DEPLOYMENTS.DEPLOYMENTS' }).getAttribute('href'),
     ).toBe('/deployments');
-    expect(screen.getByRole('link', { name: 't:STATUS.STATUS' }).getAttribute('href')).toBe(
-      '/status',
-    );
-    expect(screen.getByRole('link', { name: 't:LOGS.LOGS' }).getAttribute('href')).toBe('/logs');
     expect(
-      screen.getByRole('link', { name: 't:CONFIGURATION.CONFIGURATION' }).getAttribute('href'),
+      screen.getByRole('link', { name: 'translated:STATUS.STATUS' }).getAttribute('href'),
+    ).toBe('/status');
+    expect(screen.getByRole('link', { name: 'translated:LOGS.LOGS' }).getAttribute('href')).toBe(
+      '/logs',
+    );
+    expect(
+      screen
+        .getByRole('link', { name: 'translated:CONFIGURATION.CONFIGURATION' })
+        .getAttribute('href'),
     ).toBe('/config');
   });
 });

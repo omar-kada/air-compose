@@ -5,7 +5,7 @@ import { NotificationForm } from './notification-form';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
   }),
 }));
 
@@ -62,7 +62,9 @@ function TestWrapper({ enableNotifications = false }: { enableNotifications?: bo
 describe('NotificationForm', () => {
   it('renders form description text', () => {
     const { container } = render(<TestWrapper />);
-    expect(container.textContent).toContain('t:ONBOARDING.FORM.NOTIFICATION_FORM_DESCRIPTION');
+    expect(container.textContent).toContain(
+      'translated:ONBOARDING.FORM.NOTIFICATION_FORM_DESCRIPTION',
+    );
   });
 
   it('renders enableNotifications switch', () => {

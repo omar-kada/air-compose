@@ -8,7 +8,7 @@ const { mockUseFilteredQuery, mockGetStatusQueryOptions } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -31,7 +31,7 @@ describe('StatusPage', () => {
   it('renders the header title', () => {
     mockUseFilteredQuery.mockReturnValue({ data: {}, isPending: false, error: null });
     render(<StatusPage />);
-    expect(screen.getByText('t:STATUS.STATUS')).toBeTruthy();
+    expect(screen.getByText('translated:STATUS.STATUS')).toBeTruthy();
   });
 
   it('renders skeletons while loading', () => {

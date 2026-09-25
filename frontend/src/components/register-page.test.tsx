@@ -7,7 +7,7 @@ const { mockUseRegister } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
+    t: (key: string) => `translated:${key}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -34,7 +34,7 @@ describe('RegisterPage', () => {
 
   it('renders the page title', () => {
     render(<RegisterPage />);
-    expect(screen.getByText('t:REGISTER.FORM.TITLE')).toBeTruthy();
+    expect(screen.getByText('translated:REGISTER.FORM.TITLE')).toBeTruthy();
   });
 
   it('renders the register form', () => {

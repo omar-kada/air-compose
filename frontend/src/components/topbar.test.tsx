@@ -24,7 +24,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string) => `translated:${key}`,
     i18n: { language: 'en' },
   }),
 }));
@@ -117,19 +117,19 @@ describe('Topbar', () => {
   it('T4: renders settings menu item', async () => {
     renderTopbar();
     await openUserDropDown();
-    expect(findMenuItem('MENU.SETTINGS')).toBeTruthy();
+    expect(findMenuItem('translated:MENU.SETTINGS')).toBeTruthy();
   });
 
   it('T5: renders dark mode toggle', async () => {
     renderTopbar();
     await openUserDropDown();
-    expect(findMenuItem('MENU.DARK_MODE')).toBeTruthy();
+    expect(findMenuItem('translated:MENU.DARK_MODE')).toBeTruthy();
   });
 
   it('T6: toggles theme when clicking dark mode', async () => {
     renderTopbar();
     await openUserDropDown();
-    const darkModeItem = findMenuItem('MENU.DARK_MODE');
+    const darkModeItem = findMenuItem('translated:MENU.DARK_MODE');
     if (!darkModeItem) throw new Error('dark mode menu item not found');
     await userEvent.click(darkModeItem);
     expect(mockSetTheme).toHaveBeenCalledWith('dark');
@@ -139,13 +139,13 @@ describe('Topbar', () => {
     renderTopbar();
     const bellButton = screen.getAllByRole('button')[0];
     await userEvent.click(bellButton);
-    expect(screen.getByText('NOTIFICATIONS.NOTIFICATIONS')).toBeTruthy();
+    expect(screen.getByText('translated:NOTIFICATIONS.NOTIFICATIONS')).toBeTruthy();
   });
 
   it('T8: signs out when clicking sign out', async () => {
     renderTopbar();
     await openUserDropDown();
-    const signOutItem = findMenuItem('ACTION.SIGN_OUT');
+    const signOutItem = findMenuItem('translated:ACTION.SIGN_OUT');
     if (!signOutItem) throw new Error('sign out menu item not found');
     await userEvent.click(signOutItem);
     expect(mockLogout).toHaveBeenCalled();
