@@ -30,7 +30,7 @@ describe('RegisterForm', () => {
   });
 
   it('renders spinner when loading and disables submit', () => {
-    const { container } = render(<RegisterForm onSubmit={mockOnSubmit} loading={true} />);
+    render(<RegisterForm onSubmit={mockOnSubmit} loading={true} />);
     expect(screen.getByRole('status')).toBeTruthy();
     const button = screen.getByRole('button', { name: 't:REGISTER.FORM.SUBMIT' });
     expect(button.hasAttribute('disabled')).toBe(true);

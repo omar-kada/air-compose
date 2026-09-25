@@ -1,10 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NotificationSheet } from './notifications-sheet';
+import { vi } from 'vitest';
 
-const { mockUseInfiniteQuery, mockUseResetUnreadCount, mockDeployNavigate } = vi.hoisted(() => ({
+const { mockUseInfiniteQuery, mockUseResetUnreadCount, mockDeployNavigate, mockUseUnreadCount } = vi.hoisted(() => ({
   mockUseInfiniteQuery: vi.fn(),
   mockUseResetUnreadCount: vi.fn(),
   mockDeployNavigate: vi.fn(),
+  mockUseUnreadCount: vi.fn(),
 }));
 
 vi.mock('react-i18next', async () => {
@@ -14,7 +16,13 @@ vi.mock('react-i18next', async () => {
 
 vi.mock('@/hooks', () => ({
   getNotificationsQueryOptions: () => ({ queryKey: ['notifications'] }),
+  useUnreadNotificationCount: mockUseUnreadCount,
   useResetUnreadCount: () => mockUseResetUnreadCount,
+  useFilteredQuery: () => ({ data: undefined, error: null, isPending: false }),
+  getFeaturesQueryOptions: () => ({ queryKey: ['features'] }),
+  getSettingsQueryOptions: () => ({ queryKey: ['settings'] }),
+  useRelativeTime: () => 'mocked-time',
+  useUpdateSettings: () => ({ updateSettings: vi.fn() }),
 }));
 
 vi.mock('@/lib', async (importOriginal) => {
@@ -27,42 +35,60 @@ vi.mock('@/lib', async (importOriginal) => {
 
 vi.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
+  useQueryClient: () => ({ invalidateQueries: vi.fn(), refetchQueries: vi.fn() }),
 }));
 
-
-vi.mock('./notifications-list', () => ({
-  NotificationList: ({ onNotificationClick }: { onNotificationClick: (e: unknown) => void }) => (
-    <div
-      data-slot="notification-list"
-      data-has-click-handler={!!onNotificationClick}
-      onClick={() => onNotificationClick?.({ objectId: 'dep1' })}
-    />
-  ),
+vi.mock('react-intersection-observer', () => ({
+  useInView: () => ({ ref: vi.fn(), inView: false }),
 }));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => vi.fn(),
+  Link: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+const mockNotifications = [
+  { id: '1', objectId: 'dep1', objectName: 'D1', type: 'deployment', msg: 'Test notification', time: '2024-01-01T00:00:00Z' },
+];
+
+const openSheet = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+};
+
+const openSheetAndWaitForItems = async () => {
+  openSheet();
+  await waitFor(() => {
+    const items = document.body.querySelectorAll('a[data-slot="item"]');
+    expect(items.length).toBeGreaterThan(0);
+  });
+};
+
+const getItems = () => document.body.querySelectorAll('a[data-slot="item"]');
 
 describe('NotificationSheet', () => {
   beforeEach(() => {
-    mockUseInfiniteQuery.mockReturnValue({ data: [] });
+    mockUseInfiniteQuery.mockReturnValue({ data: [], isPending: false, error: null, isFetchingNextPage: false, hasNextPage: false, fetchNextPage: vi.fn() });
+    mockUseUnreadCount.mockReturnValue(0);
     mockUseResetUnreadCount.mockClear();
     mockDeployNavigate.mockClear();
   });
 
   it('renders children as trigger', () => {
-    const { container } = render(
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    expect(container.querySelector('[data-slot="trigger"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Open' })).toBeTruthy();
   });
 
   it('renders sheet title and description when opened', async () => {
-    const { container } = render(
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
+    openSheet();
     await waitFor(() => {
       expect(screen.getByText('translated:NOTIFICATIONS.NOTIFICATIONS')).toBeTruthy();
     });
@@ -70,57 +96,78 @@ describe('NotificationSheet', () => {
   });
 
   it('renders notification list inside sheet', async () => {
-    const { container } = render(
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ ...mockNotifications[0] }],
+      isPending: false,
+      error: null,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+    });
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
-    await waitFor(() => {
-      expect(document.querySelector('[data-slot="notification-list"]')).not.toBeNull();
-    });
+    await openSheetAndWaitForItems();
+    const items = getItems();
+    expect(items.length).toBeGreaterThan(0);
+    const allText = Array.from(items, i => i.textContent ?? '').join(' ');
+    expect(allText.toLowerCase()).toContain('dep1');
   });
 
   it('renders close button inside sheet', async () => {
-    const { container } = render(
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
+    openSheet();
     await waitFor(() => {
       expect(screen.getByText('translated:ACTION.CLOSE')).toBeTruthy();
     });
   });
 
-  it('resets unread count when sheet is closed with notifications', async () => {
-    mockUseInfiniteQuery.mockReturnValue({ data: [{ id: '1', objectId: 'dep1' }] });
-    const { container } = render(
+  it('resets unread count when sheet is closed', async () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ ...mockNotifications[0] }],
+      isPending: false,
+      error: null,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+    });
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
-    await waitFor(() => {
-      const closeButton = screen.getByText('translated:ACTION.CLOSE');
-      fireEvent.click(closeButton);
-    });
+    await openSheetAndWaitForItems();
+    const closeButton = await screen.findByText('translated:ACTION.CLOSE');
+    fireEvent.click(closeButton);
     await waitFor(() => {
       expect(mockUseResetUnreadCount).toHaveBeenCalled();
     });
   });
 
-  it('navigates to deployment when notification is clicked', async () => {
-    const { container } = render(
+  it('navigates to deployment when notification item clicked', async () => {
+    mockUseInfiniteQuery.mockReturnValue({
+      data: [{ ...mockNotifications[0] }],
+      isPending: false,
+      error: null,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+    });
+    render(
       <NotificationSheet>
         <button data-slot="trigger">Open</button>
       </NotificationSheet>,
     );
-    fireEvent.click(container.querySelector('[data-slot="trigger"]') as HTMLElement);
-    await waitFor(() => {
-      expect(document.querySelector('[data-slot="notification-list"]')).not.toBeNull();
-    });
-    fireEvent.click(document.querySelector('[data-slot="notification-list"]') as HTMLElement);
+    await openSheetAndWaitForItems();
+    const items = getItems();
+    const targetItem = Array.from(items).find(i => i.textContent?.toLowerCase().includes('dep1'))!;
+    fireEvent.click(targetItem);
     expect(mockDeployNavigate).toHaveBeenCalledWith('dep1');
   });
 });
