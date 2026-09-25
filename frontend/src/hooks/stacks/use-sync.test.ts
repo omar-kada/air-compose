@@ -31,7 +31,7 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useSync } from './use-sync';
+import { getSyncOptions, useSync } from './use-sync';
 import { renderHookWithQuery } from '@/tests/test-utils';
 import type { AnyFunction } from '@/tests/test-utils';
 
@@ -45,5 +45,31 @@ describe('useSync', () => {
     const { result } = renderHookWithQuery(() => useSync());
     (result.current.sync as unknown as AnyFunction)();
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  describe('getSyncOptions', () => {
+    it('onSuccess refetches deployments when id is valid', () => {
+      const onSuccess = (getSyncOptions() as any).onSuccess;
+      const client = { refetchQueries: vi.fn() };
+      const context = { client };
+      onSuccess({ data: { id: '123' } }, undefined, undefined, context);
+      expect(client.refetchQueries).toHaveBeenCalled();
+    });
+
+    it('onSuccess does not refetch when id is "0"', () => {
+      const onSuccess = (getSyncOptions() as any).onSuccess;
+      const client = { refetchQueries: vi.fn() };
+      const context = { client };
+      onSuccess({ data: { id: '0' } }, undefined, undefined, context);
+      expect(client.refetchQueries).not.toHaveBeenCalled();
+    });
+
+    it('onSuccess does not refetch when id is undefined', () => {
+      const onSuccess = (getSyncOptions() as any).onSuccess;
+      const client = { refetchQueries: vi.fn() };
+      const context = { client };
+      onSuccess({ data: { id: undefined } }, undefined, undefined, context);
+      expect(client.refetchQueries).not.toHaveBeenCalled();
+    });
   });
 });

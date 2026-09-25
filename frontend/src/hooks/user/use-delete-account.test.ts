@@ -32,7 +32,7 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useDeleteAccount } from './use-delete-account';
+import { getDeleteAccountOptions, useDeleteAccount } from './use-delete-account';
 import { renderHookWithQuery } from '@/tests/test-utils';
 import type { AnyFunction } from '@/tests/test-utils';
 
@@ -46,5 +46,22 @@ describe('useDeleteAccount', () => {
     const { result } = renderHookWithQuery(() => useDeleteAccount());
     await (result.current.deleteAccount as unknown as AnyFunction)();
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getDeleteAccountOptions onSuccess refetches user and registered queries on success', () => {
+    const onSuccess = (getDeleteAccountOptions() as any).onSuccess;
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: true } }, undefined, undefined, context);
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['registered'] });
+  });
+
+  it('getDeleteAccountOptions onSuccess does not refetch when deletion fails', () => {
+    const onSuccess = (getDeleteAccountOptions() as any).onSuccess;
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: false } }, undefined, undefined, context);
+    expect(client.refetchQueries).not.toHaveBeenCalled();
   });
 });

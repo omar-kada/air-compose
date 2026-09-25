@@ -96,6 +96,93 @@ describe('createSocketReceiver', () => {
     expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
 
+  it('handles event with isNotification: refetches deployment and increments unread', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: {
+          deploymentId: 123,
+          isNotification: true,
+          type: EventType.DEPLOYMENT_STARTED,
+          msg: 'started',
+        },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    expect(client.refetchQueries).toHaveBeenCalled();
+    expect(mockIncrementUnreadCount).toHaveBeenCalledWith(client);
+    expect(client.invalidateQueries).toHaveBeenCalled();
+  });
+
+  it('handles DEPLOYMENT_ERROR event', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: { type: EventType.DEPLOYMENT_ERROR, msg: 'error', isNotification: false },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    expect(client.refetchQueries).toHaveBeenCalled();
+  });
+
+  it('handles DEPLOYMENT_SUCCESS event', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: { type: EventType.DEPLOYMENT_SUCCESS, msg: 'done', isNotification: false },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    expect(client.refetchQueries).toHaveBeenCalled();
+  });
+
+  it('handles HEALTH_CHANGE event', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: { type: EventType.HEALTH_CHANGE, msg: 'health', isNotification: false },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    expect(client.refetchQueries).toHaveBeenCalled();
+  });
+
+  it('handles CONFIGURATION_UPDATED event', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: { type: EventType.CONFIGURATION_UPDATED, msg: 'config', isNotification: false },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    expect(client.invalidateQueries).toHaveBeenCalled();
+  });
+
+  it('handles event without deploymentId or isNotification (no-op branches)', () => {
+    const client = mockClient();
+    const onEvent = createSocketReceiver(client as unknown as QueryClient);
+    const msg = {
+      data: JSON.stringify({
+        kind: ServerMessageEventKind.event,
+        value: { type: EventType.MISC, msg: 'misc', isNotification: false },
+      }),
+    };
+    onEvent(msg as unknown as MessageEvent);
+    // Should not have called refetchQueries or invalidateQueries
+    expect(client.refetchQueries).not.toHaveBeenCalled();
+    expect(client.invalidateQueries).not.toHaveBeenCalled();
+  });
+
   it('throws on unhandled message kind', () => {
     const client = mockClient();
     const onEvent = createSocketReceiver(client as unknown as QueryClient);

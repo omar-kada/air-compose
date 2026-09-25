@@ -27,7 +27,7 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useUpdateConfig } from './use-update-config';
+import { getUpdateConfigOptions, useUpdateConfig } from './use-update-config';
 import { renderHookWithQuery } from '@/tests/test-utils';
 import type { AnyFunction } from '@/tests/test-utils';
 
@@ -41,5 +41,13 @@ describe('useUpdateConfig', () => {
     const { result } = renderHookWithQuery(() => useUpdateConfig());
     (result.current.updateConfig as unknown as AnyFunction)({ repo: 'test' });
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getUpdateConfigOptions onSuccess calls setQueryData with config key', () => {
+    const onSuccess = (getUpdateConfigOptions() as any).onSuccess;
+    const client = { setQueryData: vi.fn(), refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { repo: 'test' } }, undefined, undefined, context);
+    expect(client.setQueryData).toHaveBeenCalledWith(['config-key'], { data: { repo: 'test' } });
   });
 });

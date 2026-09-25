@@ -29,7 +29,7 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useLogout } from './use-logout';
+import { getLogoutOptions, useLogout } from './use-logout';
 import { renderHookWithQuery } from '@/tests/test-utils';
 import type { AnyFunction } from '@/tests/test-utils';
 
@@ -43,5 +43,21 @@ describe('useLogout', () => {
     const { result } = renderHookWithQuery(() => useLogout());
     await (result.current.logout as unknown as AnyFunction)();
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getLogoutOptions onSuccess refetches user when logout succeeds', () => {
+    const onSuccess = (getLogoutOptions() as any).onSuccess;
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: true } }, undefined, undefined, context);
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+  });
+
+  it('getLogoutOptions onSuccess does not refetch when logout fails', () => {
+    const onSuccess = (getLogoutOptions() as any).onSuccess;
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: false } }, undefined, undefined, context);
+    expect(client.refetchQueries).not.toHaveBeenCalled();
   });
 });
