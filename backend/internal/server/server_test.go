@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,136 +12,100 @@ import (
 	"time"
 
 	"omar-kada/air-compose/api"
+	"omar-kada/air-compose/internal/config"
+	"omar-kada/air-compose/internal/deployments"
+	"omar-kada/air-compose/internal/docker"
+	"omar-kada/air-compose/internal/events"
+	"omar-kada/air-compose/internal/git"
+	"omar-kada/air-compose/internal/logs"
 	"omar-kada/air-compose/internal/models"
+	"omar-kada/air-compose/internal/process"
+	"omar-kada/air-compose/internal/server/handlers"
 	"omar-kada/air-compose/internal/server/socket"
+	"omar-kada/air-compose/internal/shell"
+	"omar-kada/air-compose/internal/users"
+	"omar-kada/air-compose/testutil"
 )
 
-// --- Stubs ---
+// testInspector is a minimal docker.Inspector for tests (no Docker daemon needed).
+type testInspector struct{}
 
-type stubHandler struct {
-	registeredCalled bool
+func (testInspector) GetManagedStacks() (models.StacksState, error) {
+	return models.NewStacksState(), nil
 }
-
-func (s *stubHandler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
-	return api.AuthAPILogin200JSONResponse{}, nil
-}
-func (s *stubHandler) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObject) (api.AuthAPILogoutResponseObject, error) {
-	return api.AuthAPILogout200JSONResponse{}, nil
-}
-func (s *stubHandler) AuthAPIRefresh(_ context.Context, _ api.AuthAPIRefreshRequestObject) (api.AuthAPIRefreshResponseObject, error) {
-	return api.AuthAPIRefresh200JSONResponse{}, nil
-}
-func (s *stubHandler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
-	s.registeredCalled = true
-	return api.AuthAPIRegistered200JSONResponse{}, nil
-}
-func (s *stubHandler) AuthAPIRegister(_ context.Context, _ api.AuthAPIRegisterRequestObject) (api.AuthAPIRegisterResponseObject, error) {
-	return api.AuthAPIRegister200JSONResponse{}, nil
-}
-func (s *stubHandler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
-	return api.ConfigAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) ConfigAPISet(_ context.Context, _ api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
-	return api.ConfigAPISet200JSONResponse{}, nil
-}
-func (s *stubHandler) DeployementAPIList(_ context.Context, _ api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
-	return api.DeployementAPIList200JSONResponse{}, nil
-}
-func (s *stubHandler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
-	return api.DeployementAPISync200JSONResponse{}, nil
-}
-func (s *stubHandler) DeployementAPIRead(_ context.Context, _ api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
-	return api.DeployementAPIRead200JSONResponse{}, nil
-}
-func (s *stubHandler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
-	return api.DiffAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
-	return api.FeaturesAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) NotificationsAPIList(_ context.Context, _ api.NotificationsAPIListRequestObject) (api.NotificationsAPIListResponseObject, error) {
-	return api.NotificationsAPIList200JSONResponse{}, nil
-}
-func (s *stubHandler) OIDCAPIOidcCallback(_ context.Context, _ api.OIDCAPIOidcCallbackRequestObject) (api.OIDCAPIOidcCallbackResponseObject, error) {
-	return api.OIDCAPIOidcCallbackdefaultJSONResponse{}, nil
-}
-func (s *stubHandler) OIDCAPIOidcLogin(_ context.Context, _ api.OIDCAPIOidcLoginRequestObject) (api.OIDCAPIOidcLoginResponseObject, error) {
-	return api.OIDCAPIOidcLogindefaultJSONResponse{}, nil
-}
-func (s *stubHandler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
-	return api.SettingsAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) SettingsAPISet(_ context.Context, _ api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
-	return api.SettingsAPISet200JSONResponse{}, nil
-}
-func (s *stubHandler) SettingsAPITestGitConnection(_ context.Context, _ api.SettingsAPITestGitConnectionRequestObject) (api.SettingsAPITestGitConnectionResponseObject, error) {
-	return api.SettingsAPITestGitConnection200JSONResponse{}, nil
-}
-func (s *stubHandler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
-	return api.StateAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
-	return api.StatusAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) UserAPIDelete(_ context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
-	return api.UserAPIDelete200JSONResponse{}, nil
-}
-func (s *stubHandler) UserAPIGet(_ context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
-	return api.UserAPIGet200JSONResponse{}, nil
-}
-func (s *stubHandler) UserAPIChangePassword(_ context.Context, _ api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
-	return api.UserAPIChangePassword200JSONResponse{}, nil
-}
-func (s *stubHandler) WebSocketConnect(_ context.Context, _ api.WebSocketConnectRequestObject) (api.WebSocketConnectResponseObject, error) {
-	return api.WebSocketConnect401Response{}, nil
+func (testInspector) GetCurrentStacks(_ []string) (models.StacksState, error) {
+	return models.NewStacksState(), nil
 }
 
-type stubSocketHandler struct{}
-
-func (s *stubSocketHandler) Handle(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
-func (s *stubSocketHandler) BroadcastEvent(_ context.Context, _ models.Event) {}
-
-type stubUserService struct {
-	loginCalled bool
-	loginInput  models.Credentials
-	loginError  error
+// serverDeps holds real implementations for all Serve dependencies.
+type serverDeps struct {
+	businessHandler api.StrictServerInterface
+	socketHandler   socket.WebSocketHandler
+	userService     users.Service
+	oidcService     users.OidcService
+	configStore     config.Store
 }
 
-func (s *stubUserService) Login(creds models.Credentials) (models.Token, error) {
-	s.loginCalled = true
-	s.loginInput = creds
-	return models.Token{}, s.loginError
-}
-func (s *stubUserService) Register(_ models.Credentials) (models.Token, error) {
-	return models.Token{}, nil
-}
-func (s *stubUserService) Logout(_ models.Token) error                       { return nil }
-func (s *stubUserService) GetUsernameByToken(_ models.Token) (string, error) { return "", nil }
-func (s *stubUserService) RefreshToken(_ models.Token) (models.Token, error) {
-	return models.Token{}, nil
-}
-func (s *stubUserService) IsRegistered() (bool, error)                 { return false, nil }
-func (s *stubUserService) GetUser(_ string) (models.User, error)       { return models.User{}, nil }
-func (s *stubUserService) DeleteUser(_ string) (bool, error)           { return false, nil }
-func (s *stubUserService) ChangePassword(_, _, _ string) (bool, error) { return false, nil }
+func newServerDeps(t *testing.T) *serverDeps {
+	t.Helper()
 
-type stubOidcService struct {
-	authURL string
-}
+	db := testutil.NewMemoryStorage(t)
+	eventBus := events.NewBus(1)
 
-func (s *stubOidcService) GetAuthURL(_, _, _ string) (string, error) {
-	return s.authURL, nil
-}
-func (s *stubOidcService) LoginOidc(_, _, _ string) (models.Token, error) {
-	return models.Token{}, nil
-}
+	configStore, err := config.NewConfigStore(
+		filepath.Join(t.TempDir(), "config.yaml"), eventBus,
+	)
+	if err != nil {
+		t.Fatalf("config store: %v", err)
+	}
 
-var (
-	_ api.StrictServerInterface = (*stubHandler)(nil)
-	_ socket.WebSocketHandler   = (*stubSocketHandler)(nil)
-)
+	eventStore, err := events.NewEventStorage(db)
+	if err != nil {
+		t.Fatalf("event store: %v", err)
+	}
+	deploymentStore, err := deployments.NewDeploymentStorage(db)
+	if err != nil {
+		t.Fatalf("deployment store: %v", err)
+	}
+	userStore, err := users.NewUsersStorage(db)
+	if err != nil {
+		t.Fatalf("user store: %v", err)
+	}
+	sessionStore, err := users.NewSessionStorage(db)
+	if err != nil {
+		t.Fatalf("session store: %v", err)
+	}
+	authStore, err := users.NewAuthStorage(userStore, sessionStore, users.NewTokenHolder())
+	if err != nil {
+		t.Fatalf("auth store: %v", err)
+	}
+
+	fetcher := git.NewFetcher(0o777, t.TempDir(), configStore)
+	deployer := docker.NewDeployer(eventBus, shell.NewExecutor())
+	deploymentSvc := process.NewDeploymentService(
+		models.DeploymentParams{}, deployer, fetcher,
+		deploymentStore, configStore, eventBus,
+	)
+	repoWatcher := process.NewRepoWatcher(
+		fetcher, configStore, deploymentSvc, eventBus, process.NewCronScheduler(),
+	)
+	healthChecker := docker.NewHealthChecker(configStore, testInspector{}, eventBus)
+
+	userService := users.NewService(authStore, eventBus)
+
+	bh := handlers.NewBusinessHandler(
+		configStore, deploymentSvc, userService,
+		fetcher, healthChecker, repoWatcher, eventStore, deploymentStore,
+	)
+
+	return &serverDeps{
+		businessHandler: bh,
+		socketHandler:   socket.NewWebSocketHandler(logs.NewHistoryHub(0)),
+		userService:     userService,
+		oidcService:     users.NewOidcService(configStore, authStore),
+		configStore:     configStore,
+	}
+}
 
 // --- Tests ---
 
@@ -203,18 +166,21 @@ func TestApplyMiddlewares_Empty(t *testing.T) {
 
 func TestServe_SPARoute(t *testing.T) {
 	frontDir := t.TempDir()
-	err := os.WriteFile(filepath.Join(frontDir, "index.html"), []byte("<html>Hello SPA</html>"), 0644)
-	if err != nil {
+	if err := os.WriteFile(filepath.Join(frontDir, "index.html"), []byte("<html>Hello SPA</html>"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
+	deps := newServerDeps(t)
 	srv := NewServer()
-	params := models.ServerParams{Port: 18090, FrontDir: frontDir}
 	go func() {
-		_ = srv.Serve(params, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
+		_ = srv.Serve(
+			models.ServerParams{Port: 18090, FrontDir: frontDir},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
-	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18090/app/dashboard", nil), 5*time.Second)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second},
+		mustNewRequest("GET", "http://127.0.0.1:18090/app/dashboard", nil), 5*time.Second)
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 
@@ -228,10 +194,25 @@ func TestServe_SPARoute(t *testing.T) {
 }
 
 func TestServe_OidcLoginRedirect(t *testing.T) {
+	oidcServer := testutil.NewOidcTestServerWithToken(t)
+	defer oidcServer.Server.Close()
+
+	deps := newServerDeps(t)
+	deps.configStore.Update(models.Config{
+		Settings: models.Settings{
+			Oidc: models.OidcConfig{
+				IssuerURL: oidcServer.IssuerURL,
+				ClientID:  testutil.ClientID,
+			},
+		},
+	})
+
 	srv := NewServer()
-	oidc := &stubOidcService{authURL: "https://oidc.example.com/auth"}
 	go func() {
-		_ = srv.Serve(models.ServerParams{Port: 18091, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, oidc)
+		_ = srv.Serve(
+			models.ServerParams{Port: 18091, FrontDir: t.TempDir()},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
 	client := &http.Client{
@@ -240,68 +221,67 @@ func TestServe_OidcLoginRedirect(t *testing.T) {
 			return http.ErrUseLastResponse
 		},
 	}
-	resp := waitForResponse(t, client, mustNewRequest("GET", "http://127.0.0.1:18091/api/oidc/login", nil), 5*time.Second)
+	resp := waitForResponse(t, client,
+		mustNewRequest("GET", "http://127.0.0.1:18091/api/oidc/login", nil), 5*time.Second)
 
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("expected 302, got %d", resp.StatusCode)
 	}
-	if loc := resp.Header.Get("Location"); !strings.Contains(loc, "oidc.example.com") {
-		t.Fatalf("expected OIDC redirect, got location: %s", loc)
+	if loc := resp.Header.Get("Location"); !strings.Contains(loc, oidcServer.IssuerURL) {
+		t.Fatalf("expected OIDC redirect to %q, got location: %s", oidcServer.IssuerURL, loc)
 	}
 	resp.Body.Close()
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthRegisterGet(t *testing.T) {
+	deps := newServerDeps(t)
 	srv := NewServer()
-	h := &stubHandler{}
 	go func() {
-		_ = srv.Serve(models.ServerParams{Port: 18092, FrontDir: t.TempDir()}, h, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
+		_ = srv.Serve(
+			models.ServerParams{Port: 18092, FrontDir: t.TempDir()},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
-	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18092/api/auth/register", nil), 5*time.Second)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second},
+		mustNewRequest("GET", "http://127.0.0.1:18092/api/auth/register", nil), 5*time.Second)
 	resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
-	if !h.registeredCalled {
-		t.Fatal("AuthAPIRegistered handler was not called")
-	}
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthLoginPost(t *testing.T) {
+	deps := newServerDeps(t)
 	srv := NewServer()
-	us := &stubUserService{loginError: errors.New("login failed")}
 	go func() {
-		_ = srv.Serve(models.ServerParams{Port: 18093, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, us, &stubOidcService{})
+		_ = srv.Serve(
+			models.ServerParams{Port: 18093, FrontDir: t.TempDir()},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second}
 	req, _ := http.NewRequest("POST", "http://127.0.0.1:18093/api/auth/login",
 		strings.NewReader(`{"username":"test","password":"pass"}`))
 	req.Header.Set("Content-Type", "application/json")
-	resp := waitForResponse(t, client, req, 5*time.Second)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, req, 5*time.Second)
 	resp.Body.Close()
 
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", resp.StatusCode)
 	}
-	if !us.loginCalled {
-		t.Fatal("Login was not called")
-	}
-	if us.loginInput.Username != "test" || us.loginInput.Password != "pass" {
-		t.Fatalf("unexpected credentials: %+v", us.loginInput)
-	}
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_CORSHeaders(t *testing.T) {
+	deps := newServerDeps(t)
 	srv := NewServer()
-	us := &stubUserService{loginError: errors.New("login failed")}
 	go func() {
-		_ = srv.Serve(models.ServerParams{Port: 18094, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, us, &stubOidcService{})
+		_ = srv.Serve(
+			models.ServerParams{Port: 18094, FrontDir: t.TempDir()},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
 	req, _ := http.NewRequest("POST", "http://127.0.0.1:18094/api/auth/login",
@@ -319,12 +299,17 @@ func TestServe_CORSHeaders(t *testing.T) {
 }
 
 func TestServe_UnauthorizedApiRoute(t *testing.T) {
+	deps := newServerDeps(t)
 	srv := NewServer()
 	go func() {
-		_ = srv.Serve(models.ServerParams{Port: 18095, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
+		_ = srv.Serve(
+			models.ServerParams{Port: 18095, FrontDir: t.TempDir()},
+			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService,
+		)
 	}()
 
-	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18095/api/features", nil), 5*time.Second)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second},
+		mustNewRequest("GET", "http://127.0.0.1:18095/api/features", nil), 5*time.Second)
 	resp.Body.Close()
 
 	if resp.StatusCode != http.StatusUnauthorized {
@@ -346,6 +331,7 @@ func TestShutdown_NoPanic(t *testing.T) {
 // --- Helpers ---
 
 func waitForResponse(t *testing.T, client *http.Client, req *http.Request, timeout time.Duration) *http.Response {
+	t.Helper()
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		resp, err := client.Do(req)
