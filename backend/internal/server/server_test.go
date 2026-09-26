@@ -1,8 +1,8 @@
-// Package server provides implementations of http and ws handlers.
 package server
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,221 +14,164 @@ import (
 
 	"omar-kada/air-compose/api"
 	"omar-kada/air-compose/internal/models"
-	"omar-kada/air-compose/internal/users"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"omar-kada/air-compose/internal/server/socket"
 )
 
-// --- Mock implementations ---
+// --- Stubs ---
 
-// MockStrictServer implements api.StrictServerInterface for testing.
-// Only methods that are actually called need expectations set.
-type MockStrictServer struct {
-	mock.Mock
+type stubHandler struct {
+	registeredCalled bool
 }
 
-func (m *MockStrictServer) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.AuthAPILoginResponseObject), args.Error(1)
+func (s *stubHandler) AuthAPILogin(_ context.Context, _ api.AuthAPILoginRequestObject) (api.AuthAPILoginResponseObject, error) {
+	return api.AuthAPILogin200JSONResponse{}, nil
 }
-func (m *MockStrictServer) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObject) (api.AuthAPILogoutResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.AuthAPILogoutResponseObject), args.Error(1)
+func (s *stubHandler) AuthAPILogout(_ context.Context, _ api.AuthAPILogoutRequestObject) (api.AuthAPILogoutResponseObject, error) {
+	return api.AuthAPILogout200JSONResponse{}, nil
 }
-func (m *MockStrictServer) AuthAPIRefresh(_ context.Context, _ api.AuthAPIRefreshRequestObject) (api.AuthAPIRefreshResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.AuthAPIRefreshResponseObject), args.Error(1)
+func (s *stubHandler) AuthAPIRefresh(_ context.Context, _ api.AuthAPIRefreshRequestObject) (api.AuthAPIRefreshResponseObject, error) {
+	return api.AuthAPIRefresh200JSONResponse{}, nil
 }
-func (m *MockStrictServer) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.AuthAPIRegisteredResponseObject), args.Error(1)
+func (s *stubHandler) AuthAPIRegistered(_ context.Context, _ api.AuthAPIRegisteredRequestObject) (api.AuthAPIRegisteredResponseObject, error) {
+	s.registeredCalled = true
+	return api.AuthAPIRegistered200JSONResponse{}, nil
 }
-func (m *MockStrictServer) AuthAPIRegister(_ context.Context, _ api.AuthAPIRegisterRequestObject) (api.AuthAPIRegisterResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.AuthAPIRegisterResponseObject), args.Error(1)
+func (s *stubHandler) AuthAPIRegister(_ context.Context, _ api.AuthAPIRegisterRequestObject) (api.AuthAPIRegisterResponseObject, error) {
+	return api.AuthAPIRegister200JSONResponse{}, nil
 }
-func (m *MockStrictServer) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.ConfigAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) ConfigAPIGet(_ context.Context, _ api.ConfigAPIGetRequestObject) (api.ConfigAPIGetResponseObject, error) {
+	return api.ConfigAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) ConfigAPISet(_ context.Context, _ api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.ConfigAPISetResponseObject), args.Error(1)
+func (s *stubHandler) ConfigAPISet(_ context.Context, _ api.ConfigAPISetRequestObject) (api.ConfigAPISetResponseObject, error) {
+	return api.ConfigAPISet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) DeployementAPIList(_ context.Context, _ api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.DeployementAPIListResponseObject), args.Error(1)
+func (s *stubHandler) DeployementAPIList(_ context.Context, _ api.DeployementAPIListRequestObject) (api.DeployementAPIListResponseObject, error) {
+	return api.DeployementAPIList200JSONResponse{}, nil
 }
-func (m *MockStrictServer) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.DeployementAPISyncResponseObject), args.Error(1)
+func (s *stubHandler) DeployementAPISync(_ context.Context, _ api.DeployementAPISyncRequestObject) (api.DeployementAPISyncResponseObject, error) {
+	return api.DeployementAPISync200JSONResponse{}, nil
 }
-func (m *MockStrictServer) DeployementAPIRead(_ context.Context, _ api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.DeployementAPIReadResponseObject), args.Error(1)
+func (s *stubHandler) DeployementAPIRead(_ context.Context, _ api.DeployementAPIReadRequestObject) (api.DeployementAPIReadResponseObject, error) {
+	return api.DeployementAPIRead200JSONResponse{}, nil
 }
-func (m *MockStrictServer) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.DiffAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) DiffAPIGet(_ context.Context, _ api.DiffAPIGetRequestObject) (api.DiffAPIGetResponseObject, error) {
+	return api.DiffAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.FeaturesAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) FeaturesAPIGet(_ context.Context, _ api.FeaturesAPIGetRequestObject) (api.FeaturesAPIGetResponseObject, error) {
+	return api.FeaturesAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) NotificationsAPIList(_ context.Context, _ api.NotificationsAPIListRequestObject) (api.NotificationsAPIListResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.NotificationsAPIListResponseObject), args.Error(1)
+func (s *stubHandler) NotificationsAPIList(_ context.Context, _ api.NotificationsAPIListRequestObject) (api.NotificationsAPIListResponseObject, error) {
+	return api.NotificationsAPIList200JSONResponse{}, nil
 }
-func (m *MockStrictServer) OIDCAPIOidcCallback(_ context.Context, _ api.OIDCAPIOidcCallbackRequestObject) (api.OIDCAPIOidcCallbackResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.OIDCAPIOidcCallbackResponseObject), args.Error(1)
+func (s *stubHandler) OIDCAPIOidcCallback(_ context.Context, _ api.OIDCAPIOidcCallbackRequestObject) (api.OIDCAPIOidcCallbackResponseObject, error) {
+	return api.OIDCAPIOidcCallbackdefaultJSONResponse{}, nil
 }
-func (m *MockStrictServer) OIDCAPIOidcLogin(_ context.Context, _ api.OIDCAPIOidcLoginRequestObject) (api.OIDCAPIOidcLoginResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.OIDCAPIOidcLoginResponseObject), args.Error(1)
+func (s *stubHandler) OIDCAPIOidcLogin(_ context.Context, _ api.OIDCAPIOidcLoginRequestObject) (api.OIDCAPIOidcLoginResponseObject, error) {
+	return api.OIDCAPIOidcLogindefaultJSONResponse{}, nil
 }
-func (m *MockStrictServer) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.SettingsAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) SettingsAPIGet(_ context.Context, _ api.SettingsAPIGetRequestObject) (api.SettingsAPIGetResponseObject, error) {
+	return api.SettingsAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) SettingsAPISet(_ context.Context, _ api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.SettingsAPISetResponseObject), args.Error(1)
+func (s *stubHandler) SettingsAPISet(_ context.Context, _ api.SettingsAPISetRequestObject) (api.SettingsAPISetResponseObject, error) {
+	return api.SettingsAPISet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) SettingsAPITestGitConnection(_ context.Context, _ api.SettingsAPITestGitConnectionRequestObject) (api.SettingsAPITestGitConnectionResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.SettingsAPITestGitConnectionResponseObject), args.Error(1)
+func (s *stubHandler) SettingsAPITestGitConnection(_ context.Context, _ api.SettingsAPITestGitConnectionRequestObject) (api.SettingsAPITestGitConnectionResponseObject, error) {
+	return api.SettingsAPITestGitConnection200JSONResponse{}, nil
 }
-func (m *MockStrictServer) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.StateAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) StateAPIGet(_ context.Context, _ api.StateAPIGetRequestObject) (api.StateAPIGetResponseObject, error) {
+	return api.StateAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.StatusAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) StatusAPIGet(_ context.Context, _ api.StatusAPIGetRequestObject) (api.StatusAPIGetResponseObject, error) {
+	return api.StatusAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) UserAPIDelete(_ context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.UserAPIDeleteResponseObject), args.Error(1)
+func (s *stubHandler) UserAPIDelete(_ context.Context, _ api.UserAPIDeleteRequestObject) (api.UserAPIDeleteResponseObject, error) {
+	return api.UserAPIDelete200JSONResponse{}, nil
 }
-func (m *MockStrictServer) UserAPIGet(_ context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.UserAPIGetResponseObject), args.Error(1)
+func (s *stubHandler) UserAPIGet(_ context.Context, _ api.UserAPIGetRequestObject) (api.UserAPIGetResponseObject, error) {
+	return api.UserAPIGet200JSONResponse{}, nil
 }
-func (m *MockStrictServer) UserAPIChangePassword(_ context.Context, _ api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.UserAPIChangePasswordResponseObject), args.Error(1)
+func (s *stubHandler) UserAPIChangePassword(_ context.Context, _ api.UserAPIChangePasswordRequestObject) (api.UserAPIChangePasswordResponseObject, error) {
+	return api.UserAPIChangePassword200JSONResponse{}, nil
 }
-func (m *MockStrictServer) WebSocketConnect(_ context.Context, _ api.WebSocketConnectRequestObject) (api.WebSocketConnectResponseObject, error) {
-	args := m.Called()
-	return args.Get(0).(api.WebSocketConnectResponseObject), args.Error(1)
+func (s *stubHandler) WebSocketConnect(_ context.Context, _ api.WebSocketConnectRequestObject) (api.WebSocketConnectResponseObject, error) {
+	return api.WebSocketConnect401Response{}, nil
 }
 
-// MockWebSocketHandler implements socket.WebSocketHandler for testing.
-type MockWebSocketHandler struct {
-	mock.Mock
+type stubSocketHandler struct{}
+
+func (s *stubSocketHandler) Handle(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+func (s *stubSocketHandler) BroadcastEvent(_ context.Context, _ models.Event) {}
+
+type stubUserService struct {
+	loginCalled bool
+	loginInput  models.Credentials
+	loginError  error
 }
 
-func (m *MockWebSocketHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	m.Called(w, r)
+func (s *stubUserService) Login(creds models.Credentials) (models.Token, error) {
+	s.loginCalled = true
+	s.loginInput = creds
+	return models.Token{}, s.loginError
 }
-func (m *MockWebSocketHandler) BroadcastEvent(ctx context.Context, event models.Event) {
-	m.Called(ctx, event)
+func (s *stubUserService) Register(_ models.Credentials) (models.Token, error) {
+	return models.Token{}, nil
+}
+func (s *stubUserService) Logout(_ models.Token) error                       { return nil }
+func (s *stubUserService) GetUsernameByToken(_ models.Token) (string, error) { return "", nil }
+func (s *stubUserService) RefreshToken(_ models.Token) (models.Token, error) {
+	return models.Token{}, nil
+}
+func (s *stubUserService) IsRegistered() (bool, error)                 { return false, nil }
+func (s *stubUserService) GetUser(_ string) (models.User, error)       { return models.User{}, nil }
+func (s *stubUserService) DeleteUser(_ string) (bool, error)           { return false, nil }
+func (s *stubUserService) ChangePassword(_, _, _ string) (bool, error) { return false, nil }
+
+type stubOidcService struct {
+	authURL string
 }
 
-// MockUserService implements users.Service for testing.
-type MockUserService struct {
-	mock.Mock
+func (s *stubOidcService) GetAuthURL(_, _, _ string) (string, error) {
+	return s.authURL, nil
+}
+func (s *stubOidcService) LoginOidc(_, _, _ string) (models.Token, error) {
+	return models.Token{}, nil
 }
 
-func (m *MockUserService) Login(creds models.Credentials) (models.Token, error) {
-	args := m.Called(creds)
-	return args.Get(0).(models.Token), args.Error(1)
-}
-func (m *MockUserService) Register(creds models.Credentials) (models.Token, error) {
-	args := m.Called(creds)
-	return args.Get(0).(models.Token), args.Error(1)
-}
-func (m *MockUserService) Logout(token models.Token) error {
-	args := m.Called(token)
-	return args.Error(0)
-}
-func (m *MockUserService) GetUsernameByToken(token models.Token) (string, error) {
-	args := m.Called(token)
-	return args.Get(0).(string), args.Error(1)
-}
-func (m *MockUserService) RefreshToken(token models.Token) (models.Token, error) {
-	args := m.Called(token)
-	return args.Get(0).(models.Token), args.Error(1)
-}
-func (m *MockUserService) IsRegistered() (bool, error) {
-	args := m.Called()
-	return args.Bool(0), args.Error(1)
-}
-func (m *MockUserService) GetUser(_ string) (models.User, error) {
-	args := m.Called()
-	return args.Get(0).(models.User), args.Error(1)
-}
-func (m *MockUserService) DeleteUser(_ string) (bool, error) {
-	args := m.Called()
-	return args.Bool(0), args.Error(1)
-}
-func (m *MockUserService) ChangePassword(_, _, _ string) (bool, error) {
-	args := m.Called()
-	return args.Bool(0), args.Error(1)
-}
-
-// MockOidcService implements users.OidcService for testing.
-type MockOidcService struct {
-	mock.Mock
-}
-
-func (m *MockOidcService) GetAuthURL(clientID, redirectURL, state string) (string, error) {
-	args := m.Called(clientID, redirectURL, state)
-	return args.Get(0).(string), args.Error(1)
-}
-func (m *MockOidcService) LoginOidc(code, state, codeVerifier string) (models.Token, error) {
-	args := m.Called(code, state, codeVerifier)
-	return args.Get(0).(models.Token), args.Error(1)
-}
+var (
+	_ api.StrictServerInterface = (*stubHandler)(nil)
+	_ socket.WebSocketHandler   = (*stubSocketHandler)(nil)
+)
 
 // --- Tests ---
 
 func TestNewServer(t *testing.T) {
-	srv := NewServer()
-	assert.NotNil(t, srv)
-	_, ok := srv.(*HTTPServer)
-	assert.True(t, ok, "NewServer should return *HTTPServer")
+	if NewServer() == nil {
+		t.Fatal("NewServer returned nil")
+	}
 }
 
 func TestApplyMiddlewares_Order(t *testing.T) {
-	// applyMiddlewares iterates middlewares in reverse order:
-	// mws = [mw1, mw2, mw3] → mw3 wraps first, then mw2, then mw1
-	// Execution order: mw1-call → mw2-call → mw3-call → handler → mw3-after → mw2-after → mw1-after
-	var callOrder []string
+	var order []string
 
-	finalHandler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		callOrder = append(callOrder, "handler")
+	h := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		order = append(order, "handler")
 	})
 
 	mw := func(name string) func(http.Handler) http.Handler {
 		return func(next http.Handler) http.Handler {
-			callOrder = append(callOrder, name+"-wrap")
+			order = append(order, name+"-wrap")
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				callOrder = append(callOrder, name+"-call")
+				order = append(order, name+"-call")
 				next.ServeHTTP(w, r)
-				callOrder = append(callOrder, name+"-after")
+				order = append(order, name+"-after")
 			})
 		}
 	}
 
-	// Wrapping order: mw3, mw2, mw1 (reverse)
-	result := applyMiddlewares(finalHandler, mw("mw1"), mw("mw2"), mw("mw3"))
-
-	req := httptest.NewRequest("GET", "/test", nil)
-	w := httptest.NewRecorder()
-	result.ServeHTTP(w, req)
+	result := applyMiddlewares(h, mw("mw1"), mw("mw2"), mw("mw3"))
+	result.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/test", nil))
 
 	expected := []string{
 		"mw3-wrap", "mw2-wrap", "mw1-wrap",
@@ -236,280 +179,189 @@ func TestApplyMiddlewares_Order(t *testing.T) {
 		"handler",
 		"mw3-after", "mw2-after", "mw1-after",
 	}
-	assert.Equal(t, expected, callOrder)
+	if len(order) != len(expected) {
+		t.Fatalf("expected %d entries, got %d: %v", len(expected), len(order), order)
+	}
+	for i, exp := range expected {
+		if order[i] != exp {
+			t.Fatalf("position %d: expected %q, got %q", i, exp, order[i])
+		}
+	}
 }
 
 func TestApplyMiddlewares_Empty(t *testing.T) {
 	var called bool
-	handler := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	h := http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		called = true
 	})
-
-	result := applyMiddlewares(handler)
-	req := httptest.NewRequest("GET", "/test", nil)
-	w := httptest.NewRecorder()
-	result.ServeHTTP(w, req)
-	assert.True(t, called, "handler should be called when no middlewares")
+	result := applyMiddlewares(h)
+	result.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/test", nil))
+	if !called {
+		t.Fatal("handler should be called when no middlewares")
+	}
 }
 
 func TestServe_SPARoute(t *testing.T) {
-	// Create a temp front dir with index.html
 	frontDir := t.TempDir()
-	indexHTML := "<html><body>Hello SPA</body></html>"
-	err := os.WriteFile(filepath.Join(frontDir, "index.html"), []byte(indexHTML), 0644)
-	assert.NoError(t, err)
-
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
+	err := os.WriteFile(filepath.Join(frontDir, "index.html"), []byte("<html>Hello SPA</html>"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18090,
-		FrontDir: frontDir,
-	}
-
+	params := models.ServerParams{Port: 18090, FrontDir: frontDir}
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(params, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Get("http://127.0.0.1:18090/app/dashboard")
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	assert.NotNil(t, resp, "server should respond")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18090/app/dashboard", nil), 5*time.Second)
 	body, _ := io.ReadAll(resp.Body)
-	assert.Contains(t, string(body), "Hello SPA")
 	resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	if !strings.Contains(string(body), "Hello SPA") {
+		t.Fatalf("expected SPA content, got %s", string(body))
+	}
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_OidcLoginRedirect(t *testing.T) {
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
-
-	oidcSvc.On("GetAuthURL", mock.Anything, mock.Anything, mock.Anything).Return("https://oidc.example.com/auth", nil).Maybe()
-
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18091,
-		FrontDir: t.TempDir(),
-	}
-
+	oidc := &stubOidcService{authURL: "https://oidc.example.com/auth"}
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(models.ServerParams{Port: 18091, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, oidc)
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-		return http.ErrUseLastResponse
-	}}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Get("http://127.0.0.1:18091/api/oidc/login")
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
+	resp := waitForResponse(t, client, mustNewRequest("GET", "http://127.0.0.1:18091/api/oidc/login", nil), 5*time.Second)
 
-	assert.NotNil(t, resp)
-	assert.Equal(t, http.StatusFound, resp.StatusCode)
-	location := resp.Header.Get("Location")
-	assert.Contains(t, location, "oidc.example.com")
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("expected 302, got %d", resp.StatusCode)
+	}
+	if loc := resp.Header.Get("Location"); !strings.Contains(loc, "oidc.example.com") {
+		t.Fatalf("expected OIDC redirect, got location: %s", loc)
+	}
 	resp.Body.Close()
-
-	oidcSvc.AssertCalled(t, "GetAuthURL", mock.Anything, mock.Anything, mock.Anything)
-	oidcSvc.AssertExpectations(t)
-
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthRegisterGet(t *testing.T) {
-	// GET /api/auth/register bypasses auth middleware and goes to the handler
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
-
-	businessHandler.On("AuthAPIRegistered", mock.Anything, mock.Anything).Return(
-		api.AuthAPIRegistered200JSONResponse{Registered: false, Oidc: false}, nil)
-
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18092,
-		FrontDir: t.TempDir(),
-	}
-
+	h := &stubHandler{}
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(models.ServerParams{Port: 18092, FrontDir: t.TempDir()}, h, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Get("http://127.0.0.1:18092/api/auth/register")
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	assert.NotNil(t, resp)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18092/api/auth/register", nil), 5*time.Second)
 	resp.Body.Close()
 
-	businessHandler.AssertCalled(t, "AuthAPIRegistered", mock.Anything, mock.Anything)
-	businessHandler.AssertExpectations(t)
-
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	if !h.registeredCalled {
+		t.Fatal("AuthAPIRegistered handler was not called")
+	}
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthLoginPost(t *testing.T) {
-	// POST /api/auth/login is handled by auth middleware (loginHandler), not the strict handler
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
-
-	// Send valid credentials so loginHandler calls authService.Login
-	loginCreds := models.Credentials{Username: "testuser", Password: "testpass"}
-	userSvc.On("Login", loginCreds).Return(models.Token{}, assert.AnError)
-
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18093,
-		FrontDir: t.TempDir(),
-	}
-
+	us := &stubUserService{loginError: errors.New("login failed")}
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(models.ServerParams{Port: 18093, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, us, &stubOidcService{})
 	}()
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Post("http://127.0.0.1:18093/api/auth/login", "application/json", strings.NewReader(`{"username":"testuser","password":"testpass"}`))
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	assert.NotNil(t, resp)
-	// loginHandler calls authService.Login which returns error → sends 401
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	req, _ := http.NewRequest("POST", "http://127.0.0.1:18093/api/auth/login",
+		strings.NewReader(`{"username":"test","password":"pass"}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp := waitForResponse(t, client, req, 5*time.Second)
 	resp.Body.Close()
 
-	userSvc.AssertCalled(t, "Login", loginCreds)
-	userSvc.AssertExpectations(t)
-
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", resp.StatusCode)
+	}
+	if !us.loginCalled {
+		t.Fatal("Login was not called")
+	}
+	if us.loginInput.Username != "test" || us.loginInput.Password != "pass" {
+		t.Fatalf("unexpected credentials: %+v", us.loginInput)
+	}
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_CORSHeaders(t *testing.T) {
-	// POST /api/auth/login goes through CORS middleware and auth middleware
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
-
-	loginCreds := models.Credentials{Username: "testuser", Password: "testpass"}
-	userSvc.On("Login", loginCreds).Return(models.Token{}, assert.AnError)
-
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18094,
-		FrontDir: t.TempDir(),
-	}
-
+	us := &stubUserService{loginError: errors.New("login failed")}
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(models.ServerParams{Port: 18094, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, us, &stubOidcService{})
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		req, _ := http.NewRequest("POST", "http://127.0.0.1:18094/api/auth/login", strings.NewReader(`{"username":"testuser","password":"testpass"}`))
-		req.Header.Set("Content-Type", "application/json")
-		// CORS middleware pattern "127.0.0.1:*" matches origins without protocol prefix
-		req.Header.Set("Origin", "127.0.0.1:18094")
-		resp, _ = client.Do(req)
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	req, _ := http.NewRequest("POST", "http://127.0.0.1:18094/api/auth/login",
+		strings.NewReader(`{"username":"test","password":"pass"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "127.0.0.1:18094")
 
-	assert.NotNil(t, resp)
-	// CORS headers should be present when Origin header matches allowed origins
-	origin := resp.Header.Get("Access-Control-Allow-Origin")
-	assert.NotEmpty(t, origin, "CORS origin header should be set for allowed origin")
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, req, 5*time.Second)
 	resp.Body.Close()
 
+	if origin := resp.Header.Get("Access-Control-Allow-Origin"); origin == "" {
+		t.Fatal("expected CORS Access-Control-Allow-Origin header")
+	}
 	srv.Shutdown(context.Background())
 }
 
 func TestServe_UnauthorizedApiRoute(t *testing.T) {
-	// /api/ routes that aren't auth/ or oidc/ require a valid token
-	businessHandler := new(MockStrictServer)
-	wsHandler := new(MockWebSocketHandler)
-	userSvc := new(MockUserService)
-	oidcSvc := new(MockOidcService)
-
 	srv := NewServer()
-	params := models.ServerParams{
-		Port:     18095,
-		FrontDir: t.TempDir(),
-	}
-
 	go func() {
-		_ = srv.Serve(params, businessHandler, wsHandler, userSvc, oidcSvc)
+		_ = srv.Serve(models.ServerParams{Port: 18095, FrontDir: t.TempDir()}, &stubHandler{}, &stubSocketHandler{}, &stubUserService{}, &stubOidcService{})
 	}()
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	var resp *http.Response
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Get("http://127.0.0.1:18095/api/features")
-		if resp != nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	assert.NotNil(t, resp)
-	// Without auth cookies, should get 401
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	resp := waitForResponse(t, &http.Client{Timeout: 5 * time.Second}, mustNewRequest("GET", "http://127.0.0.1:18095/api/features", nil), 5*time.Second)
 	resp.Body.Close()
 
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", resp.StatusCode)
+	}
 	srv.Shutdown(context.Background())
 }
 
 func TestShutdown_NoPanic(t *testing.T) {
 	srv := NewServer().(*HTTPServer)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	// Shutdown on an uninitialized server should not panic
-	assert.NotPanics(t, func() {
-		srv.Shutdown(ctx)
-	})
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("Shutdown panicked: %v", r)
+		}
+	}()
+	srv.Shutdown(context.Background())
 }
 
-// Ensure mock types satisfy their interfaces at compile time
-var _ api.StrictServerInterface = (*MockStrictServer)(nil)
-var _ interface {
-	Handle(http.ResponseWriter, *http.Request)
-	BroadcastEvent(context.Context, models.Event)
-} = (*MockWebSocketHandler)(nil)
-var _ users.Service = (*MockUserService)(nil)
-var _ users.OidcService = (*MockOidcService)(nil)
+// --- Helpers ---
+
+func waitForResponse(t *testing.T, client *http.Client, req *http.Request, timeout time.Duration) *http.Response {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		resp, err := client.Do(req)
+		if err == nil && resp != nil {
+			return resp
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatal("server did not respond within timeout")
+	return nil
+}
+
+func mustNewRequest(method, url string, body io.Reader) *http.Request {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		panic(err)
+	}
+	return req
+}
