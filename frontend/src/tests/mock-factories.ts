@@ -15,6 +15,14 @@ export function createI18nMock() {
   };
 }
 
+export function createI18nextMock() {
+  return {
+    default: {
+      t: (key: string) => `translated:${key}`,
+    },
+  };
+}
+
 export function createSonnerMock() {
   return {
     toast: {

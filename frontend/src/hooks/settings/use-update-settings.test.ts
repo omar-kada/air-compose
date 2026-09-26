@@ -27,9 +27,9 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useUpdateSettings } from './use-update-settings';
+import { getUpdateSettingsOptions, useUpdateSettings } from './use-update-settings';
 import { renderHookWithQuery } from '@/tests/test-utils';
-import type { AnyFunction } from '@/tests/test-utils';
+import type { AnyFunction, MockMutationOptions } from '@/tests/test-utils';
 
 describe('useUpdateSettings', () => {
   it('returns updateSettings function', () => {
@@ -41,5 +41,15 @@ describe('useUpdateSettings', () => {
     const { result } = renderHookWithQuery(() => useUpdateSettings());
     (result.current.updateSettings as unknown as AnyFunction)({ theme: 'dark' });
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getUpdateSettingsOptions onSuccess calls setQueryData and refetchQueries', () => {
+    const { onSuccess } = getUpdateSettingsOptions() as MockMutationOptions;
+    if (!onSuccess) throw new Error('onSuccess should be defined');
+    const client = { setQueryData: vi.fn(), refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { theme: 'dark' } }, undefined, undefined, context);
+    expect(client.setQueryData).toHaveBeenCalledWith(['settings-key'], { data: { theme: 'dark' } });
+    expect(client.refetchQueries).toHaveBeenCalled();
   });
 });

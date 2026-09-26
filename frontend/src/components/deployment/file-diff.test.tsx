@@ -1,11 +1,10 @@
 import { render, fireEvent } from '@testing-library/react';
 import { FileDiffView } from './file-diff';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => `t:${key}`,
-  }),
-}));
+vi.mock('react-i18next', async () => {
+  const { createI18nMock } = await import('@/tests/mock-factories');
+  return createI18nMock();
+});
 
 vi.mock('@/hooks', () => ({
   useIsMobile: () => false,

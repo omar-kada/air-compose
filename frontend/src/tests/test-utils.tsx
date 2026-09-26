@@ -12,6 +12,11 @@ export function createTestQueryClient() {
 
 export type AnyFunction = (...args: unknown[]) => unknown;
 
+export type MockMutationOptions = {
+  mutationFn: ReturnType<typeof vi.fn>;
+  onSuccess?: (data: unknown, variables: unknown, context: unknown, meta: unknown) => void;
+};
+
 export function renderHookWithQuery<T>(callback: () => T) {
   const queryClient = createTestQueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (

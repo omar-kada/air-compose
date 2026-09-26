@@ -27,9 +27,9 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useLogin } from './use-login';
+import { getLoginOptions, useLogin } from './use-login';
 import { renderHookWithQuery } from '@/tests/test-utils';
-import type { AnyFunction } from '@/tests/test-utils';
+import type { AnyFunction, MockMutationOptions } from '@/tests/test-utils';
 
 describe('useLogin', () => {
   it('returns login function', () => {
@@ -44,5 +44,23 @@ describe('useLogin', () => {
       password: 'test',
     });
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getLoginOptions onSuccess refetches user when login succeeds', () => {
+    const { onSuccess } = getLoginOptions() as MockMutationOptions;
+    if (!onSuccess) throw new Error('onSuccess should be defined');
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: true } }, undefined, undefined, context);
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+  });
+
+  it('getLoginOptions onSuccess does not refetch when login fails', () => {
+    const { onSuccess } = getLoginOptions() as MockMutationOptions;
+    if (!onSuccess) throw new Error('onSuccess should be defined');
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: false } }, undefined, undefined, context);
+    expect(client.refetchQueries).not.toHaveBeenCalled();
   });
 });

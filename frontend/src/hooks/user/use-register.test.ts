@@ -30,9 +30,9 @@ vi.mock('@/api/api', async (importOriginal) => {
   };
 });
 
-import { useRegister } from './use-register';
+import { getRegisterOptions, useRegister } from './use-register';
 import { renderHookWithQuery } from '@/tests/test-utils';
-import type { AnyFunction } from '@/tests/test-utils';
+import type { AnyFunction, MockMutationOptions } from '@/tests/test-utils';
 
 describe('useRegister', () => {
   it('returns register function', () => {
@@ -47,5 +47,24 @@ describe('useRegister', () => {
       password: 'test',
     });
     expect(mockToastPromise).toHaveBeenCalled();
+  });
+
+  it('getRegisterOptions onSuccess refetches registered and user queries when registration succeeds', () => {
+    const { onSuccess } = getRegisterOptions() as MockMutationOptions;
+    if (!onSuccess) throw new Error('onSuccess should be defined');
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: true } }, undefined, undefined, context);
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['registered'] });
+    expect(client.refetchQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+  });
+
+  it('getRegisterOptions onSuccess does not refetch when registration fails', () => {
+    const { onSuccess } = getRegisterOptions() as MockMutationOptions;
+    if (!onSuccess) throw new Error('onSuccess should be defined');
+    const client = { refetchQueries: vi.fn() };
+    const context = { client };
+    onSuccess({ data: { success: false } }, undefined, undefined, context);
+    expect(client.refetchQueries).not.toHaveBeenCalled();
   });
 });
