@@ -85,3 +85,81 @@ func TestIsObfuscated(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigGetBranch(t *testing.T) {
+	t.Run("custom branch", func(t *testing.T) {
+		cfg := Config{Settings: Settings{Git: GitConfig{Branch: "develop"}}}
+		assert.Equal(t, "develop", cfg.GetBranch())
+	})
+
+	t.Run("empty branch defaults to main", func(t *testing.T) {
+		cfg := Config{Settings: Settings{Git: GitConfig{Branch: ""}}}
+		assert.Equal(t, DefaultBranch, cfg.GetBranch())
+	})
+}
+
+func TestConfigIsEventNotificationEnabled(t *testing.T) {
+	cfg := Config{
+		Settings: Settings{
+			Notifications: NotificationConfig{
+				NotificationTypes: []EventType{EventDeploymentStarted, EventDeploymentError},
+			},
+		},
+	}
+
+	assert.True(t, cfg.IsEventNotificationEnabled(EventDeploymentStarted))
+	assert.True(t, cfg.IsEventNotificationEnabled(EventDeploymentError))
+	assert.False(t, cfg.IsEventNotificationEnabled(EventDeploymentSuccess))
+}
+
+func TestSettingsGetObfuscatedToken(t *testing.T) {
+	t.Run("long token", func(t *testing.T) {
+		s := Settings{Git: GitConfig{Token: "1234567890abcdef1234567890"}}
+		result := s.GetObfuscatedToken()
+		assert.Equal(t, "1234567890"+repeatAsterisks(20), result)
+	})
+
+	t.Run("short token", func(t *testing.T) {
+		s := Settings{Git: GitConfig{Token: "short"}}
+		result := s.GetObfuscatedToken()
+		assert.Equal(t, repeatAsterisks(30), result)
+	})
+
+	t.Run("empty token", func(t *testing.T) {
+		s := Settings{Git: GitConfig{Token: ""}}
+		assert.Empty(t, s.GetObfuscatedToken())
+	})
+}
+
+func TestSettingsGetObfuscatedNotificationURL(t *testing.T) {
+	s := Settings{Notifications: NotificationConfig{NotificationURL: "gotify://localhost:8080"}}
+	result := s.GetObfuscatedNotificationURL()
+	assert.Equal(t, "gotify://l"+repeatAsterisks(20), result)
+}
+
+func TestOidcConfigGetObfuscatedClientSecret(t *testing.T) {
+	t.Run("long secret", func(t *testing.T) {
+		cfg := OidcConfig{ClientSecret: "1234567890abcdef1234567890"}
+		result := cfg.GetObfuscatedClientSecret()
+		assert.Equal(t, "1234567890"+repeatAsterisks(20), result)
+	})
+
+	t.Run("short secret", func(t *testing.T) {
+		cfg := OidcConfig{ClientSecret: "short"}
+		result := cfg.GetObfuscatedClientSecret()
+		assert.Equal(t, repeatAsterisks(30), result)
+	})
+
+	t.Run("empty secret", func(t *testing.T) {
+		cfg := OidcConfig{ClientSecret: ""}
+		assert.Empty(t, cfg.GetObfuscatedClientSecret())
+	})
+}
+
+func repeatAsterisks(n int) string {
+	var sb strings.Builder
+	for i := 0; i < n; i++ {
+		sb.WriteString("*")
+	}
+	return sb.String()
+}
