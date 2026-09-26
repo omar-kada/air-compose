@@ -161,6 +161,7 @@ func TestServe_SPARoute(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18090, FrontDir: frontDir},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	resp := waitForResponse(t, &http.Client{Timeout: 2 * time.Second},
 		mustNewRequest("GET", "http://127.0.0.1:18090/app/dashboard", nil), 10*time.Second)
@@ -169,7 +170,6 @@ func TestServe_SPARoute(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, string(body), "Hello SPA")
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_OidcLoginRedirect(t *testing.T) {
@@ -191,6 +191,7 @@ func TestServe_OidcLoginRedirect(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18091, FrontDir: t.TempDir()},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	client := &http.Client{
 		Timeout: 2 * time.Second,
@@ -204,7 +205,6 @@ func TestServe_OidcLoginRedirect(t *testing.T) {
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
 	assert.Contains(t, resp.Header.Get("Location"), oidcServer.IssuerURL)
 	resp.Body.Close()
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthRegisterGet(t *testing.T) {
@@ -214,13 +214,13 @@ func TestServe_AuthRegisterGet(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18092, FrontDir: t.TempDir()},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	resp := waitForResponse(t, &http.Client{Timeout: 2 * time.Second},
 		mustNewRequest("GET", "http://127.0.0.1:18092/api/auth/register", nil), 10*time.Second)
 	resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_AuthLoginPost(t *testing.T) {
@@ -230,6 +230,7 @@ func TestServe_AuthLoginPost(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18093, FrontDir: t.TempDir()},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	req, _ := http.NewRequest("POST", "http://127.0.0.1:18093/api/auth/login",
 		strings.NewReader(`{"username":"test","password":"pass"}`))
@@ -238,7 +239,6 @@ func TestServe_AuthLoginPost(t *testing.T) {
 	resp.Body.Close()
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_CORSHeaders(t *testing.T) {
@@ -248,6 +248,7 @@ func TestServe_CORSHeaders(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18094, FrontDir: t.TempDir()},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	req, _ := http.NewRequest("POST", "http://127.0.0.1:18094/api/auth/login",
 		strings.NewReader(`{"username":"test","password":"pass"}`))
@@ -259,7 +260,6 @@ func TestServe_CORSHeaders(t *testing.T) {
 
 	assert.NotEmpty(t, resp.Header.Get("Access-Control-Allow-Origin"),
 		"expected CORS Access-Control-Allow-Origin header")
-	srv.Shutdown(context.Background())
 }
 
 func TestServe_UnauthorizedApiRoute(t *testing.T) {
@@ -269,13 +269,13 @@ func TestServe_UnauthorizedApiRoute(t *testing.T) {
 		_ = srv.Serve(models.ServerParams{Port: 18095, FrontDir: t.TempDir()},
 			deps.businessHandler, deps.socketHandler, deps.userService, deps.oidcService)
 	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
 
 	resp := waitForResponse(t, &http.Client{Timeout: 2 * time.Second},
 		mustNewRequest("GET", "http://127.0.0.1:18095/api/features", nil), 10*time.Second)
 	resp.Body.Close()
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	srv.Shutdown(context.Background())
 }
 
 func TestShutdown_NoPanic(t *testing.T) {
