@@ -1221,4 +1221,6 @@ func TestSettingsAPITestGitConnection_Failure(t *testing.T) {
 	default:
 		t.Fatalf("unexpected resp type: %T", resp)
 	}
+
+	m.AssertExpectations(t)
 }
