@@ -91,5 +91,7 @@ func (s *HTTPServer) Serve(
 
 // Shutdown closes the server
 func (s *HTTPServer) Shutdown(ctx context.Context) {
-	s.server.Shutdown(ctx)
+	if s.server != nil {
+		s.server.Shutdown(ctx)
+	}
 }
