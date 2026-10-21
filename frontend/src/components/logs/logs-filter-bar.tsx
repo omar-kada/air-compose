@@ -25,15 +25,16 @@ export function LogFilterBar({
       <Input
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
+        aria-label={t('LOGS.FILTER_LOGS')}
         placeholder={t('LOGS.FILTER_LOGS')}
         className="max-w-50 min-w-30 h-8 text-sm"
       />
-
       <ToggleGroup
         type="multiple"
         value={[...activeLevels]}
         onValueChange={(next) => onLevelsChange(new Set(next as Level[]))}
         className="flex items-center"
+        aria-label={t('LOGS.FILTER_LOG_LEVEL')}
       >
         {LEVELS.map((level) => (
           <ToggleGroupItem

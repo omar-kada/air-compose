@@ -40,8 +40,14 @@ export function RepoForm({ form }: { form: UseFormReturn<RepoFormValues> }) {
             control={form.control}
             render={({ field }) => (
               <Field orientation="horizontal">
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                <FieldTitle>{t('ONBOARDING.FORM.PRIVATE_REPO')}</FieldTitle>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  aria-labelledby={`field-${field.name}`}
+                />
+                <FieldTitle id={`field-${field.name}`}>
+                  {t('ONBOARDING.FORM.PRIVATE_REPO')}
+                </FieldTitle>
               </Field>
             )}
           />
@@ -83,12 +89,15 @@ function RepoField({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid} orientation="horizontal">
-          <FieldTitle className="w-40">{t(`SETTINGS.FORM.${name}`)}</FieldTitle>
+          <FieldTitle id={`field-${field.name}`} className="w-40">
+            {t(`SETTINGS.FORM.${name}`)}
+          </FieldTitle>
           {withDescription && (
             <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
           )}
           <Input
             {...field}
+            aria-labelledby={`field-${field.name}`}
             aria-invalid={fieldState.invalid}
             autoComplete="off"
             placeholder={withPlaceholder ? t(`SETTINGS.FORM.${name}_PLACEHOLDER`) : ''}

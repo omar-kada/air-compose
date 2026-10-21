@@ -19,8 +19,14 @@ export function NotificationForm({ form }: { form: UseFormReturn<NotificationFor
           control={form.control}
           render={({ field }) => (
             <Field orientation="horizontal">
-              <Switch checked={field.value} onCheckedChange={field.onChange} />
-              <FieldTitle>{t('ONBOARDING.FORM.enableNotifications')}</FieldTitle>
+              <Switch
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                aria-labelledby={`field-${field.name}`}
+              />
+              <FieldTitle id={`field-${field.name}`}>
+                {t('ONBOARDING.FORM.enableNotifications')}
+              </FieldTitle>
             </Field>
           )}
         />
@@ -59,12 +65,13 @@ function NotificationField({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldTitle>{t(`ONBOARDING.FORM.${name}`)}</FieldTitle>
+          <FieldTitle id={`field-${field.name}`}>{t(`ONBOARDING.FORM.${name}`)}</FieldTitle>
           {withDescription && (
             <FieldDescription>{t(`ONBOARDING.FORM.${name}_DESCRIPTION`)}</FieldDescription>
           )}
           <Input
             {...field}
+            aria-labelledby={`field-${field.name}`}
             aria-invalid={fieldState.invalid}
             autoComplete="off"
             placeholder={withPlaceholder ? t(`ONBOARDING.FORM.${name}_PLACEHOLDER`) : ''}

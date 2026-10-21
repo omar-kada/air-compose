@@ -45,7 +45,7 @@ describe('LoginForm', () => {
     const { container } = render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
     const password = container.querySelector('input[name="password"]') as HTMLInputElement;
     expect(password?.getAttribute('type')).toBe('password');
-    const toggle = screen.getByRole('button', { name: 'Show password' });
+    const toggle = screen.getByRole('button', { name: 'translated:ACTION.SHOW_PASSWORD' });
     fireEvent.click(toggle);
     expect(password?.getAttribute('type')).toBe('text');
     fireEvent.click(toggle);
@@ -56,6 +56,6 @@ describe('LoginForm', () => {
     render(<LoginForm onSubmit={mockOnSubmit} loading={false} />);
     expect(screen.getByText('translated:LOGIN.FORM.username')).toBeTruthy();
     expect(screen.getByText('translated:LOGIN.FORM.password')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Show password' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'translated:ACTION.SHOW_PASSWORD' })).toBeTruthy();
   });
 });
