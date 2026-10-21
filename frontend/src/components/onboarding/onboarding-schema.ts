@@ -36,21 +36,11 @@ export const cronSchema = z.object({
 
 export type CronFormValues = z.infer<typeof cronSchema>;
 
-export const notificationSchema = z
-  .object({
-    enableNotifications: z.boolean().default(false).optional(),
-    notificationURL: z.string().optional(),
-    notificationTypes: z.array(z.enum(EventType)),
-  })
-  .superRefine((data, ctx) => {
-    if (data.enableNotifications && !data.notificationURL) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'ONBOARDING.FORM.NOTIFICATION_URL_REQUIRED',
-        path: ['notificationURL'],
-      });
-    }
-  });
+export const notificationSchema = z.object({
+  enableNotifications: z.boolean().default(false).optional(),
+  notificationURL: z.string().optional(),
+  notificationTypes: z.array(z.enum(EventType)),
+});
 
 export type NotificationFormValues = z.infer<typeof notificationSchema>;
 
