@@ -104,10 +104,11 @@ function PasswordField({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel>{t(`SETTINGS.CHANGE_PASS_DIALOG.${name}`)}</FieldLabel>
+          <FieldLabel htmlFor={`field-${field.name}`}>{t(`SETTINGS.CHANGE_PASS_DIALOG.${name}`)}</FieldLabel>
           <InputGroup>
             <InputGroupInput
               {...field}
+              id={`field-${field.name}`}
               type={showPassword ? 'text' : 'password'}
               autoComplete="off"
               aria-invalid={fieldState.invalid}
@@ -121,7 +122,7 @@ function PasswordField({
                 variant="ghost"
                 size="icon"
                 onClick={toggleShowPassword}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('ACTION.HIDE_PASSWORD') : t('ACTION.SHOW_PASSWORD')}
               >
                 {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </Button>

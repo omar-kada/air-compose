@@ -116,7 +116,10 @@
     "FILTER_LOGS": "Filter logs ...",
     "STREAMING": "Live",
     "EXPAND_ALL": "Expand all",
-    "SCROLL_TO_BOTTOM": "Scroll to bottom"
+    "EXPAND": "Expand",
+    "COLLAPSE": "Collapse",
+    "SCROLL_TO_BOTTOM": "Scroll to bottom",
+    "FILTER_LOG_LEVEL": "Filter log levels"
   },
   "SETTINGS": {
     "SETTINGS": "Settings",
@@ -178,6 +181,8 @@
     "SYNC_NOW": "Sync now",
     "VIEW_FILE": "View file",
     "HIDE_FILE": "Hide file",
+    "SHOW_PASSWORD": "Show password",
+    "HIDE_PASSWORD": "Hide password",
     "SELECT_ALL": "Select all",
     "CLEAR_ALL": "Clear all",
     "COPY": "Copy to clipboard"

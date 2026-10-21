@@ -54,9 +54,9 @@ export function RegisterForm({
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel>{t('REGISTER.FORM.username')}</FieldLabel>
+              <FieldLabel htmlFor={`field-${field.name}`}>{t('REGISTER.FORM.username')}</FieldLabel>
               <InputGroup>
-                <InputGroupInput {...field} autoComplete="off" aria-invalid={fieldState.invalid} />
+                <InputGroupInput {...field} id={`field-${field.name}`} autoComplete="off" aria-invalid={fieldState.invalid} />
                 <InputGroupAddon align="inline-start">
                   <UserIcon />
                 </InputGroupAddon>
@@ -75,10 +75,11 @@ export function RegisterForm({
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel>{t('REGISTER.FORM.password')}</FieldLabel>
+              <FieldLabel htmlFor={`field-${field.name}`}>{t('REGISTER.FORM.password')}</FieldLabel>
               <InputGroup>
                 <InputGroupInput
                   {...field}
+                  id={`field-${field.name}`}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="off"
                   aria-invalid={fieldState.invalid}
@@ -92,7 +93,7 @@ export function RegisterForm({
                     variant="ghost"
                     size="icon"
                     onClick={toggleShowPassword}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('ACTION.HIDE_PASSWORD') : t('ACTION.SHOW_PASSWORD')}
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </Button>

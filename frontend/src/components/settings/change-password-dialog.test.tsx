@@ -51,7 +51,7 @@ describe('ChangePasswordDialog', () => {
     await waitFor(() => {
       expect(document.querySelectorAll('input[type="password"]')).toHaveLength(2);
     });
-    const toggleButtons = screen.getAllByRole('button', { name: 'Show password' });
+    const toggleButtons = screen.getAllByRole('button', { name: 'translated:ACTION.SHOW_PASSWORD' });
     expect(toggleButtons).toHaveLength(2);
     fireEvent.click(toggleButtons[0]);
     await waitFor(() => {

@@ -32,6 +32,7 @@ export function LogEntries({ logs }: { logs: LogMessages }) {
           size="xs"
           variant="ghost"
           className="text-muted-foreground"
+          aria-pressed={expandAll}
           onClick={() => {
             setExpandAll(!expandAll);
           }}
@@ -44,6 +45,7 @@ export function LogEntries({ logs }: { logs: LogMessages }) {
 }
 
 function LogEntry({ line, expand }: { line: LogLine; expand?: boolean }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     setExpanded(expand ?? expanded);
@@ -77,6 +79,7 @@ function LogEntry({ line, expand }: { line: LogLine; expand?: boolean }) {
             className="size-3 "
             size="icon-xs"
             variant="ghost"
+            aria-label={expanded ? t('LOGS.COLLAPSE') : t('LOGS.EXPAND')}
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <ChevronUp /> : <ChevronDown />}

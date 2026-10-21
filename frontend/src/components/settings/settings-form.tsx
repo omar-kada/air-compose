@@ -125,12 +125,13 @@ function SettingsField({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldTitle>{t(`SETTINGS.FORM.${name}`)}</FieldTitle>
+          <FieldTitle id={`field-${field.name}`}>{t(`SETTINGS.FORM.${name}`)}</FieldTitle>
           {withDescription && (
             <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
           )}
           <Input
             {...field}
+            aria-labelledby={`field-${field.name}`}
             aria-invalid={fieldState.invalid}
             autoComplete="off"
             placeholder={withPlaceholder ? t(`SETTINGS.FORM.${name}_PLACEHOLDER`) : ''}
@@ -168,7 +169,7 @@ function SettingsSliderField({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldTitle>{t(`SETTINGS.FORM.${name}`, { value: field.value ?? min })}</FieldTitle>
+          <FieldTitle id={`field-${field.name}`}>{t(`SETTINGS.FORM.${name}`, { value: field.value ?? min })}</FieldTitle>
           {withDescription && (
             <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
           )}
@@ -180,6 +181,7 @@ function SettingsSliderField({
               value={[field.value ?? min]} // shadcn expects an array
               onValueChange={(val) => field.onChange(val[0] ?? min)} // unwrap the array
               onBlur={field.onBlur}
+              aria-labelledby={`field-${field.name}`}
               aria-invalid={fieldState.invalid}
             />
           </div>

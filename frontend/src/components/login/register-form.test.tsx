@@ -47,7 +47,7 @@ describe('RegisterForm', () => {
     const { container } = render(<RegisterForm onSubmit={mockOnSubmit} loading={false} />);
     const password = container.querySelector('input[name="password"]') as HTMLInputElement;
     expect(password?.getAttribute('type')).toBe('password');
-    const toggle = screen.getByRole('button', { name: 'Show password' });
+    const toggle = screen.getByRole('button', { name: 'translated:ACTION.SHOW_PASSWORD' });
     fireEvent.click(toggle);
     expect(password?.getAttribute('type')).toBe('text');
     fireEvent.click(toggle);
