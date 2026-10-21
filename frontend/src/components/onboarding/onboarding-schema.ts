@@ -39,7 +39,7 @@ export type CronFormValues = z.infer<typeof cronSchema>;
 export const notificationSchema = z.object({
   enableNotifications: z.boolean().default(false).optional(),
   notificationURL: z.string().optional(),
-  notificationTypes: z.array(z.enum(EventType)),
+  notificationTypes: z.array(z.enum(EventType)).optional(),
 });
 
 export type NotificationFormValues = z.infer<typeof notificationSchema>;
@@ -54,7 +54,7 @@ export function toSettings(formValues: OnboardingFormValues): Settings {
     token: formValues.token?.trim(),
     cron: formValues.cron?.trim(),
     notificationURL: formValues.notificationURL?.trim(),
-    notificationTypes: formValues.notificationTypes,
+    notificationTypes: formValues.notificationTypes ?? [],
     retriesOnUnhealthy: formValues.retriesOnUnhealthy,
     retryDelay: formValues.retryDelay * 60000,
   };
