@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.4](https://github.com/omar-kada/air-compose/compare/v0.6.3...v0.6.4) (2026-10-21)
+
+
+### Bug Fixes
+
+* enable save button when no notification types selected ([#335](https://github.com/omar-kada/air-compose/issues/335)) ([0e8d8cd](https://github.com/omar-kada/air-compose/commit/0e8d8cd6d67fcd0c1832499c9031a0b541d61b58))
+
 ## [0.6.3](https://github.com/omar-kada/air-compose/compare/v0.6.2...v0.6.3) (2026-10-21)
 
 
