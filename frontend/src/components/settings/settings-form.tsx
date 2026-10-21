@@ -169,7 +169,9 @@ function SettingsSliderField({
       control={form.control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldTitle id={`field-${field.name}`}>{t(`SETTINGS.FORM.${name}`, { value: field.value ?? min })}</FieldTitle>
+          <FieldTitle id={`field-${field.name}`}>
+            {t(`SETTINGS.FORM.${name}`, { value: field.value ?? min })}
+          </FieldTitle>
           {withDescription && (
             <FieldDescription>{t(`SETTINGS.FORM.${name}_DESCRIPTION`)}</FieldDescription>
           )}

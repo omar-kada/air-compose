@@ -104,7 +104,9 @@ function PasswordField({
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={`field-${field.name}`}>{t(`SETTINGS.CHANGE_PASS_DIALOG.${name}`)}</FieldLabel>
+          <FieldLabel htmlFor={`field-${field.name}`}>
+            {t(`SETTINGS.CHANGE_PASS_DIALOG.${name}`)}
+          </FieldLabel>
           <InputGroup>
             <InputGroupInput
               {...field}
