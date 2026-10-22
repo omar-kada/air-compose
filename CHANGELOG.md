@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.6](https://github.com/omar-kada/air-compose/compare/v0.6.5...v0.6.6) (2026-10-22)
+
+
+### Bug Fixes
+
+* **ui:** remove notifications toggle, default all events, add a11y labels ([#341](https://github.com/omar-kada/air-compose/issues/341)) ([8ebafe4](https://github.com/omar-kada/air-compose/commit/8ebafe48d53563fe4ff5eccdac943e90c0e0bc0b))
+
 ## [0.6.5](https://github.com/omar-kada/air-compose/compare/v0.6.4...v0.6.5) (2026-10-21)
 
 
