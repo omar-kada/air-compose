@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.5](https://github.com/omar-kada/air-compose/compare/v0.6.4...v0.6.5) (2026-10-21)
+
+
+### Bug Fixes
+
+* **ui:** wire aria-labels to visible labels across forms and logs ([#337](https://github.com/omar-kada/air-compose/issues/337)) ([9d3172b](https://github.com/omar-kada/air-compose/commit/9d3172b63e0d6e03f946c35e44ed3b12af00f982))
+
 ## [0.6.4](https://github.com/omar-kada/air-compose/compare/v0.6.3...v0.6.4) (2026-10-21)
 
 
