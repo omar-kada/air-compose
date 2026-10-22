@@ -114,7 +114,7 @@ export function ConfigPage() {
               </Toggle>
             )}
             {form.formState.isDirty && (
-              <Button variant="outline" onClick={resetForm}>
+              <Button variant="outline" onClick={resetForm} aria-label={t('ACTION.RESET')}>
                 <RotateCcw />
                 {t('ACTION.RESET')}
               </Button>
@@ -123,6 +123,7 @@ export function ConfigPage() {
               <Button
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={disabled || !form.formState.isDirty}
+                aria-label={t('ACTION.SAVE')}
               >
                 {isSavePending ? <Spinner /> : <Save />}
                 {t('ACTION.SAVE')}

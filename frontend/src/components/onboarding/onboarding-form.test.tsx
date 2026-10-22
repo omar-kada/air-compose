@@ -83,7 +83,9 @@ describe('OnboardingForm', () => {
 
     // Step 2 → Submit
     await waitFor(() => {
-      expect(screen.getByRole('switch')).toBeTruthy();
+      expect(
+        screen.getByText('translated:ONBOARDING.FORM.NOTIFICATION_FORM_DESCRIPTION'),
+      ).toBeTruthy();
     });
     const submitButton = screen.getByRole('button', { name: /SUBMIT/ });
     await waitFor(() => {

@@ -37,7 +37,6 @@ export const cronSchema = z.object({
 export type CronFormValues = z.infer<typeof cronSchema>;
 
 export const notificationSchema = z.object({
-  enableNotifications: z.boolean().default(false).optional(),
   notificationURL: z.string().optional(),
   notificationTypes: z.array(z.enum(EventType)).optional(),
 });
@@ -81,9 +80,10 @@ export function toRepoFormValues(settings: Settings): RepoFormValues {
 
 export function toNotificationFormValues(settings: Settings): NotificationFormValues {
   return {
-    enableNotifications: settings.notificationURL != null,
     notificationURL: settings.notificationURL,
-    notificationTypes: settings.notificationTypes,
+    notificationTypes: settings.notificationTypes?.length
+      ? settings.notificationTypes
+      : Object.values(EventType),
   };
 }
 

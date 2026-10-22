@@ -117,7 +117,7 @@ export function RegisterForm({
       </FieldSet>
 
       <div className="flex justify-between items-center">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} aria-label={t('REGISTER.FORM.SUBMIT')}>
           {t('REGISTER.FORM.SUBMIT')}
         </Button>
         {loading && <Spinner />}

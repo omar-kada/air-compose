@@ -2,7 +2,6 @@ import { Controller, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldTitle } from '../ui/field';
 import { Input } from '../ui/input';
-import { Switch } from '../ui/switch';
 import { NotificationMultiSelect } from '../view';
 import type { NotificationFormValues } from './onboarding-schema';
 
@@ -14,34 +13,14 @@ export function NotificationForm({ form }: { form: UseFormReturn<NotificationFor
         {t('ONBOARDING.FORM.NOTIFICATION_FORM_DESCRIPTION')}
       </p>
       <FieldGroup className="mt-2">
-        <Controller
-          name="enableNotifications"
-          control={form.control}
-          render={({ field }) => (
-            <Field orientation="horizontal">
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                aria-labelledby={`field-${field.name}`}
-              />
-              <FieldTitle id={`field-${field.name}`}>
-                {t('ONBOARDING.FORM.enableNotifications')}
-              </FieldTitle>
-            </Field>
-          )}
-        />
-        {form.watch('enableNotifications') && (
-          <>
-            <NotificationField form={form} name="notificationURL" />
-            <NotificationMultiSelect
-              name="notificationTypes"
-              label="ONBOARDING.FORM.notificationTypes"
-              form={form}
-              withDescription
-              variant="horizontal"
-            ></NotificationMultiSelect>
-          </>
-        )}
+        <NotificationField form={form} name="notificationURL" withDescription />
+        <NotificationMultiSelect
+          name="notificationTypes"
+          label="ONBOARDING.FORM.notificationTypes"
+          form={form}
+          withDescription
+          variant="horizontal"
+        ></NotificationMultiSelect>
       </FieldGroup>
     </form>
   );
@@ -54,7 +33,7 @@ function NotificationField({
   withPlaceholder = true,
 }: {
   form: UseFormReturn<NotificationFormValues>;
-  name: keyof Omit<NotificationFormValues, 'enableNotifications'>;
+  name: keyof NotificationFormValues;
   withDescription?: boolean;
   withPlaceholder?: boolean;
 }) {

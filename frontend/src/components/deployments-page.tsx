@@ -43,7 +43,7 @@ export function DeploymentsPage() {
         title="DEPLOYMENTS.NO_DEPLOYMENTS"
         details="DEPLOYMENTS.NO_DEPLOYMENTS_DESCRIPTION"
       >
-        <Button variant="outline" size="sm" onClick={sync}>
+        <Button variant="outline" size="sm" onClick={sync} aria-label={t('ACTION.SYNC_NOW')}>
           <CloudSync />
           {t('ACTION.SYNC_NOW')}
         </Button>
@@ -65,7 +65,12 @@ export function DeploymentsPage() {
       }
     >
       {/* Mobile back button (only shows when content is open) */}
-      <Button variant="ghost" className="sm:hidden mx-4 my-2" onClick={handleBack}>
+      <Button
+        variant="ghost"
+        className="sm:hidden mx-4 my-2"
+        onClick={handleBack}
+        aria-label={t('ACTION.BACK')}
+      >
         <ArrowLeft className="h-5 w-5" /> {t('ACTION.BACK')}
       </Button>
       <Separator className="sm:hidden"></Separator>
