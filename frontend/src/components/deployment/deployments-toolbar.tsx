@@ -47,7 +47,7 @@ export function DeploymentToolbar({ className }: { className?: string }) {
               )}
         </span>
         <DeploymentDiffDialog>
-          <Button variant="outline">
+          <Button variant="outline" aria-label={t('DIFF.DIFF')}>
             <FileDiff />
             {!isMobile && t('DIFF.DIFF')}
             {diffError ? (
@@ -66,7 +66,12 @@ export function DeploymentToolbar({ className }: { className?: string }) {
             )}
           </Button>
         </DeploymentDiffDialog>
-        <Button variant="outline" onClick={sync} disabled={isSyncLoading}>
+        <Button
+          variant="outline"
+          onClick={sync}
+          disabled={isSyncLoading}
+          aria-label={t('ACTION.SYNC_NOW')}
+        >
           {isSyncLoading ? <Spinner /> : <CloudSync />}
           {!isMobile && t('ACTION.SYNC_NOW')}
           {syncError ? <TriangleAlert className="text-destructive" /> : null}
