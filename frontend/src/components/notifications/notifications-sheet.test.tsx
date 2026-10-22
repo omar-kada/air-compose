@@ -142,7 +142,9 @@ describe('NotificationSheet', () => {
     );
     openSheet();
     await waitFor(() => {
-      expect(screen.getByText('translated:ACTION.CLOSE')).toBeTruthy();
+      expect(
+        screen.getAllByRole('button', { name: 'translated:ACTION.CLOSE' }).length,
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -161,8 +163,10 @@ describe('NotificationSheet', () => {
       </NotificationSheet>,
     );
     await openSheetAndWaitForItems();
-    const closeButton = await screen.findByText('translated:ACTION.CLOSE');
-    fireEvent.click(closeButton);
+    const closeButtons = screen.getAllByRole('button', {
+      name: 'translated:ACTION.CLOSE',
+    });
+    fireEvent.click(closeButtons[0]);
     await waitFor(() => {
       expect(mockUseResetUnreadCount).toHaveBeenCalled();
     });
