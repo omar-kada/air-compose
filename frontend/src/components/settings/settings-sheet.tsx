@@ -60,7 +60,10 @@ export function SettingsSheet({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetDescription className="hidden">{t('SETTINGS.DESCRIPTION')}</SheetDescription>
       {children && <SheetTrigger asChild>{children}</SheetTrigger>}
-      <SheetContent className="w-full md:w-none flex flex-col h-full">
+      <SheetContent
+        className="w-full md:w-none flex flex-col h-full"
+        closeLabel={t('ACTION.CLOSE')}
+      >
         <SheetHeader>
           <SheetTitle>{t('SETTINGS.SETTINGS')}</SheetTitle>
           <SheetDescription>{`${t('SETTINGS.VERSION')}: ${__APP_VERSION__}`}</SheetDescription>

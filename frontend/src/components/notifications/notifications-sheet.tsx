@@ -46,6 +46,7 @@ export function NotificationSheet({ children }: { children: ReactNode }) {
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent
         className="w-full md:w-none flex flex-col h-full"
+        closeLabel={t('ACTION.CLOSE')}
         aria-describedby={t('NOTIFICATIONS.DESCRIPTION')}
       >
         <SheetHeader>

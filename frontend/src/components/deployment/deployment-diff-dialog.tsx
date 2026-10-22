@@ -17,7 +17,10 @@ export function DeploymentDiffDialog({ children }: { children?: ReactNode }) {
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-full max-w-none sm:max-w-[90vw] lg:max-w-4xl">
+      <DialogContent
+        className="w-full max-w-none sm:max-w-[90vw] lg:max-w-4xl"
+        closeLabel={t('ACTION.CLOSE')}
+      >
         <DialogTitle>{t('DIFF.DIFF_BETWEEN_DEPLOYED_AND_REMOTE')}</DialogTitle>
         <DialogDescription>
           {t('DIFF.DIFF_BETWEEN_DEPLOYED_AND_REMOTE_DESCRIPTION')}

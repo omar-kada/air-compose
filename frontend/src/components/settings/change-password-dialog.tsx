@@ -56,7 +56,7 @@ export function ChangePasswordDialog({ children }: { children: ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-full max-w-4xl">
+      <DialogContent className="w-full max-w-4xl" closeLabel={t('ACTION.CLOSE')}>
         <DialogTitle>{t('SETTINGS.CHANGE_PASS_DIALOG.TITLE')}</DialogTitle>
         <DialogDescription>{t('SETTINGS.CHANGE_PASS_DIALOG.DESCRIPTION')}</DialogDescription>
         <ErrorAlert title="ALERT.CHANGE_PASS_ERROR" error={error} />
