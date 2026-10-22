@@ -26,6 +26,7 @@ const gotoHome = () => (window.location.href = '/');
 
 export function Topbar({ children, className }: { children?: ReactNode; className?: string }) {
   const { data: user } = useUser();
+  const { t } = useTranslation();
   const unreadCount = useUnreadNotificationCount();
 
   return (
@@ -42,7 +43,12 @@ export function Topbar({ children, className }: { children?: ReactNode; classNam
         {user && (
           <div className="flex items-center gap-2">
             <NotificationSheet>
-              <Button variant="ghost" size="icon" className="relative rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative rounded-full"
+                aria-label={t('MENU.NOTIFICATION')}
+              >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <Badge
@@ -87,7 +93,12 @@ function UserDropDown({ user }: { user: User }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full cursor-pointer"
+            aria-label={t('MENU.ACCOUNT')}
+          >
             <Avatar>
               <AvatarFallback className="select-none">{initial}</AvatarFallback>
             </Avatar>

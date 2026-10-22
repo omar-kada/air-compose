@@ -27,31 +27,13 @@ vi.mock('../ui/input', () => ({
   Input: (props: React.ComponentProps<'input'>) => <input data-slot="input" {...props} />,
 }));
 
-vi.mock('../ui/switch', () => ({
-  Switch: ({
-    checked,
-    onCheckedChange,
-  }: {
-    checked?: boolean;
-    onCheckedChange?: (checked: boolean) => void;
-  }) => (
-    <input
-      type="checkbox"
-      data-slot="switch"
-      checked={checked}
-      onChange={(e) => onCheckedChange?.(e.target.checked)}
-    />
-  ),
-}));
-
 vi.mock('../view', () => ({
   NotificationMultiSelect: () => <div data-slot="notification-multi-select" />,
 }));
 
-function TestWrapper({ enableNotifications = false }: { enableNotifications?: boolean }) {
+function TestWrapper() {
   const form = useForm<NotificationFormValues>({
     defaultValues: {
-      enableNotifications,
       notificationURL: '',
       notificationTypes: [],
     },
@@ -67,20 +49,9 @@ describe('NotificationForm', () => {
     );
   });
 
-  it('renders enableNotifications switch', () => {
+  it('always renders notification fields', () => {
     const { container } = render(<TestWrapper />);
-    expect(container.querySelector('[data-slot="switch"]')).not.toBeNull();
-  });
-
-  it('renders notification fields when notifications are enabled', () => {
-    const { container } = render(<TestWrapper enableNotifications />);
     expect(container.querySelector('[data-slot="input"]')).not.toBeNull();
     expect(container.querySelector('[data-slot="notification-multi-select"]')).not.toBeNull();
-  });
-
-  it('does not render notification fields when notifications are disabled', () => {
-    const { container } = render(<TestWrapper enableNotifications={false} />);
-    expect(container.querySelector('[data-slot="input"]')).toBeNull();
-    expect(container.querySelector('[data-slot="notification-multi-select"]')).toBeNull();
   });
 });

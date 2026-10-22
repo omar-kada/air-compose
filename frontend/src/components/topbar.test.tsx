@@ -84,7 +84,7 @@ const renderTopbar = () =>
 
 const openUserDropDown = async () => {
   const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: /^T$/ }));
+  await user.click(screen.getByRole('button', { name: /translated:MENU.ACCOUNT/ }));
 };
 
 const findMenuItem = (key: string) =>

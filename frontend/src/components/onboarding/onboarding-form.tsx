@@ -1,3 +1,4 @@
+import { EventType } from '@/api/api';
 import type { Settings } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,8 +51,7 @@ export function OnboardingForm({
   const notificationForm = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationSchema),
     defaultValues: {
-      enableNotifications: false,
-      notificationTypes: [],
+      notificationTypes: Object.values(EventType),
     },
   });
   const forms = [repoForm, cronForm, notificationForm];
