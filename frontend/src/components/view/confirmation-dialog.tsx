@@ -42,7 +42,7 @@ export function ConfirmationDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-full max-w-4xl" closeLabel={t('ACTION.CLOSE')}>
+      <DialogContent className="w-full max-w-4xl">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
         <DialogFooter>
