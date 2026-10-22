@@ -47,7 +47,11 @@ export function Topbar({ children, className }: { children?: ReactNode; classNam
                 variant="ghost"
                 size="icon"
                 className="relative rounded-full"
-                aria-label={t('MENU.NOTIFICATION')}
+                aria-label={
+                  unreadCount > 0
+                    ? `${t('MENU.NOTIFICATION')} (${unreadCount})`
+                    : t('MENU.NOTIFICATION')
+                }
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (

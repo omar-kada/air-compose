@@ -47,7 +47,14 @@ export function DeploymentToolbar({ className }: { className?: string }) {
               )}
         </span>
         <DeploymentDiffDialog>
-          <Button variant="outline" aria-label={t('DIFF.DIFF')}>
+          <Button
+            variant="outline"
+            aria-label={
+              diffs != null && diffs.length > 0
+                ? `${t('DIFF.DIFF')} (${diffs.length})`
+                : t('DIFF.DIFF')
+            }
+          >
             <FileDiff />
             {!isMobile && t('DIFF.DIFF')}
             {diffError ? (
