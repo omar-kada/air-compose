@@ -32,6 +32,7 @@ export function LogEntries({ logs }: { logs: LogMessages }) {
           size="xs"
           variant="ghost"
           className="text-muted-foreground"
+          aria-label={t('LOGS.EXPAND_ALL')}
           aria-pressed={expandAll}
           onClick={() => {
             setExpandAll(!expandAll);

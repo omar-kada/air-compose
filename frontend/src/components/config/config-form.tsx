@@ -59,7 +59,12 @@ export function ConfigForm({
         />
       ))}
       {!disabled && (
-        <Button variant="default" type="button" onClick={addNewService}>
+        <Button
+          variant="default"
+          type="button"
+          onClick={addNewService}
+          aria-label={t('CONFIGURATION.FORM.ADD_SERVICE')}
+        >
           <Plus /> {t('CONFIGURATION.FORM.ADD_SERVICE')}
         </Button>
       )}

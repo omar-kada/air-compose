@@ -76,7 +76,8 @@ export function GroupedCheckboxes({ groups, value, onChange, variant = "vertical
                   variant="ghost"
                   size="xs"
                   onClick={() => handleSelectAll(group.items)}
-                  disabled={allSelected}   // disable if already all selected
+                  disabled={allSelected}
+                  aria-label={t('ACTION.SELECT_ALL')}
                 >
                     <Check></Check>
                   {t('ACTION.SELECT_ALL')}
@@ -86,7 +87,8 @@ export function GroupedCheckboxes({ groups, value, onChange, variant = "vertical
                   variant="ghost"
                   size="xs"
                   onClick={() => handleClearAll(group.items)}
-                  disabled={noneSelected}  // disable if already none selected
+                  disabled={noneSelected}
+                  aria-label={t('ACTION.CLEAR_ALL')}
                 >
                     <X></X>
                   {t('ACTION.CLEAR_ALL')}

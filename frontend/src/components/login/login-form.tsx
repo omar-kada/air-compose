@@ -118,7 +118,7 @@ export function LoginForm({
         />
       </FieldSet>
       <div className="flex justify-between items-center">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} aria-label={t('LOGIN.FORM.SUBMIT')}>
           {t('LOGIN.FORM.SUBMIT')}
         </Button>
         {loading && <Spinner />}

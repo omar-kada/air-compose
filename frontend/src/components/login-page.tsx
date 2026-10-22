@@ -25,7 +25,9 @@ export function LoginPage() {
           {registration?.oidc && (
             <>
               <div className="flex w-full justify-around">
-                <Button onClick={loginWithOidc}>{t('LOGIN.FORM.LOGIN_WITH_OIDC')}</Button>
+                <Button onClick={loginWithOidc} aria-label={t('LOGIN.FORM.LOGIN_WITH_OIDC')}>
+                  {t('LOGIN.FORM.LOGIN_WITH_OIDC')}
+                </Button>
               </div>
               <TextSeparator text={t('LOGIN.FORM.OR')} />
             </>

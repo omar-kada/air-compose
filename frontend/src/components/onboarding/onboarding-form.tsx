@@ -146,11 +146,19 @@ export function OnboardingForm({
       </div>
 
       <div className="mt-8 flex w-full justify-between gap-4">
-        <Button disabled={step === 0} onClick={() => setStep(step - 1)}>
+        <Button
+          disabled={step === 0}
+          onClick={() => setStep(step - 1)}
+          aria-label={t('ONBOARDING.FORM.PREVIOUS')}
+        >
           <ArrowLeft />
           {t('ONBOARDING.FORM.PREVIOUS')}
         </Button>
-        <Button disabled={!forms[step].formState.isValid} onClick={handleNextAndSumbit}>
+        <Button
+          disabled={!forms[step].formState.isValid}
+          onClick={handleNextAndSumbit}
+          aria-label={step === 2 ? t('ONBOARDING.FORM.SUBMIT') : t('ONBOARDING.FORM.NEXT')}
+        >
           {step === 2 ? t('ONBOARDING.FORM.SUBMIT') : t('ONBOARDING.FORM.NEXT')}
           {step === 2 ? <Save /> : <ArrowRight />}
         </Button>

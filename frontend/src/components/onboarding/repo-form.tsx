@@ -55,6 +55,7 @@ export function RepoForm({ form }: { form: UseFormReturn<RepoFormValues> }) {
             type="button"
             onClick={handleTestConnection}
             disabled={isPending || !form.watch('repo')}
+            aria-label={t('ONBOARDING.FORM.TEST_CONNECTION')}
           >
             {isPending ? <Spinner /> : <Cable />}
             {t('ONBOARDING.FORM.TEST_CONNECTION')}

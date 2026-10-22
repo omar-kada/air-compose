@@ -75,11 +75,13 @@ export function SettingsSheet({
           </div>
         </ScrollArea>
         <SheetFooter>
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
+          <Button type="submit" onClick={form.handleSubmit(onSubmit)} aria-label={t('ACTION.SAVE')}>
             {t('ACTION.SAVE')}
           </Button>
           <SheetClose asChild>
-            <Button variant="outline">{t('ACTION.CLOSE')}</Button>
+            <Button variant="outline" aria-label={t('ACTION.CLOSE')}>
+              {t('ACTION.CLOSE')}
+            </Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

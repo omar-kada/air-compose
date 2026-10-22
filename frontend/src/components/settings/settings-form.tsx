@@ -32,7 +32,7 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
         <SettingsSection title={t('SETTINGS.FORM.ACCOUNT')} Icon={UserIcon} className="flex gap-2">
           {!isPending && user?.type === UserType.LOCAL && (
             <ChangePasswordDialog>
-              <Button type="button">
+              <Button type="button" aria-label={t('SETTINGS.FORM.CHANGE_PASSWORD')}>
                 <KeyRound />
                 {t('SETTINGS.FORM.CHANGE_PASSWORD')}
               </Button>
@@ -43,7 +43,11 @@ export function SettingsForm({ form }: { form: UseFormReturn<FormValues> }) {
             description={t('SETTINGS.FORM.DELETE_ACCOUNT_DIALOG.DESCRIPTION')}
             onConfirm={deleteAccount}
           >
-            <Button variant="destructive" type="button">
+            <Button
+              variant="destructive"
+              type="button"
+              aria-label={t('SETTINGS.FORM.DELETE_ACCOUNT')}
+            >
               <Trash />
               {t('SETTINGS.FORM.DELETE_ACCOUNT')}
             </Button>

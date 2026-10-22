@@ -69,13 +69,17 @@ export function ChangePasswordDialog({ children }: { children: ReactNode }) {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">
+            <Button variant="outline" aria-label={t('ACTION.CANCEL')}>
               <X />
               {t('ACTION.CANCEL')}
             </Button>
           </DialogClose>
 
-          <Button type="button" onClick={handleSubmit(onChangePass)}>
+          <Button
+            type="button"
+            onClick={handleSubmit(onChangePass)}
+            aria-label={t('ACTION.CONFIRM')}
+          >
             {loading ? <Spinner /> : <Check />}
             {t('ACTION.CONFIRM')}
           </Button>
