@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.7](https://github.com/omar-kada/air-compose/compare/v0.6.6...v0.6.7) (2026-10-23)
+
+
+### Bug Fixes
+
+* **config:** memoize ConfigForm with React.memo to prevent unnecessary re-renders during typing ([#344](https://github.com/omar-kada/air-compose/issues/344)) ([4724b6f](https://github.com/omar-kada/air-compose/commit/4724b6fb7f67991051d292547320ff337f7b796e))
+
 ## [0.6.6](https://github.com/omar-kada/air-compose/compare/v0.6.5...v0.6.6) (2026-10-22)
 
 
