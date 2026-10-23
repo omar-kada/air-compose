@@ -2,14 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib';
 import { Plus } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, memo } from 'react';
 import { useFieldArray, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type FormValues } from './config-form-schema';
 import { EnvVarArrayForm } from './env-vars-array-form';
 import { ServiceCard } from './service-card';
 
-export function ConfigForm({
+export const ConfigForm = memo(function ConfigForm({
   form,
   className,
   disabled,
@@ -70,4 +70,4 @@ export function ConfigForm({
       )}
     </form>
   );
-}
+});
