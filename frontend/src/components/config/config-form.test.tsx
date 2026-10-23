@@ -4,7 +4,7 @@ import type { FormValues } from './config-form-schema';
 import { ConfigForm } from './config-form';
 
 const { envVarArrayFormSpy } = vi.hoisted(() => ({
-  envVarArrayFormSpy: vi.fn(() => <div data-slot="env-vars-array-form" />),
+  envVarArrayFormSpy: vi.fn((_props: unknown) => <div data-slot="env-vars-array-form" />),
 }));
 
 vi.mock('react-i18next', async () => {
