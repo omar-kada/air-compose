@@ -33,14 +33,17 @@ export function EnvVarArrayForm({
 
   const formData = useWatch({ control, name });
 
-  // add default empty line
+  // add default empty line — debounced to avoid interfering with typing
   useEffect(() => {
     if (!formData) return;
 
     const last = formData.at(-1);
 
     if (last?.key && last.key.trim() !== '') {
-      append({ key: '', value: '' });
+      const handler = setTimeout(() => {
+        append({ key: '', value: '' });
+      }, 300);
+      return () => clearTimeout(handler);
     }
   }, [formData, append]);
 
