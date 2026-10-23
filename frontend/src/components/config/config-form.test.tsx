@@ -3,6 +3,10 @@ import { useForm } from 'react-hook-form';
 import type { FormValues } from './config-form-schema';
 import { ConfigForm } from './config-form';
 
+const { envVarArrayFormSpy } = vi.hoisted(() => ({
+  envVarArrayFormSpy: vi.fn(() => <div data-slot="env-vars-array-form" />),
+}));
+
 vi.mock('react-i18next', async () => {
   const { createI18nMock } = await import('@/tests/mock-factories');
   return createI18nMock();
@@ -19,7 +23,7 @@ vi.mock('./service-card', () => ({
 }));
 
 vi.mock('./env-vars-array-form', () => ({
-  EnvVarArrayForm: () => <div data-slot="env-vars-array-form" />,
+  EnvVarArrayForm: (props: unknown) => envVarArrayFormSpy(props),
 }));
 
 function TestWrapper({ disabled }: { disabled?: boolean }) {
@@ -29,10 +33,14 @@ function TestWrapper({ disabled }: { disabled?: boolean }) {
       globalEnvVars: [],
     },
   });
-  return <ConfigForm form={form} disabled={disabled} />;
+  return <ConfigForm form={form} className="flex-1 p-4" disabled={disabled} />;
 }
 
 describe('ConfigForm', () => {
+  beforeEach(() => {
+    envVarArrayFormSpy.mockClear();
+  });
+
   it('renders service cards for each service', () => {
     const { container } = render(<TestWrapper />);
     const cards = container.querySelectorAll('[data-slot="service-card"]');
@@ -86,5 +94,23 @@ describe('ConfigForm', () => {
     const { container } = render(<TestWrapper />);
     fireEvent.click(container.querySelector('[data-slot="remove-service"]') as HTMLElement);
     expect(container.querySelectorAll('[data-slot="service-card"]')).toHaveLength(0);
+  });
+
+  it('does not re-render children when re-rendered with same props (React.memo)', () => {
+    const { rerender } = render(<TestWrapper />);
+
+    // EnvVarArrayForm mock should have rendered exactly once
+    expect(envVarArrayFormSpy).toHaveBeenCalledTimes(1);
+
+    // Re-render with identical props — React.memo should prevent ConfigForm
+    // from re-rendering because form (stable ref), className, and disabled
+    // are all identical.
+    rerender(<TestWrapper />);
+
+    // Without React.memo: ConfigForm re-renders on rerender → EnvVarArrayForm
+    // mock is called again → spy count = 2 (test FAILS)
+    // With React.memo: ConfigForm skips re-render → EnvVarArrayForm mock
+    // not called again → spy count = 1 (test PASSES)
+    expect(envVarArrayFormSpy).toHaveBeenCalledTimes(1);
   });
 });
