@@ -1,6 +1,6 @@
 import { Equal, Trash2 } from 'lucide-react';
-import { Fragment, useEffect } from 'react';
-import { Controller, useFieldArray, useWatch, type Control } from 'react-hook-form';
+import { Fragment } from 'react';
+import { Controller, useFieldArray, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Field, FieldError } from '../ui/field';
 import {
@@ -30,20 +30,6 @@ export function EnvVarArrayForm({
     control,
     name,
   });
-
-  const formData = useWatch({ control, name });
-
-  // add default empty line
-  useEffect(() => {
-    if (!formData) return;
-
-    const last = formData.at(-1);
-
-    if (last?.key && last.key.trim() !== '') {
-      append({ key: '', value: '' });
-    }
-  }, [formData, append]);
-
   return (
     <div className="grid grid-cols-2 gap-2 max-w-150">
       {varArray.map((varField, index) => (
@@ -56,6 +42,12 @@ export function EnvVarArrayForm({
                 <InputGroup>
                   <InputGroupInput
                     {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      if (index === varArray.length - 1 && event.target.value.trim() !== '') {
+                        append({ key: '', value: '' }, { shouldFocus: false });
+                      }
+                    }}
                     aria-invalid={fieldState.invalid}
                     autoComplete="off"
                     placeholder={t('CONFIGURATION.FORM.KEY')}
