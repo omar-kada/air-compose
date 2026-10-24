@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.8](https://github.com/omar-kada/air-compose/compare/v0.6.7...v0.6.8) (2026-10-24)
+
+
+### Bug Fixes
+
+* always trigger new row in env var array ([#347](https://github.com/omar-kada/air-compose/issues/347)) ([f36471d](https://github.com/omar-kada/air-compose/commit/f36471dc2e285f34d8c68c40c0ab4a71883866da))
+
 ## [0.6.7](https://github.com/omar-kada/air-compose/compare/v0.6.6...v0.6.7) (2026-10-23)
 
 
