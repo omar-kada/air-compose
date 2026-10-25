@@ -19,7 +19,7 @@ a Linux environement with `docker` installed
 
 ## Features
 
-1. Auto sync&deploy services from a Git repository
+1. Auto sync&deploy services (including itself) from a Git repository
 2. No special syntax, compose stacks configuration are kept in their original form and are accessible to the user
 3. Modern UI to manage the tool remotely
 4. Notifications on deployments and health (through [Shoutrrr](https://containrrr.dev/shoutrrr))
