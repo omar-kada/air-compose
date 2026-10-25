@@ -1,0 +1,4 @@
+out/
+node_modules/
+cli.tape
+*.log
