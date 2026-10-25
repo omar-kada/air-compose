@@ -1,0 +1,73 @@
+# Template: `make` renders it to cli.tape with envsubst
+# (only ${DEMO_BASE} is substituted).
+
+Output out/cli.mp4
+Output out/debug.txt
+Require docker
+Require curl
+
+Set Shell bash
+Set Width 1280
+Set Height 720
+Set FontFamily "JetBrains Mono"
+Set FontSize 20
+Set Padding 30
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 45ms
+
+# --- off-camera setup ---
+Hide
+Type 'say() { printf "\033[1A\033[2K\r\r\n\033[1;32m%s\033[0m\r\n\r\n" "$1"; }'
+Enter
+Type "export PS1='\[\033[1;32m\]demo\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ \[\033[0m\] '"
+Enter
+Type "clear" Enter
+Show
+
+# 1. folders: data + a services folder that hosts AirCompose itself
+Hide
+Type "mkdir -p ${DEMO_BASE}" Enter
+Type "cd ${DEMO_BASE}" Enter
+Type "clear" Enter
+Type@0ms "say '==> Creating base directory structure'"
+Enter
+Show
+Sleep 1s
+Type "mkdir -p data services/air-compose" Enter
+Sleep 2s
+
+Hide
+Type@0ms "say '==> Creating compose and env files'" Enter
+Show
+Sleep 1s
+Type "cd services/air-compose" Enter
+Sleep 2s
+
+Type@12ms "curl -sS -o compose.yaml https://raw.githubusercontent.com/omar-kada/air-compose-config/refs/heads/main/services/air-compose/compose.yaml" Enter
+Sleep 2s
+
+Type "nano .env" Enter
+Type "AIR_COMPOSE_SERVICES_DIR=${DEMO_BASE}/services"
+Enter
+Type "AIR_COMPOSE_WORKING_DIR=${DEMO_BASE}/data/air-compose"
+Sleep 2s
+Ctrl+X
+Sleep 2s
+Type "Y"
+Sleep 2s
+Enter
+Sleep 2s
+
+Type "ls -au" Enter
+Sleep 2s
+
+Hide
+Type@0ms "say '==> Starting air-compose'" Enter
+Show
+Sleep 1s
+
+Type "docker compose up -d --wait" Enter
+Sleep 3s
+Wait+Screen@60s /Healthy/
+Sleep 5s
+

@@ -2,7 +2,7 @@ version = 1
 
 test_patterns = ["**/*_test.*"]
 
-exclude_patterns = ["**/src/components/ui/*", "**/src/api/*", "**/api.gen.go"]
+exclude_patterns = ["**/src/components/ui/*", "**/src/api/*", "**/api.gen.go", "**/demo/*"]
 
 [[analyzers]]
 name = "test-coverage"

@@ -49,3 +49,10 @@ orval-gen:
 
 # docker-run:
 # 	docker compose --env-file ./_ignore_.env up --build
+
+.PHONY: demo
+demo:
+	$(MAKE) -C demo
+	mkdir -p docs/static/videos
+	cp demo/out/demo.mp4 docs/static/videos/demo.mp4
+	cp demo/out/demo.gif docs/static/img/demo.gif

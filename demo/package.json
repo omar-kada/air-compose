@@ -1,0 +1,11 @@
+{
+  "name": "air-compose-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "record:ui": "node --env-file=demo.env ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
