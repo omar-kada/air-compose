@@ -52,6 +52,7 @@ orval-gen:
 
 .PHONY: demo
 demo:
+	docker build -t air-compose:local .
 	$(MAKE) -C demo
 	mkdir -p docs/static/videos
 	cp demo/out/demo.mp4 docs/static/videos/demo.mp4

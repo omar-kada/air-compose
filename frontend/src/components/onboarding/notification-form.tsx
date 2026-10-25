@@ -13,7 +13,7 @@ export function NotificationForm({ form }: { form: UseFormReturn<NotificationFor
         {t('ONBOARDING.FORM.NOTIFICATION_FORM_DESCRIPTION')}
       </p>
       <FieldGroup className="mt-2">
-        <NotificationField form={form} name="notificationURL" withDescription />
+        <NotificationField form={form} name="notificationURL" />
         <NotificationMultiSelect
           name="notificationTypes"
           label="ONBOARDING.FORM.notificationTypes"

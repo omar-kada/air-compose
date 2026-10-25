@@ -17,18 +17,20 @@ Set TypingSpeed 45ms
 
 # --- off-camera setup ---
 Hide
-Type 'say() { printf "\033[1A\033[2K\r\r\n\033[1;32m%s\033[0m\r\n\r\n" "$1"; }'
+Type@0ms 'clearline() { printf "\033[1A\033[2K\033[1A\033[2K\r"; }'
 Enter
-Type "export PS1='\[\033[1;32m\]demo\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ \[\033[0m\] '"
+Type@0ms 'say() { printf "\033[1A\033[2K\r\r\n\033[1;32m%s\033[0m\r\n\r\n" "$1"; }'
 Enter
-Type "clear" Enter
+Type@0ms "export PS1='\[\033[1;32m\]demo\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ \[\033[0m\] '"
+Enter
+Type@0ms "clear" Enter
 Show
 
 # 1. folders: data + a services folder that hosts AirCompose itself
 Hide
-Type "mkdir -p ${DEMO_BASE}" Enter
-Type "cd ${DEMO_BASE}" Enter
-Type "clear" Enter
+Type@0ms "mkdir -p ${DEMO_BASE}" Enter
+Type@0ms "cd ${DEMO_BASE}" Enter
+Type@0ms "clear" Enter
 Type@0ms "say '==> Creating base directory structure'"
 Enter
 Show
@@ -43,10 +45,16 @@ Sleep 1s
 Type "cd services/air-compose" Enter
 Sleep 2s
 
-Type@12ms "curl -sS -o compose.yaml https://raw.githubusercontent.com/omar-kada/air-compose-config/refs/heads/main/services/air-compose/compose.yaml" Enter
+Type@12ms "curl -sS -o compose.yaml https://raw.githubusercontent.com/omar-kada/air-compose/refs/heads/main/compose.yaml" Enter
+Hide
+Type "sed -i 's|ghcr.io/omar-kada/air-compose:latest|air-compose:local|' compose.yaml" Enter
+Type@0ms "clearline" Enter
+Type@0ms "clearline" Enter
+Show
 Sleep 2s
 
 Type "nano .env" Enter
+Sleep 1s
 Type "AIR_COMPOSE_SERVICES_DIR=${DEMO_BASE}/services"
 Enter
 Type "AIR_COMPOSE_WORKING_DIR=${DEMO_BASE}/data/air-compose"
@@ -70,4 +78,3 @@ Type "docker compose up -d --wait" Enter
 Sleep 3s
 Wait+Screen@60s /Healthy/
 Sleep 5s
-
