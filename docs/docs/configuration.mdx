@@ -41,7 +41,7 @@ environment:
 services:
   service1:
     PORT: "8080"
-    API_KEY: "secret"
+    DATA_PATH: "your-data-path"
   service2:
     PORT: "3000"
 ```
@@ -105,6 +105,12 @@ services:
 
 :::note
 Per-service variables override global variables.
+
+Local environment variables can be stored in the air-compose config (`config.yaml`) or in a local `.env` file for each stack.
+
+:::warning
+A `.env` file in the Git repository will overwrite local `.env` files when the repo is synced. Do not commit `.env` files to the repo if you are using local `.env` files.
+:::
 :::
 
 ## CLI Parameters
