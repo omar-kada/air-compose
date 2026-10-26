@@ -3,7 +3,7 @@
 AirCompose is a lightweight gitops automation tool that handles **Docker compose** stacks deployment.  
 Its purpose is to make deploying and updating a self-hosted environment **simple**, **fast**, and **reproducible**. without the need to have heavy tooling or dependencies.
 
-https://github.com/user-attachments/assets/bddfd025-338f-4200-bd02-76f334d3bb33
+https://github.com/user-attachments/assets/3b9df7a7-e8ff-4786-ad69-d43f16a07acd
 
 [Documentation](https://omar-kada.github.io/air-compose)
 
