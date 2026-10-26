@@ -41,7 +41,7 @@ environment:
 services:
   service1:
     PORT: "8080"
-    API_KEY: "secret"
+    API_KEY: "your-api-key"
   service2:
     PORT: "3000"
 ```
@@ -105,6 +105,8 @@ services:
 
 :::note
 Per-service variables override global variables.
+
+Local environment variables can be stored in the air-compose config (`config.yaml`) or in a local `.env` file for each stack.
 :::
 
 ## CLI Parameters
