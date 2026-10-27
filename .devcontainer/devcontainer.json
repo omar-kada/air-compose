@@ -1,6 +1,7 @@
 {
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
+  "command": "sleep infinity",
   "forwardPorts": [5005],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
@@ -13,7 +14,7 @@
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-  "postStartCommand": "mkdir -p /data /data/repo && cd /data && nohup /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 5; echo '=== air-compose log ==='; cat /tmp/air-compose.log",
+  "postStartCommand": "mkdir -p /data /data/repo && cd /data && nohup /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 5; echo '=== air-compose log ==='; cat /tmp/air-compose.log; echo '=== Port check ==='; curl -s http://localhost:5005 > /dev/null 2>&1 && echo 'Port 5005 is open ✅' || echo 'Port 5005 is NOT open ❌'",
   "customizations": {
     "codespaces": {
       "openFiles": [
