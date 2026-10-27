@@ -1,10 +1,19 @@
 # air-compose demo configuration
-# This file is mounted into the container at /data/config.yaml
-# Edit to customize the demo environment — changes are live-reloaded.
+# Mounted at /data/config.yaml inside the container
+# Edit any field to customize your demo — changes are saved on disk.
 
-# Global environment variables applied to all deployed services
+settings:
+  git:
+    repo: ""
+    branch: "main"
+  schedule:
+    cron: ""          # empty = auto-sync disabled
+    retriesOnUnhealthy: 3
+    retryDelay: 30000
+  notifications: {}
+  oidc: {}
+
 environment:
-  TZ: UTC
+  TZ: "UTC"
 
-# Per-service configuration (key/value pairs per service name)
 services: {}

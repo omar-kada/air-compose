@@ -2,6 +2,10 @@
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
   "forwardPorts": [5005],
+  "containerEnv": {
+    "AIR_COMPOSE_WORKING_DIR": "/data",
+    "AIR_COMPOSE_PORT": "5005"
+  },
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
