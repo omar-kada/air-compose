@@ -5,7 +5,8 @@
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
     "AIR_COMPOSE_PORT": "5005",
-    "AIR_COMPOSE_DISPLAY_CONFIG": "true"
+    "AIR_COMPOSE_DISPLAY_CONFIG": "true",
+    "AIR_COMPOSE_SERVICES_DIR": "repo"
   },
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
