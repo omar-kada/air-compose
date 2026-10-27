@@ -4,10 +4,10 @@
 
 settings:
   git:
-    repo: ""
+    repo: "https://github.com/omar-kada/air-compose-config"
     branch: "main"
   schedule:
-    cron: ""          # empty = auto-sync disabled
+    cron: "@hourly"
     retriesOnUnhealthy: 3
     retryDelay: 30000
   notifications: {}
