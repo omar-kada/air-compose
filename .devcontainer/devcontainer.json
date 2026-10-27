@@ -1,0 +1,17 @@
+{
+  "name": "air-compose Demo",
+  "image": "ghcr.io/omar-kada/air-compose:latest",
+  "forwardPorts": [5005],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "postStartCommand": "mkdir -p /data && cd /data && nohup /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 2",
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "/data/config.yaml"
+      ]
+    }
+  }
+}

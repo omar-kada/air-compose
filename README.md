@@ -7,6 +7,8 @@ https://github.com/user-attachments/assets/ce42ed20-5ca3-400d-bf36-2525a099d170
 
 [Documentation](https://omar-kada.github.io/air-compose)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/omar-kada/air-compose)
+
 ## Summary
 
 - [Requirements](#requirements)
