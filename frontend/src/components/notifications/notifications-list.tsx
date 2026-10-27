@@ -88,7 +88,7 @@ function Notification({
     [onClick, notification],
   );
   return (
-    <Item asChild className={cn(unread ? 'bg-accent ' : '', className, 'flex-nowrap')}>
+    <Item asChild className={cn(unread ? 'bg-accent ' : '', className)}>
       <a href="" onClick={handleClick}>
         <ItemMedia variant="default">
           <NotificationBadge notification={notification} />
