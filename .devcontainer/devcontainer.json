@@ -12,7 +12,7 @@
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-  "postStartCommand": "mkdir -p /data && cd /data && nohup /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 2",
+  "postStartCommand": "mkdir -p /data && cd /data && /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 5; echo '=== air-compose log ==='; cat /tmp/air-compose.log",
   "customizations": {
     "codespaces": {
       "openFiles": [
