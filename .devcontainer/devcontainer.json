@@ -6,13 +6,14 @@
     "AIR_COMPOSE_WORKING_DIR": "/data",
     "AIR_COMPOSE_PORT": "5005",
     "AIR_COMPOSE_DISPLAY_CONFIG": "true",
-    "AIR_COMPOSE_SERVICES_DIR": "repo"
+    "AIR_COMPOSE_SERVICES_DIR": "repo",
+    "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true"
   },
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-  "postStartCommand": "mkdir -p /data && cd /data && /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 5; echo '=== air-compose log ==='; cat /tmp/air-compose.log",
+  "postStartCommand": "mkdir -p /data /data/repo && cd /data && nohup /app/air-compose run > /tmp/air-compose.log 2>&1 & sleep 5; echo '=== air-compose log ==='; cat /tmp/air-compose.log",
   "customizations": {
     "codespaces": {
       "openFiles": [
