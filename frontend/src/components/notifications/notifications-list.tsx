@@ -93,7 +93,7 @@ function Notification({
         <ItemMedia variant="default">
           <NotificationBadge notification={notification} />
         </ItemMedia>
-        <ItemContent>
+        <ItemContent className="min-w-0 overflow-hidden">
           <ItemTitle className="line-clamp-1">
             {t(`EVENT_TYPE.${notification.type}`, { ...notification })}
           </ItemTitle>
