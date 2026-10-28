@@ -13,7 +13,8 @@
     "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
   },
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=air-compose-stacks,target=/opt/stacks,type=volume"
   ],
   "postCreateCommand": "mkdir -p /data /opt/stacks /data/repo /data/db && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
   "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
