@@ -9,7 +9,8 @@
     "AIR_COMPOSE_DISPLAY_CONFIG": "true",
     "AIR_COMPOSE_SERVICES_DIR": "repo",
     "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true",
-    "AIR_COMPOSE_CONFIG_FILE": "config.yaml"
+    "AIR_COMPOSE_CONFIG_FILE": "config.yaml",
+    "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
   },
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
@@ -17,6 +18,9 @@
   "postCreateCommand": "mkdir -p /data && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
   "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
   "customizations": {
+    "vscode": {
+      "remoteUser": "root"
+    },
     "codespaces": {
       "openFiles": [
         "/data/config.yaml"
