@@ -1,7 +1,7 @@
 {
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
-  "command": "sleep infinity",
+  "user": "root",
   "forwardPorts": [5005],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
@@ -18,9 +18,6 @@
   "postCreateCommand": "mkdir -p /data && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
   "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
   "customizations": {
-    "vscode": {
-      "remoteUser": "root"
-    },
     "codespaces": {
       "openFiles": [
         "/data/config.yaml"

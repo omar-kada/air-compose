@@ -16,5 +16,4 @@ settings:
 environment: {}
 
 services:
-  homepage: {}
-  dockge: {}
+  immich: {}
