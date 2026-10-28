@@ -5,7 +5,7 @@
 set -e
 
 # Create required directories
-mkdir -p /data /data/repo /data/db
+mkdir -p /data /opt/stacks /data/db
 
 # Ensure config file exists (fallback for failed mount)
 if [ ! -f /data/config.yaml ]; then
