@@ -8,7 +8,8 @@
     "AIR_COMPOSE_PORT": "5005",
     "AIR_COMPOSE_DISPLAY_CONFIG": "true",
     "AIR_COMPOSE_SERVICES_DIR": "repo",
-    "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true"
+    "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true",
+    "AIR_COMPOSE_CONFIG_FILE": "config.yaml"
   },
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/config.yaml,target=/data/config.yaml,type=bind,consistency=cached",
