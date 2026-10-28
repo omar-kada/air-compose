@@ -16,4 +16,4 @@ settings:
 environment: {}
 
 services:
-  immich: {}
+  stirling-pdf: {}
