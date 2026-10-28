@@ -9,7 +9,7 @@ settings:
   schedule:
     cron: "@hourly"
     retriesOnUnhealthy: 3
-    retryDelay: 30000
+    retryDelay: 300000
   notifications: {}
   oidc: {}
 

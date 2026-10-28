@@ -2,12 +2,12 @@
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
   "user": "root",
-  "forwardPorts": [5005],
+  "forwardPorts": [5005, 8080],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
     "AIR_COMPOSE_PORT": "5005",
     "AIR_COMPOSE_DISPLAY_CONFIG": "true",
-    "AIR_COMPOSE_SERVICES_DIR": "repo",
+    "AIR_COMPOSE_SERVICES_DIR": "/data/repo",
     "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true",
     "AIR_COMPOSE_CONFIG_FILE": "config.yaml",
     "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
