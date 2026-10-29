@@ -1,22 +1,22 @@
 {
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
-  "user": "root",
+  "containerUser": "root",
+  "initializeCommand": "mkdir -p \"${localWorkspaceFolder}/.air-compose/stacks\"",
   "forwardPorts": [5005, 8080],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
     "AIR_COMPOSE_PORT": "5005",
-    "AIR_COMPOSE_DISPLAY_CONFIG": "true",
-    "AIR_COMPOSE_SERVICES_DIR": "/opt/stacks",
+    "AIR_COMPOSE_SERVICES_DIR": "${localWorkspaceFolder}/.air-compose/stacks",
     "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true",
     "AIR_COMPOSE_CONFIG_FILE": "config.yaml",
     "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
   },
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-    "source=/opt/stacks,target=/opt/stacks,type=bind"
+    "source=${localWorkspaceFolder}/.air-compose/stacks,target=${localWorkspaceFolder}/.air-compose/stacks,type=bind"
   ],
-  "postCreateCommand": "mkdir -p /data /opt/stacks /data/repo /data/db && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
+  "postCreateCommand": "mkdir -p /data \"$AIR_COMPOSE_SERVICES_DIR\" /data/repo /data/db && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
   "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
   "customizations": {
     "codespaces": {
