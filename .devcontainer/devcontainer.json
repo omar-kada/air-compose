@@ -12,9 +12,11 @@
     "AIR_COMPOSE_CONFIG_FILE": "config.yaml",
     "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
   },
+  "runArgs": [
+    "-v", "${localWorkspaceFolder}/.air-compose/stacks:${localWorkspaceFolder}/.air-compose/stacks"
+  ],
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-    "source=${localWorkspaceFolder}/.air-compose/stacks,target=${localWorkspaceFolder}/.air-compose/stacks,type=bind"
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
   "postCreateCommand": "mkdir -p /data \"$AIR_COMPOSE_SERVICES_DIR\" /data/repo /data/db && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
   "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
