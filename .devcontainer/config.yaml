@@ -1,7 +1,3 @@
-# air-compose demo configuration
-# Mounted at /data/config.yaml inside the container
-# Edit to customize the demo — changes are saved on disk.
-
 settings:
   git:
     repo: "https://github.com/omar-kada/air-compose-config"

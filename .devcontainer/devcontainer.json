@@ -2,7 +2,6 @@
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
   "containerUser": "root",
-  "initializeCommand": "mkdir -p \"${localWorkspaceFolder}/.air-compose/stacks\"",
   "forwardPorts": [5005, 8080],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
