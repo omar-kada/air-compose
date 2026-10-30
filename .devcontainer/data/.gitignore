@@ -1,0 +1,6 @@
+# air-compose runtime data lives in this directory (db, cloned config repo,
+# command logs). All of it is generated at runtime — keep only config.yaml
+# (and this .gitignore) under version control.
+*
+!.gitignore
+!config.yaml

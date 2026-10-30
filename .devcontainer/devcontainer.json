@@ -1,0 +1,28 @@
+{
+  "name": "air-compose Demo",
+  "image": "ghcr.io/omar-kada/air-compose:latest",
+  "containerUser": "root",
+  "overrideCommand": false,
+  "forwardPorts": [5005, 8080],
+  "containerEnv": {
+    "AIR_COMPOSE_WORKING_DIR": "${containerWorkspaceFolder}/.devcontainer/data",
+    "AIR_COMPOSE_PORT": "5005",
+    "AIR_COMPOSE_SERVICES_DIR": "${localWorkspaceFolder}/.air-compose/stacks",
+    "AIR_COMPOSE_DISPLAY_CMD_LOGS": "true",
+    "AIR_COMPOSE_CONFIG_FILE": "config.yaml",
+    "AIR_COMPOSE_LOG_LEVEL": "DEBUG"
+  },
+  "runArgs": [
+    "-v", "${localWorkspaceFolder}/.air-compose/stacks:${localWorkspaceFolder}/.air-compose/stacks"
+  ],
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "${containerWorkspaceFolder}/.devcontainer/data/config.yaml"
+      ]
+    }
+  }
+}

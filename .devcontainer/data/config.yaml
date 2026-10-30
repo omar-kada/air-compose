@@ -1,0 +1,15 @@
+settings:
+  git:
+    repo: "https://github.com/omar-kada/air-compose-config"
+    branch: "main"
+  schedule:
+    cron: "@hourly"
+    retriesOnUnhealthy: 3
+    retryDelay: 300000
+  notifications: {}
+  oidc: {}
+
+environment: {}
+
+services:
+  stirling-pdf: {}
