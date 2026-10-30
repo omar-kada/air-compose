@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.9](https://github.com/omar-kada/air-compose/compare/v0.6.8...v0.6.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* prevent notification list content overflow on mobile ([#363](https://github.com/omar-kada/air-compose/issues/363)) ([03fe097](https://github.com/omar-kada/air-compose/commit/03fe0972b044b600f5995007929d140eb43633aa))
+
 ## [0.6.8](https://github.com/omar-kada/air-compose/compare/v0.6.7...v0.6.8) (2026-10-24)
 
 
