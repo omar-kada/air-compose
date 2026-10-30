@@ -2,6 +2,7 @@
   "name": "air-compose Demo",
   "image": "ghcr.io/omar-kada/air-compose:latest",
   "containerUser": "root",
+  "overrideCommand": false,
   "forwardPorts": [5005, 8080],
   "containerEnv": {
     "AIR_COMPOSE_WORKING_DIR": "/data",
@@ -18,7 +19,6 @@
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
   "postCreateCommand": "mkdir -p /data \"$AIR_COMPOSE_SERVICES_DIR\" /data/repo /data/db && cp .devcontainer/config.yaml /data/config.yaml 2>/dev/null || true",
-  "postStartCommand": "/bin/sh ${containerWorkspaceFolder}/.devcontainer/start.sh",
   "customizations": {
     "codespaces": {
       "openFiles": [
