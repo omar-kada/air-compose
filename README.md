@@ -7,8 +7,9 @@ https://github.com/user-attachments/assets/ce42ed20-5ca3-400d-bf36-2525a099d170
 
 [Documentation](https://omar-kada.github.io/air-compose)
 
+Demo (after opening, wait for it to load and then open the app from the Ports tab):  
+
 [![Demo in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/omar-kada/air-compose)  
-after opening, wait for it to load and then open the app from the Ports tab
 
 ## Summary
 
